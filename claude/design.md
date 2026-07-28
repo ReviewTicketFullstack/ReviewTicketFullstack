@@ -63,6 +63,7 @@
 | **Text Secondary**     | `ink-700`     | 부가 설명                               |
 | **Muted**              | `ink-500`     | 메타 정보, 비활성 탭, placeholder       |
 | **Danger**             | `brand-900`   | 삭제, 인풋 에러, 에러 메시지            |
+| **Hover(강조)**        | `brand-950`   | Primary·Danger 버튼의 hover 한 단계     |
 | **Success**            | `green-700`   | 완료 상태 배지, 성공 안내               |
 | **Rating**             | `star`        | 별점 아이콘 전용                        |
 
@@ -79,6 +80,7 @@
   --color-brand-100: oklch(0.96 0.02 28.9); /* #FFEDEA */
   --color-brand-800: oklch(0.65 0.22 27.9); /* #F94239 — Primary */
   --color-brand-900: oklch(0.598 0.232 29.6); /* #EA2013 — Danger */
+  --color-brand-950: oklch(0.545 0.21 30.5); /* #CE1D09 — Primary/Danger hover */
 
   /* Neutral */
   --color-ink-900: oklch(0.252 0 0); /* #222222 */
@@ -100,6 +102,7 @@
 
 - **강조는 Primary 하나로 수렴시킨다.** 보조 강조색을 새로 만들지 않는다.
 - **유채색의 투명도를 임의로 조정하지 않는다.** 연한 빨강이 필요하면 `brand-800/20`이 아니라 `brand-50` / `brand-100`을 쓴다. 투명도가 허용되는 것은 무채색(오버레이·그림자)뿐이다.
+- **hover도 투명도로 만들지 않는다.** `opacity`를 낮추면 라벨까지 흐려져 disabled처럼 읽힌다. 한 단계 어두운 색으로 바꾼다(Primary → `brand-900`, Danger → `brand-950`, Secondary → `line-100`).
 - Background와 Surface는 항상 구분되게 둔다. 둘이 같으면 카드가 사라진다.
 - Danger / Success는 **상태 전달에만** 쓴다. 장식이나 강조 용도로 전용하지 않는다.
 - 색으로만 정보를 전달하지 않는다. 항상 텍스트나 아이콘을 동반한다.

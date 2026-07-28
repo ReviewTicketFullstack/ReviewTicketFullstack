@@ -1,5 +1,6 @@
 export * from './Button';
 export * from './Badge';
+export * from './CountBadge';
 export * from './Modal';
 export * from './Input';
 export * from './Textarea';

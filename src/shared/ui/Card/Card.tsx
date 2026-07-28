@@ -1,39 +1,52 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+interface CardBaseProps {
   children: ReactNode;
-  /**  전체가 터치 타깃일 때. 자동으로 button 태그와 shadow-raised 추가 */
-  interactive?: boolean;
-  /** 정보 카드일 때 Border 표시 */
-  bordered?: boolean;
+  className?: string;
 }
 
-export function Card({
-  children,
-  interactive = false,
-  bordered = false,
-  className = '',
-  ...props
-}: CardProps) {
-  const baseClass = 'rounded-2xl bg-surface p-3';
-  const elevationClass = interactive ? 'shadow-raised' : bordered ? 'border border-line-100' : '';
-  const finalClass = `${baseClass} ${elevationClass} ${className}`;
+/** 영역 전체가 터치 타깃인 카드. button으로 렌더되므로 children은 phrasing content만 둔다. */
+type InteractiveCardProps = CardBaseProps &
+  Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'className'> & {
+    interactive: true;
+  };
 
-  if (interactive) {
-    const buttonProps = props as ButtonHTMLAttributes<HTMLButtonElement>;
+/** 클릭 대상이 아닌 정보 카드. */
+type StaticCardProps = CardBaseProps &
+  Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'className'> & {
+    interactive?: false;
+    /** 배경과의 구분이 필요할 때 Border를 얹는다. */
+    bordered?: boolean;
+  };
+
+export type CardProps = InteractiveCardProps | StaticCardProps;
+
+const BASE_CLASS = 'rounded-2xl bg-surface p-3';
+
+export function Card(props: CardProps) {
+  if (props.interactive) {
+    const { children, className = '', interactive, ...rest } = props;
+    void interactive;
+
     return (
       <button
         type="button"
-        className={`${finalClass} text-left transition-transform active:scale-95`}
-        {...buttonProps}
+        className={`${BASE_CLASS} shadow-raised text-left transition-transform active:scale-[0.99] ${className}`}
+        {...rest}
       >
         {children}
       </button>
     );
   }
 
+  const { children, className = '', interactive, bordered = false, ...rest } = props;
+  void interactive;
+
   return (
-    <div className={finalClass} {...props}>
+    <div
+      className={`${BASE_CLASS} ${bordered ? 'border border-line-100' : ''} ${className}`}
+      {...rest}
+    >
       {children}
     </div>
   );
