@@ -25,7 +25,7 @@ export function AppRoutes() {
 
       <Route element={<CustomerLayout />}>
         <Route path="/home" element={<HomePage />} />
-        <Route path="/order" element={<OrderPage />} />
+        <Route path="/order/:storeId" element={<OrderPage />} />
         <Route path="/order-history" element={<OrderHistoryPage />} />
       </Route>
 

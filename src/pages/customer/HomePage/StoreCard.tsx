@@ -1,7 +1,9 @@
 import { Star } from 'lucide-react';
 import { Card } from '@/shared/ui';
+import { useNavigate } from 'react-router-dom';
 
 export interface StoreCardProps {
+  storeId: string;
   storeName: string;
   rating: number;
   reviewCount: string;
@@ -9,13 +11,25 @@ export interface StoreCardProps {
 }
 
 export function StoreCard({
+  storeId,
   storeName,
   rating,
   reviewCount,
   imageUrl,
 }: StoreCardProps) {
+  const navigate = useNavigate();
+
   return (
-    <Card className="flex gap-4 p-4">
+    <Card 
+    className="
+    flex cursor-pointer gap-4 p-4
+    transition-all duration-200
+    hover:shadow-xl
+    hover:bg-gray-100
+    active:scale-[0.98]
+    "
+    onClick={() => navigate(`/order/${storeId}`)}
+    >
       {/* Image Section (1 part) */}
       <div className="flex-shrink-0">
         <div className="aspect-square w-24 rounded-lg bg-gray-200 flex items-center justify-center">

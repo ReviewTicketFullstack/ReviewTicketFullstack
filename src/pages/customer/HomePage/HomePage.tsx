@@ -8,8 +8,8 @@ export function HomePage() {
       <div className="grid grid-cols-2 gap-4">
         <Card className="flex items-center justify-center p-6">
           <div className="text-center">
-            <p className="text-lg font-bold leading-7">안녕하세요?</p>
-            <p className="text-lg font-bold leading-7">이도연님!</p>
+            <p className="text-3xl font-bold leading-14 text-left" >안녕하세요?</p>
+            <p className="text-6xl font-bold leading-14 text-left">이도연님!</p>
           </div>
         </Card>
       </div>
@@ -17,6 +17,7 @@ export function HomePage() {
       {/* Store List Section */}
       <div className="space-y-4">
         <StoreCard
+          storeId='dominu-pizza'
           storeName="도미너피자"
           rating={4.7}
           reviewCount="100+"
