@@ -6,7 +6,7 @@ const REVIEW_TIME_LIMIT_MS = 60 * 1000; // 1 minute
 export function saveOrder(order: Omit<Order, 'id' | 'createdAt' | 'reviewDeadline'>): Order {
   const orders = getOrderHistory();
   
-  const now = new Date();
+  const now = new Date();``
   const createdAt = now.toISOString().split('T')[0];
   const reviewDeadlineTime = new Date(now.getTime() + REVIEW_TIME_LIMIT_MS);
   const reviewDeadline = reviewDeadlineTime.toISOString();
@@ -18,7 +18,7 @@ export function saveOrder(order: Omit<Order, 'id' | 'createdAt' | 'reviewDeadlin
     reviewDeadline,
   };
   
-  orders.push(newOrder);
+  orders.unshift(newOrder);
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
   
   return newOrder;
