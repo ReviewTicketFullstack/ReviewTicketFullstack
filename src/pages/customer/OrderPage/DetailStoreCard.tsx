@@ -30,7 +30,7 @@ export function DetailStoreCard({
       <div className="flex items-center gap-2">
         <Star size={16} className="fill-yellow-400 text-yellow-400" />
         <span className="text-base font-bold">{rating}</span>
-        <span className="text-sm text-gray-600">리뷰 {reviewCount} {'>'}</span>
+        <span className="text-sm text-gray-600">리뷰 {reviewCount}{'>'}</span>
       </div>
     </Card>
   );
