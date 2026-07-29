@@ -4,6 +4,7 @@ import { DetailStoreCard } from './DetailStoreCard';
 import { MenuListCard, type MenuItemData } from './MenuListCard';
 import { useParams } from "react-router-dom";
 import { saveOrder } from '@/features/order/orderStorage';
+import { useNavigate } from 'react-router-dom';
 
 const MENU_DATA: MenuItemData[] = [
   { name: '피자', price: '18,000원', reviewBadge: true },
@@ -19,6 +20,7 @@ const parsePrice = (priceStr: string): number => {
 
 export function OrderPage() {
   const { storeId } = useParams();
+  const navigate = useNavigate();
 
   const [selectedMenu, setSelectedMenu] = useState<MenuItemData | null>(null);
 
@@ -38,7 +40,10 @@ export function OrderPage() {
     });
 
     setSelectedMenu(null);
-    alert('주문이 완료되었습니다!');
+
+    navigate('/order-history', {
+      replace: true,
+    });
   };
 
   return (
