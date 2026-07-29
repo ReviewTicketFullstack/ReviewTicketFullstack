@@ -27,7 +27,7 @@ export function AppRoutes() {
         <Route path="/order-history" element={<OrderHistoryPage />} />
       </Route>
 
-      <Route path="/owner" element={<OwnerLayout />}>
+      <Route element={<OwnerLayout />}>
         <Route path="stores" element={<StoreManagementPage />} />
         <Route path="menu" element={<MenuManagementPage />} />
         <Route path="reviews" element={<ReviewManagementPage />} />
