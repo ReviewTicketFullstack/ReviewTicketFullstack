@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
-import { Header } from '../Header';
-import { BottomNavigation } from '../BottomNavigation';
+import { Header } from './Header';
+import { BottomNavigation } from './BottomNavigation';
 
 export function CustomerLayout() {
   return (
