@@ -4,7 +4,7 @@ export function BottomNavigation() {
   return (
     <nav className="sticky bottom-0 flex h-16 border-t bg-white">
       <NavLink 
-        to="/order" 
+        to="/home" 
         className={({ isActive }) => 
           `flex-1 flex items-center justify-center text-sm ${isActive ? 'text-blue-600 font-bold' : 'text-gray-500'}`
         }
