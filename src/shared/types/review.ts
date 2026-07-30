@@ -1,4 +1,4 @@
-export type ReviewPassStatus = 'pass' | 'non-pass' ;
+export type ReviewPassStatus = 'pass' | 'non-pass';
 
 export interface Review {
   id: string;
@@ -7,7 +7,9 @@ export interface Review {
   /** 1-5 */
   rating: number;
   comment?: string;
+  /** Base64 encoded image data */
+  photo?: string;
   /** ISO date string. */
   createdAt: string;
-  passStatus: ReviewPassStatus
+  passStatus: ReviewPassStatus;
 }
