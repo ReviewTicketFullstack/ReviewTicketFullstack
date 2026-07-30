@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/shared/ui/Button";
+import { useAuth } from "@/app/App";
 
 export function LoginPage() {
+  const { authType } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // TODO: Remove this logging after verification
+  useEffect(() => {
+    if (authType) {
+      console.log(`Current authType: ${authType}`);
+    }
+  }, [authType]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: 인증 로직 구현
-    console.log("Login:", { email, password });
+    console.log("Login:", { email, password, authType });
   };
 
   return (
