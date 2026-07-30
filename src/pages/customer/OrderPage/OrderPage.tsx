@@ -57,7 +57,7 @@ export function OrderPage() {
       {/* Order Button Section */}
       <div
         className="fixed
-                  bottom-20
+                  bottom-0
                   left-1/2
                   w-full
                   max-w-[860px]
