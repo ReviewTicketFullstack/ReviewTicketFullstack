@@ -8,6 +8,7 @@ export interface ReviewModalProps {
   onClose: () => void;
   storeName: string;
   menuName: string;
+  onSubmitSuccess?: () => void;
 }
 
 export interface ReviewData {
@@ -21,6 +22,7 @@ export function ReviewModal({
   onClose,
   storeName,
   menuName,
+  onSubmitSuccess,
 }: ReviewModalProps) {
   const [rating, setRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState<string>('');
@@ -47,10 +49,14 @@ export function ReviewModal({
     console.log('리뷰 제출:', reviewData);
     alert('리뷰가 작성되었습니다!');
 
-    // 초기화
+    // 상태 초기화
     setRating(0);
     setReviewText('');
     removePhoto();
+
+    // 제출 성공 콜백
+    onSubmitSuccess?.();
+
     onClose();
   };
 

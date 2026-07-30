@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Card } from "@/shared/ui";
 import { ReviewButton } from "./ReviewButton";
 import { ReviewModal } from "./ReviewModal";
+import { updateOrderReviewStatus } from "@/features/order/orderStorage";
 import type { Order } from "@/shared/types/order";
 
 export interface OrderHistoryItemProps {
   order: Order;
 }
 
-export function OrderHistoryItem({ order }: OrderHistoryItemProps) {
+export function OrderHistoryItem({ order: initialOrder }: OrderHistoryItemProps) {
+  const [order, setOrder] = useState<Order>(initialOrder);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   return (
@@ -44,6 +46,7 @@ export function OrderHistoryItem({ order }: OrderHistoryItemProps) {
             <ReviewButton
               reviewDeadline={order.reviewDeadline}
               hasReviewBadge={order.hasReviewBadge}
+              reviewStatus={order.reviewStatus}
               onReviewClick={() => setIsReviewModalOpen(true)}
             />
           </div>
@@ -55,6 +58,11 @@ export function OrderHistoryItem({ order }: OrderHistoryItemProps) {
         onClose={() => setIsReviewModalOpen(false)}
         storeName={order.storeName}
         menuName={order.menuName}
+        onSubmitSuccess={() => {
+          const updatedOrder = { ...order, reviewStatus: 'pending' as const };
+          setOrder(updatedOrder);
+          updateOrderReviewStatus(order.id, 'pending');
+        }}
       />
     </>
   );

@@ -1,20 +1,23 @@
-import { useEffect, useState } from 'react';
-import { Button } from '@/shared/ui';
-import { useIsMobile } from '@/shared/hooks';
+import { useEffect, useState } from "react";
+import { Button } from "@/shared/ui";
+import { useIsMobile } from "@/shared/hooks";
+import type { ReviewStatus } from "@/shared/types/order";
 import {
   getRemainingReviewTime,
   formatTimeRemaining,
-} from '@/features/order/orderStorage';
+} from "@/features/order/orderStorage";
 
 export interface ReviewButtonProps {
   reviewDeadline: string;
   hasReviewBadge: boolean;
+  reviewStatus: ReviewStatus;
   onReviewClick: () => void;
 }
 
 export function ReviewButton({
   reviewDeadline,
   hasReviewBadge,
+  reviewStatus,
   onReviewClick,
 }: ReviewButtonProps) {
   const isMobile = useIsMobile();
@@ -22,42 +25,45 @@ export function ReviewButton({
   const [isExpired, setIsExpired] = useState<boolean>(false);
 
   useEffect(() => {
-    // Initial calculation
+    if (reviewStatus !== 'available') return;
+
     const time = getRemainingReviewTime(reviewDeadline);
     setRemainingTime(time);
     setIsExpired(time <= 0);
 
-    // Timer interval
     const interval = setInterval(() => {
       const currentTime = getRemainingReviewTime(reviewDeadline);
       setRemainingTime(currentTime);
       setIsExpired(currentTime <= 0);
-    }, 100);
+    }, 300);
 
     return () => clearInterval(interval);
-  }, [reviewDeadline]);
+  }, [reviewDeadline, reviewStatus]);
 
-  if (!hasReviewBadge) {
+  if (!hasReviewBadge || reviewStatus === 'not_available') {
     return (
-      <Button
-        variant="secondary"
-        size="large"
-        fullWidth
-        disabled
-      >
+      <Button variant="secondary" size="large" fullWidth disabled>
         리뷰작성 대상이 아닙니다
+      </Button>
+    );
+  }
+
+  if (reviewStatus === 'pending') {
+    return (
+      <Button variant="secondary" size="large" fullWidth disabled>
+        검토중
       </Button>
     );
   }
 
   const isDisabled = isExpired;
   const buttonText = isExpired
-    ? '리뷰작성 가능시간 초과'
+    ? "리뷰작성 가능시간 초과"
     : `리뷰작성 ${formatTimeRemaining(remainingTime)}`;
 
   const handleReviewClick = () => {
     if (!isMobile) {
-      alert('리뷰 작성은 모바일에서만 가능합니다.');
+      alert("리뷰 작성은 모바일에서만 가능합니다.");
       return;
     }
     onReviewClick();
