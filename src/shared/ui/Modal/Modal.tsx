@@ -1,74 +1,23 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export interface ModalProps {
   open: boolean;
   onClose?: () => void;
-  title?: string;
   children?: ReactNode;
-  /** 액션 버튼 최대 2개 */
-  actions?: ReactNode;
 }
 
-export function Modal({ open, onClose, title, children, actions }: ModalProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const titleId = useId();
-
-  useEffect(() => {
-    if (!open) return;
-
-    // 열기 직전 포커스를 기억해 두었다가 닫을 때 되돌린다.
-    const previouslyFocused = document.activeElement;
-
-    const prevOverflow = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
-
-    panelRef.current?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose?.();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.documentElement.style.overflow = prevOverflow;
-
-      if (previouslyFocused instanceof HTMLElement) {
-        previouslyFocused.focus();
-      }
-    };
-  }, [open, onClose]);
-
+export function Modal({ open, onClose, children }: ModalProps) {
   if (!open) return null;
 
   return (
-    // 오버레이 클릭으로 닫는다. 키보드 경로는 위의 Esc가 담당한다.
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5"
-      onClick={onClose}
-    >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? titleId : undefined}
-        tabIndex={-1}
-        className="w-full max-w-[400px] rounded-2xl bg-surface shadow-sheet focus:outline-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {title && (
-          <div className="border-b border-line-100 px-4 py-3">
-            <h2 id={titleId} className="text-base font-bold text-ink-900">
-              {title}
-            </h2>
-          </div>
-        )}
+    // z-50을 추가해 화면 최상단에 뜨도록 보장합니다
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* 배경: bg-black/50을 추가해 주변을 어둡게 만듭니다 */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-        {children && <div className="max-h-[60vh] overflow-y-auto px-4 py-3">{children}</div>}
-
-        {actions && (
-          <div className="flex justify-end gap-2 border-t border-line-100 px-4 py-3">{actions}</div>
-        )}
+      {/* 콘텐츠 상자: 흰 배경, 패딩, 라운딩, 그림자 효과를 줍니다 */}
+      <div className="relative z-10 bg-white p-6 rounded-2xl shadow-xl max-w-md w-full mx-4">
+        {children}
       </div>
     </div>
   );

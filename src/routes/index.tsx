@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { CustomerLayout, OwnerLayout, AuthLayout } from '@/shared/layout';
 import {
+  HomePage,
   OrderPage,
   OrderHistoryPage,
   OnboardingPage,
@@ -23,11 +24,12 @@ export function AppRoutes() {
       </Route>
 
       <Route element={<CustomerLayout />}>
-        <Route path="/order" element={<OrderPage />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/order/:storeId" element={<OrderPage />} />
         <Route path="/order-history" element={<OrderHistoryPage />} />
       </Route>
 
-      <Route path="/owner" element={<OwnerLayout />}>
+      <Route element={<OwnerLayout />}>
         <Route path="stores" element={<StoreManagementPage />} />
         <Route path="menu" element={<MenuManagementPage />} />
         <Route path="reviews" element={<ReviewManagementPage />} />

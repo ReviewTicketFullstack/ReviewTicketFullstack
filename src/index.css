@@ -3,14 +3,17 @@
 /* 디자인 토큰 — claude/design.md의 Colors · Typography · Elevation 정의를 그대로 옮긴다. */
 @theme {
   --font-sans:
-    "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif;
+    "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo",
+    system-ui, sans-serif;
 
   /* Accent — 강조는 brand-800 하나로 수렴 */
   --color-brand-50: oklch(0.978 0.011 17.3); /* #FFF5F5 */
   --color-brand-100: oklch(0.96 0.02 28.9); /* #FFEDEA */
   --color-brand-800: oklch(0.65 0.22 27.9); /* #F94239 — Primary */
   --color-brand-900: oklch(0.598 0.232 29.6); /* #EA2013 — Danger */
-  --color-brand-950: oklch(0.545 0.21 30.5); /* #CE1D09 — Primary/Danger hover */
+  --color-brand-950: oklch(
+    0.545 0.21 30.5
+  ); /* #CE1D09 — Primary/Danger hover */
 
   /* Neutral */
   --color-ink-900: oklch(0.252 0 0); /* #222222 */
