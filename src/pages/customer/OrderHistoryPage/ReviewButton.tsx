@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/shared/ui';
+import { useIsMobile } from '@/shared/hooks';
 import {
   getRemainingReviewTime,
   formatTimeRemaining,
@@ -16,6 +17,7 @@ export function ReviewButton({
   hasReviewBadge,
   onReviewClick,
 }: ReviewButtonProps) {
+  const isMobile = useIsMobile();
   const [remainingTime, setRemainingTime] = useState<number>(0);
   const [isExpired, setIsExpired] = useState<boolean>(false);
 
@@ -53,13 +55,21 @@ export function ReviewButton({
     ? '리뷰작성 가능시간 초과'
     : `리뷰작성 ${formatTimeRemaining(remainingTime)}`;
 
+  const handleReviewClick = () => {
+    if (!isMobile) {
+      alert('리뷰 작성은 모바일에서만 가능합니다.');
+      return;
+    }
+    onReviewClick();
+  };
+
   return (
     <Button
       variant="primary"
       size="large"
       fullWidth
       disabled={isDisabled}
-      onClick={onReviewClick}
+      onClick={handleReviewClick}
     >
       {buttonText}
     </Button>
