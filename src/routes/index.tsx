@@ -1,5 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
-import { CustomerLayout, OwnerLayout, AuthLayout } from '@/shared/layout';
+import { Routes, Route } from "react-router-dom";
+import { CustomerLayout, OwnerLayout, AuthLayout } from "@/shared/layout";
 import {
   HomePage,
   OrderPage,
@@ -11,14 +11,17 @@ import {
   StoreManagementPage,
   MenuManagementPage,
   ReviewManagementPage,
-} from '@/pages';
+} from "@/pages";
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route element={<AuthLayout />}>
-        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPage />} />
+      </Route>
+
+      <Route element={<AuthLayout />}>
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/signup/customer" element={<CustomerSignUpPage />} />
         <Route path="/signup/owner" element={<OwnerSignUpPage />} />
       </Route>
