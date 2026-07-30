@@ -30,7 +30,7 @@ export function OrderHistoryItem({ order }: OrderHistoryItemProps) {
           <div className="flex items-center justify-between">
             <span className="text-base text-gray-700">{order.menuName}</span>
             <span className="text-base font-bold">
-              {order.price.toLocaleString("ko-KR")}
+              {order.price.toLocaleString("ko-KR")}원
             </span>
           </div>
 
