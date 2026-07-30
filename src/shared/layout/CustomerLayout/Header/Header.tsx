@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Ticket, Settings } from 'lucide-react';
-import { MyInfoModal } from '@/pages/customer/MyInfoModal/MyInfoModal';
+import { useState } from "react";
+import { Ticket, Settings } from "lucide-react";
+import { MyInfoModal } from "@/pages/customer/MyInfoModal/MyInfoModal";
 
 export function Header() {
   const [isMyInfoModalOpen, setIsMyInfoModalOpen] = useState(false);
+  const remainingTickets = 2;
 
   return (
     <>
@@ -13,10 +14,16 @@ export function Header() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="rounded-lg p-2 hover:bg-neutral-100 active:bg-neutral-200"
+              onClick={() => setIsMyInfoModalOpen(true)}
+              className="relative rounded-lg p-2 hover:bg-neutral-100 active:bg-neutral-200"
               aria-label="Tickets"
             >
               <Ticket size={20} className="text-neutral-900" />
+              <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-800">
+                <span className="text-xs font-semibold text-white">
+                  {remainingTickets}
+                </span>
+              </div>
             </button>
             <button
               type="button"

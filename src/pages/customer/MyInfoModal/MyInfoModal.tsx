@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Modal } from '@/shared/ui/Modal/Modal';
-import { Button } from '@/shared/ui';
-import { ArrowLeft } from 'lucide-react';
+import { useState } from "react";
+import { Modal } from "@/shared/ui/Modal/Modal";
+import { Button } from "@/shared/ui";
+import { ArrowLeft } from "lucide-react";
 
 export interface MyInfoModalProps {
   open: boolean;
@@ -9,9 +9,9 @@ export interface MyInfoModalProps {
 }
 
 export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
-  const [nickname, setNickname] = useState('사용자');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [nickname, setNickname] = useState("사용자");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [isNicknameDuplicate, setIsNicknameDuplicate] = useState(false);
 
   const handleDuplicateCheck = () => {
@@ -64,7 +64,9 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
             </Button>
           </div>
           {isNicknameDuplicate && (
-            <p className="text-xs text-brand-900 mt-2">이미 사용 중인 닉네임입니다.</p>
+            <p className="text-xs text-brand-900 mt-2">
+              이미 사용 중인 닉네임입니다.
+            </p>
           )}
         </div>
 
@@ -96,18 +98,13 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
         {/* Ticket Information */}
         <div className="bg-fill-100 rounded-lg px-4 py-3">
           <p className="text-xs text-ink-700 mb-1">남은 티켓</p>
-          <p className="text-base font-semibold text-ink-900">12개</p>
+          <p className="text-base font-semibold text-ink-900">3개</p>
         </div>
       </div>
 
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-line-100">
-        <Button
-          variant="primary"
-          size="large"
-          fullWidth
-          onClick={handleSave}
-        >
+        <Button variant="primary" size="large" fullWidth onClick={handleSave}>
           저장
         </Button>
       </div>
