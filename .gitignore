@@ -1,0 +1,9 @@
+# 실제 비밀번호가 평문으로 들어 있다. 절대 커밋하지 않는다.
+# 팀원에게는 01_secure_and_provision.sql.example 을 준다.
+DB/01_secure_and_provision.sql
+
+# 거부 로그. 운영 데이터라 저장소에 올리지 않는다.
+DB/Upload_Failure_log/*.log
+
+# DB 덤프
+DB/backups/

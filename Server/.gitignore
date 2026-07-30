@@ -1,0 +1,44 @@
+### ReviewTicket ###
+# 업로드된 리뷰 사진. 코드 폴더 안에 있지만 저장소에 올리지 않는다.
+Uploaded_pictures/
+!Uploaded_pictures/.gitkeep
+# DB 접속 비밀번호가 들어간다
+src/main/resources/application-local.yml
+
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/

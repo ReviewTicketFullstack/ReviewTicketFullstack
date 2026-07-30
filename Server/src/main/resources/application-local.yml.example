@@ -1,0 +1,37 @@
+# 이 파일을 application-local.yml 로 복사한 뒤 자기 값을 넣는다.
+#
+#   copy application-local.yml.example application-local.yml
+#
+# application-local.yml 은 .gitignore 에 있어 커밋되지 않는다.
+
+spring:
+  datasource:
+    password: 여기에_DB_비밀번호
+
+  # ---- 이메일 인증 메일 발송 (SMTP) ----
+  # Gmail 을 쓸 경우:
+  #   1) 구글 계정에 2단계 인증을 켠다
+  #   2) 앱 비밀번호를 발급한다 (16자리, 공백 없이 붙여 넣는다)
+  #   3) username 에 보내는 계정, password 에 앱 비밀번호를 넣는다
+  # 평소 쓰는 구글 계정 비밀번호로는 로그인되지 않는다.
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: 여기에_보내는_이메일주소
+    password: 여기에_앱_비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+reviewticket:
+  auth:
+    # 32바이트(영문 32자) 이상의 무작위 문자열. 짧으면 서버가 뜨지 않는다.
+    # 아래 값은 예시이니 반드시 바꿔서 쓴다.
+    jwt-secret: 여기에_32자_이상의_무작위_문자열_예시값을_그대로_쓰지_말_것
+  mail:
+    # 받는 사람에게 보이는 발신 주소. 보통 위 spring.mail.username 과 같다.
+    # 비워두면 메일을 보내지 않고 인증 링크를 서버 로그에 남긴다.
+    from: 여기에_보내는_이메일주소
