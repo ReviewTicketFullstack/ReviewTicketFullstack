@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Card } from "@/shared/ui";
 import { ReviewButton } from "./ReviewButton";
 import { ReviewModal } from "./ReviewModal";
-import { updateOrderReviewStatus } from "@/features/order/orderStorage";
-import type { Order } from "@/shared/types/order";
+import { updateOrderReviewStatus } from "@/entities/order/orderStorage";
+import type { Order } from "@/entities/order/model";
 
 export interface OrderHistoryItemProps {
   order: Order;

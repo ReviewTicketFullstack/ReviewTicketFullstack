@@ -1,3 +1,6 @@
+/**
+ * [TEMPORARY] 임시 Store 모델.
+ */
 export interface Store {
   id: string;
   name: string;

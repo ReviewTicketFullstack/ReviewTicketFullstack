@@ -1,3 +1,10 @@
+/**
+ * [TEMPORARY] 임시 Review 모델.
+ *
+ * photo 필드는 Base64 encoded image data 를 담습니다.
+ * 향후 S3 presigned URL 방식으로 변경될 가능성이 있습니다.
+ */
+
 export type ReviewPassStatus = 'pass' | 'non-pass';
 
 export interface Review {

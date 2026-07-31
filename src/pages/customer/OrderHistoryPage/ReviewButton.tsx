@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui";
 import { useIsMobile } from "@/shared/hooks";
-import type { ReviewStatus } from "@/shared/types/order";
+import type { ReviewStatus } from "@/entities/order/model";
 import {
   getRemainingReviewTime,
   formatTimeRemaining,
-} from "@/features/order/orderStorage";
+} from "@/entities/order/orderStorage";
 
 export interface ReviewButtonProps {
   reviewDeadline: string;

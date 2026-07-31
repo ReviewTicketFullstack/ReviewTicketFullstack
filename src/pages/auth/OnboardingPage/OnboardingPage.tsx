@@ -1,18 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { Utensils, Store } from "lucide-react";
-import { useAuth } from "@/app/App";
+import { useAuth } from "@/app/providers";
 
 export function OnboardingPage() {
-  const { setAuthType } = useAuth();
+  const { setUserRole } = useAuth();
   const navigate = useNavigate();
 
   const handleCustomerClick = () => {
-    setAuthType("CUSTOMER");
+    setUserRole("CUSTOMER");
     navigate("/login");
   };
 
   const handleOwnerClick = () => {
-    setAuthType("OWNER");
+    setUserRole("OWNER");
     navigate("/login");
   };
 

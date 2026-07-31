@@ -1,3 +1,6 @@
+/**
+ * [TEMPORARY] 임시 MenuItem 모델.
+ */
 export interface MenuItem {
   id: string;
   storeId: string;
