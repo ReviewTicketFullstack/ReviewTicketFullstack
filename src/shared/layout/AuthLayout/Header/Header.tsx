@@ -1,7 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 
-export function LoginHeader() {
+export interface AuthHeaderProps {
+  title: string;
+}
+
+export function AuthHeader({ title }: AuthHeaderProps) {
   const navigate = useNavigate();
 
   return (
@@ -17,7 +21,7 @@ export function LoginHeader() {
         </button>
 
         <h1 className="flex-1 text-center text-xl font-bold text-ink-900">
-          로그인
+          {title}
         </h1>
 
         <div className="w-10" />

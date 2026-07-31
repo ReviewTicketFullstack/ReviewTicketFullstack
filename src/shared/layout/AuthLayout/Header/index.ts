@@ -1,1 +1,1 @@
-export { LoginHeader } from './Header';
+export { AuthHeader } from './Header';

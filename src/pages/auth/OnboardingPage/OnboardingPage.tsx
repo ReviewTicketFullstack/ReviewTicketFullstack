@@ -8,13 +8,11 @@ export function OnboardingPage() {
 
   const handleCustomerClick = () => {
     setAuthType("CUSTOMER");
-    console.log("Selected: CUSTOMER");
     navigate("/login");
   };
 
   const handleOwnerClick = () => {
     setAuthType("OWNER");
-    console.log("Selected: OWNER");
     navigate("/login");
   };
 

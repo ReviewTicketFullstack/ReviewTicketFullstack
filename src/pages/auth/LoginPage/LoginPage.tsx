@@ -1,23 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
-import { useAuth } from "@/app/App";
 
 export function LoginPage() {
-  const { authType } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // TODO: Remove this logging after verification
-  useEffect(() => {
-    if (authType) {
-      console.log(`Current authType: ${authType}`);
-    }
-  }, [authType]);
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 인증 로직 구현
-    console.log("Login:", { email, password, authType });
+    // TODO: 인증 로직 구현. useAuth()의 authType(CUSTOMER/OWNER)에 따라
+    // 로그인 API를 분기하고, 응답으로 받은 user를 signin()에 전달한다.
   };
 
   return (
