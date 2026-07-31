@@ -1,3 +1,8 @@
+/**
+ * 정규화된 Order 모델.
+ * 현재 사용 중인 모델은 @/shared/types/order.ts 를 참조하세요.
+ */
+
 // export type OrderStatus = 'pending' | 'completed' | 'cancelled';
 
 export interface OrderItem {

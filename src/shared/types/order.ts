@@ -1,4 +1,8 @@
-export type ReviewStatus = 'available' | 'pending' | 'not_available';
+/**
+현재 사용 중인 Order 임시 모델.
+ */
+
+export type ReviewStatus = "available" | "pending" | "not_available";
 
 export interface Order {
   id: string;
