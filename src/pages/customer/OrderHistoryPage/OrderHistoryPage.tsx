@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getOrderHistory } from '@/features/order/orderStorage';
 import { OrderHistoryItem } from './OrderHistoryItem';
-import type { Order } from '@/shared/types/order';
+import type { Order } from '@/types/order';
 
 export function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);

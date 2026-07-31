@@ -1,21 +1,34 @@
 /**
- * 정규화된 Order 모델.
- * 현재 사용 중인 모델은 @/shared/types/order.ts 를 참조하세요.
+ * [TEMPORARY] 임시 Order 모델.
+ *
+ * UI 프로토타입 단계에서 사용 중입니다.
+ * 평면화 구조: 주문 1건 = 메뉴 1개 지원
+ *
+ * 향후 정규화될 예정 (items: OrderLine[] 구조)
  */
 
-// export type OrderStatus = 'pending' | 'completed' | 'cancelled';
-
-export interface OrderItem {
-  menuItemId: string;
-  menuName: string;
-  /** Snapshot of MenuItem.price at the time the order was placed. */
-  price?: number;
-}
+export type ReviewStatus = "available" | "pending" | "not_available";
 
 export interface Order {
   id: string;
   storeId: string;
-  items: OrderItem[];
-  status: string; // 추후 OrderStatus
+  storeName: string;
+  menuName: string;
+  price: number;
+  hasReviewBadge: boolean;
+  reviewStatus: ReviewStatus;
   createdAt: string;
+  reviewDeadline: string;
 }
+
+/**
+ * [DEPRECATED] 정규화 구조. 현재 사용되지 않습니다.
+ * 향후 참고 기준으로 남깁니다.
+ */
+/*
+export interface OrderItem {
+  menuItemId: string;
+  menuName: string;
+  price?: number;
+}
+*/

@@ -1,4 +1,4 @@
-import type { Order } from '@/shared/types/order';
+import type { Order } from '@/types/order';
 
 const ORDERS_KEY = 'review_ticket_orders';
 const REVIEW_TIME_LIMIT_MS = 60 * 1000; // 1 minute

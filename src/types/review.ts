@@ -1,10 +1,11 @@
 /**
- * [PROTOTYPE] 초기 설계 단계의 모델.
- * 현재 사용 중인 모델은 @/shared/types/review.ts 를 참조하세요.
+ * [TEMPORARY] 임시 Review 모델.
  *
- * 주요 차이: photo 필드 미포함
+ * photo 필드는 Base64 encoded image data 를 담습니다.
+ * 향후 S3 presigned URL 방식으로 변경될 가능성이 있습니다.
  */
-export type ReviewPassStatus = 'pass' | 'non-pass' ;
+
+export type ReviewPassStatus = 'pass' | 'non-pass';
 
 export interface Review {
   id: string;
@@ -13,7 +14,9 @@ export interface Review {
   /** 1-5 */
   rating: number;
   comment?: string;
+  /** Base64 encoded image data */
+  photo?: string;
   /** ISO date string. */
   createdAt: string;
-  passStatus: ReviewPassStatus
+  passStatus: ReviewPassStatus;
 }

@@ -3,7 +3,7 @@ import { Card } from "@/shared/ui";
 import { ReviewButton } from "./ReviewButton";
 import { ReviewModal } from "./ReviewModal";
 import { updateOrderReviewStatus } from "@/features/order/orderStorage";
-import type { Order } from "@/shared/types/order";
+import type { Order } from "@/types/order";
 
 export interface OrderHistoryItemProps {
   order: Order;

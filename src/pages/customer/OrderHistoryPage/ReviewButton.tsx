@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui";
 import { useIsMobile } from "@/shared/hooks";
-import type { ReviewStatus } from "@/shared/types/order";
+import type { ReviewStatus } from "@/types/order";
 import {
   getRemainingReviewTime,
   formatTimeRemaining,
