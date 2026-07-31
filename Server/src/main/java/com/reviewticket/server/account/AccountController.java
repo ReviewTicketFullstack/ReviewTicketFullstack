@@ -39,16 +39,6 @@ public class AccountController {
     public record ChangeNameResponse(String displayName) {
     }
 
-    public record ChangePasswordRequest(
-            @NotBlank(message = "기존 비밀번호를 입력해 주세요") String currentPassword,
-            @NotBlank(message = "새 비밀번호를 입력해 주세요") String newPassword,
-            @NotBlank(message = "새 비밀번호 확인을 입력해 주세요") String newPasswordConfirm) {
-    }
-
-    /** 비밀번호를 바꾸면 옛 토큰이 죽으므로 새 토큰을 함께 내려준다. */
-    public record ChangePasswordResponse(String token, String message) {
-    }
-
     @GetMapping
     public MeResponse me(@AuthenticationPrincipal User user) {
         return new MeResponse(user.getId(), user.getEmail(), user.getDisplayName(), user.getRole());
@@ -61,12 +51,6 @@ public class AccountController {
         return new ChangeNameResponse(changed);
     }
 
-    @PatchMapping(value = "/password", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ChangePasswordResponse changePassword(@AuthenticationPrincipal User user,
-            @Valid @RequestBody ChangePasswordRequest request) {
-        String newToken = accountService.changePassword(user.getId(),
-                request.currentPassword(), request.newPassword(), request.newPasswordConfirm());
-        return new ChangePasswordResponse(newToken,
-                "비밀번호를 변경했습니다. 다른 기기에서는 다시 로그인해야 합니다.");
-    }
+    // 비밀번호 변경은 /api/auth/password-reset 흐름으로 옮겼다.
+    // 비밀번호를 잊은 사용자가 로그인 없이 재설정하는 것이 실제 요구였다.
 }

@@ -45,7 +45,9 @@ public class DemoStaticConfig implements WebMvcConfigurer {
         }
         log.info("데모 프로토타입 서빙: http://localhost:8080/demo/  <-  {}", demoDir);
 
-        registry.addResourceHandler("/demo/**")
+        // Vite의 기본 빌드 결과는 JS/CSS를 /assets/... 와 /favicon.svg 로 참조한다.
+        // /demo 아래의 index.html을 열었을 때에도 이 파일들이 같은 서버에서 제공되게 한다.
+        registry.addResourceHandler("/demo/**", "/assets/**", "/favicon.svg")
                 .addResourceLocations(demoDir.toUri().toString())
                 .setCachePeriod(0);
     }

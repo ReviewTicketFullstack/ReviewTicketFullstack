@@ -63,6 +63,27 @@ public class AuthController {
     public record VerifiedResponse(boolean verified) {
     }
 
+    public record VerifyRequest(@NotBlank(message = "토큰이 없습니다") String token) {
+    }
+
+    public record VerifyResponse(String email) {
+    }
+
+    public record ResetRequest(@Email(message = "이메일 형식이 올바르지 않습니다") @NotBlank String email) {
+    }
+
+    public record ResetTokenResponse(boolean valid) {
+    }
+
+    public record ResetConfirm(
+            @NotBlank(message = "토큰이 없습니다") String token,
+            @NotBlank(message = "새 비밀번호를 입력해 주세요") String newPassword,
+            @NotBlank(message = "새 비밀번호 확인을 입력해 주세요") String newPasswordConfirm) {
+    }
+
+    public record MessageResponse(String message) {
+    }
+
     // ---------- 중복 검사 ----------
 
     @GetMapping("/check-email")
@@ -101,43 +122,53 @@ public class AuthController {
     }
 
     /**
-     * 메일 링크가 향하는 곳. 브라우저가 직접 여는 주소이므로 JSON 대신
-     * 사람이 읽을 HTML 을 돌려준다. 인증 대기 화면이 폴링으로 상태를
-     * 감지하고 있으므로, 이 창은 닫으라고 안내하면 흐름이 이어진다.
+     * 메일 링크가 여는 페이지. GET 은 부작용이 없다 — 버튼을 눌러 POST 할 때만
+     * 회원이 만들어진다. 메일 클라이언트가 링크를 미리 열어도 가입되지 않는다.
      */
     @GetMapping(value = "/verify", produces = MediaType.TEXT_HTML_VALUE)
-    public String verify(@RequestParam("token") @NotBlank String token) {
-        String email = escapeHtml(authService.verify(token));
-        return """
-                <!doctype html>
-                <html lang="ko"><head><meta charset="utf-8">
-                <title>회원가입 완료</title></head>
-                <body style="font-family:sans-serif;padding:2rem">
-                  <h1>이메일 인증이 완료되어 회원가입이 끝났습니다</h1>
-                  <p>%s</p>
-                  <p>이 창을 닫고 회원가입 화면으로 돌아가 주세요.</p>
-                </body></html>
-                """.formatted(email);
+    public String verifyPage(@RequestParam("token") @NotBlank String token) {
+        return AuthPages.signupVerify(token);
     }
 
-    /**
-     * 이 컨트롤러가 유일하게 HTML 을 직접 만들어 내려주는 곳이라, 값을 그대로
-     * 끼워 넣으면 삽입 통로가 된다. 이메일은 사용자가 입력한 문자열이고
-     * &#64;Email 검증은 꽤 관대해서 특수문자가 통과할 여지가 있다.
-     * 템플릿 엔진을 쓰지 않으므로 직접 escape 한다.
-     */
-    private static String escapeHtml(String raw) {
-        return raw.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#39;");
+    /** 위 페이지의 버튼이 부른다. 여기서 실제 회원이 생성된다. */
+    @PostMapping(value = "/verify", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public VerifyResponse verify(@Valid @RequestBody VerifyRequest request) {
+        String email = authService.verify(request.token());
+        return new VerifyResponse(email);
     }
 
     /** 인증 대기 화면이 짧은 주기로 물어본다. */
     @GetMapping("/status")
     public VerifiedResponse status(@RequestParam("email") @NotBlank String email) {
         return new VerifiedResponse(authService.isVerified(email));
+    }
+
+    // ---------- 비밀번호 재설정 ----------
+
+    /** 재설정 요청. 이메일 존재 여부와 무관하게 항상 200 (열거 방지). */
+    @PostMapping(value = "/password-reset/request", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public MessageResponse requestPasswordReset(@Valid @RequestBody ResetRequest request) {
+        authService.requestPasswordReset(request.email());
+        return new MessageResponse("입력하신 이메일이 가입돼 있다면 재설정 메일을 보냈습니다.");
+    }
+
+    /** 재설정 메일 링크가 여는 페이지. GET 은 부작용 없음. */
+    @GetMapping(value = "/password-reset", produces = MediaType.TEXT_HTML_VALUE)
+    public String passwordResetPage(@RequestParam("token") @NotBlank String token) {
+        return AuthPages.passwordReset(token);
+    }
+
+    /** 페이지의 인증 버튼이 부른다. 토큰 유효성만 확인하고 아무것도 바꾸지 않는다. */
+    @GetMapping("/password-reset/check")
+    public ResetTokenResponse checkResetToken(@RequestParam("token") @NotBlank String token) {
+        return new ResetTokenResponse(authService.isResetTokenUsable(token));
+    }
+
+    /** 페이지의 변경 버튼이 부른다. 여기서 실제 비밀번호가 바뀐다. */
+    @PostMapping(value = "/password-reset", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public MessageResponse resetPassword(@Valid @RequestBody ResetConfirm request) {
+        authService.resetPassword(request.token(), request.newPassword(), request.newPasswordConfirm());
+        return new MessageResponse("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.");
     }
 
     // ---------- 로그인 ----------

@@ -8,16 +8,20 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.reviewticket.server.config.ReviewTicketProperties;
+import com.reviewticket.server.domain.PasswordResetToken;
 import com.reviewticket.server.domain.PendingSignup;
 import com.reviewticket.server.domain.Role;
 import com.reviewticket.server.domain.User;
-import com.reviewticket.server.mail.VerificationMailer;
+import com.reviewticket.server.mail.PasswordResetMailRequested;
+import com.reviewticket.server.mail.VerificationMailRequested;
+import com.reviewticket.server.repository.PasswordResetTokenRepository;
 import com.reviewticket.server.repository.PendingSignupRepository;
 import com.reviewticket.server.repository.UserRepository;
 
@@ -40,21 +44,35 @@ public class AuthService {
 
     private static final int MAX_DISPLAY_NAME_LENGTH = 32;
 
+    /** DB 의 email 컬럼 길이. 넘으면 저장 단계에서 터지므로 미리 막는다. */
+    private static final int MAX_EMAIL_LENGTH = 190;
+
+    /**
+     * 존재하지 않는 이메일로 로그인을 시도했을 때 비교 대상으로 쓰는 해시.
+     * 어떤 비밀번호와도 일치하지 않으며, BCrypt 를 실제로 한 번 돌려
+     * 응답 시간을 맞추는 것이 목적이다. 비용 계수(10)를 실제 계정과 같게 둔다.
+     */
+    private static final String DUMMY_HASH =
+            "$2a$10$ZZZZZZZZZZZZZZZZZZZZZeZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
+
     private final UserRepository users;
     private final PendingSignupRepository pendings;
+    private final PasswordResetTokenRepository resetTokens;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
-    private final VerificationMailer mailer;
+    private final ApplicationEventPublisher events;
     private final ReviewTicketProperties properties;
 
     public AuthService(UserRepository users, PendingSignupRepository pendings,
+            PasswordResetTokenRepository resetTokens,
             PasswordEncoder passwordEncoder, JwtProvider jwtProvider,
-            VerificationMailer mailer, ReviewTicketProperties properties) {
+            ApplicationEventPublisher events, ReviewTicketProperties properties) {
         this.users = users;
         this.pendings = pendings;
+        this.resetTokens = resetTokens;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
-        this.mailer = mailer;
+        this.events = events;
         this.properties = properties;
     }
 
@@ -85,6 +103,9 @@ public class AuthService {
         String email = normalizeEmail(rawEmail);
         String displayName = rawDisplayName == null ? "" : rawDisplayName.trim();
 
+        if (email.length() > MAX_EMAIL_LENGTH) {
+            throw new IllegalArgumentException("이메일이 너무 깁니다");
+        }
         if (displayName.isEmpty()) {
             throw new IllegalArgumentException(
                     role == Role.OWNER ? "가게 이름을 입력해 주세요" : "닉네임을 입력해 주세요");
@@ -119,7 +140,9 @@ public class AuthService {
                 email, passwordEncoder.encode(rawPassword), role, displayName,
                 token, LocalDateTime.now().plus(properties.auth().verificationTtl())));
 
-        mailer.send(pending.getEmail(), token);
+        // 커밋 이후에 보낸다 (VerificationMailListener). 여기서 바로 보내면
+        // 뒤이어 커밋이 실패했을 때 DB 에 없는 토큰의 링크가 이미 도착한다.
+        events.publishEvent(new VerificationMailRequested(pending.getEmail(), token));
     }
 
     /** 인증 메일 재발송. 토큰을 새로 만들어 옛 링크는 무효화한다. */
@@ -141,7 +164,9 @@ public class AuthService {
 
         String token = newToken();
         pending.renew(token, LocalDateTime.now().plus(properties.auth().verificationTtl()));
-        mailer.send(pending.getEmail(), token);
+        // 커밋 이후에 보낸다 (VerificationMailListener). 여기서 바로 보내면
+        // 뒤이어 커밋이 실패했을 때 DB 에 없는 토큰의 링크가 이미 도착한다.
+        events.publishEvent(new VerificationMailRequested(pending.getEmail(), token));
     }
 
     // ---------- 인증 ----------
@@ -188,16 +213,101 @@ public class AuthService {
 
     // ---------- 로그인 ----------
 
+    /**
+     * 로그인.
+     *
+     * 가입되지 않은 이메일이어도 해시 비교를 한 번 수행한다. 그러지 않으면
+     * "없는 이메일 → 즉시 401", "있는 이메일 + 틀린 비밀번호 → BCrypt 80ms 후 401"
+     * 로 응답 시간이 갈려, 메시지가 같아도 어떤 이메일이 가입돼 있는지
+     * 알아낼 수 있다. 버려지는 계산이지만 그게 목적이다.
+     */
     @Transactional(readOnly = true)
     public LoginResult login(String rawEmail, String rawPassword) {
-        User user = users.findByEmail(normalizeEmail(rawEmail))
-                .orElseThrow(() -> new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다"));
+        Optional<User> found = users.findByEmail(normalizeEmail(rawEmail));
 
+        if (found.isEmpty()) {
+            passwordEncoder.matches(rawPassword, DUMMY_HASH);
+            throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다");
+        }
+
+        User user = found.get();
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
             throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다");
         }
 
         return new LoginResult(jwtProvider.issue(user), jwtProvider.ttlSeconds(), user);
+    }
+
+    // ---------- 비밀번호 재설정 ----------
+
+    /**
+     * 재설정 요청. 토큰을 만들고 본인 이메일로 재설정 메일을 보낸다.
+     *
+     * 이메일 존재 여부와 무관하게 항상 조용히 끝낸다 — 여기서 "없는 이메일"을
+     * 알려주면 어떤 주소가 가입돼 있는지 알아낼 수 있다. 존재하지 않으면
+     * 아무것도 하지 않고, 프론트에는 동일하게 "메일을 보냈다"고 표시한다.
+     */
+    @Transactional
+    public void requestPasswordReset(String rawEmail) {
+        Optional<User> found = users.findByEmail(normalizeEmail(rawEmail));
+        if (found.isEmpty()) {
+            return;
+        }
+        User user = found.get();
+
+        // 재발송 간격 제한. 쿨다운이면 조용히 끝낸다 — 예외를 던지면 "존재하는
+        // 이메일 + 최근 요청"만 400 이 나가고 없는 이메일은 200 이라, 응답 차이로
+        // 가입 여부를 알아낼 수 있다(계정 열거). 열거를 막으려면 존재하든 아니든
+        // 쿨다운이든 항상 같은 200 을 줘야 한다. 여기서는 메일만 보내지 않고 리턴.
+        boolean recentlySent = resetTokens.findTopByUserOrderByIdDesc(user)
+                .map(PasswordResetToken::getCreatedAt)
+                .map(createdAt -> createdAt != null
+                        && createdAt.isAfter(LocalDateTime.now().minus(RESEND_COOLDOWN)))
+                .orElse(false);
+        if (recentlySent) {
+            return;
+        }
+
+        String token = newToken();
+        resetTokens.save(new PasswordResetToken(
+                user, token, LocalDateTime.now().plus(properties.auth().verificationTtl())));
+        events.publishEvent(new PasswordResetMailRequested(user.getEmail(), token));
+    }
+
+    /**
+     * 재설정 링크의 인증 버튼이 부른다. 토큰이 유효한지만 확인하고 아무것도
+     * 바꾸지 않는다 — 사용자가 새 비밀번호를 입력하기 전에 만료 여부를 알려주기
+     * 위함이다. GET 이 부작용을 갖지 않게 하는 것도 목적이다 (메일 스캐너 대비).
+     */
+    @Transactional(readOnly = true)
+    public boolean isResetTokenUsable(String token) {
+        return resetTokens.findByToken(token)
+                .map(t -> t.isUsable(LocalDateTime.now()))
+                .orElse(false);
+    }
+
+    /**
+     * 새 비밀번호 확정. 토큰을 검증하고 비밀번호를 바꾼 뒤 token_version 을 올려
+     * 기존에 발급된 모든 JWT 를 무효화한다 — 재설정했다는 것은 계정이 탈취됐을
+     * 수 있다는 뜻이므로, 열려 있던 세션을 전부 끊는 것이 맞다.
+     */
+    @Transactional
+    public void resetPassword(String token, String newPassword, String newPasswordConfirm) {
+        PasswordResetToken reset = resetTokens.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("재설정 링크가 올바르지 않습니다"));
+
+        if (!reset.isUsable(LocalDateTime.now())) {
+            throw new IllegalArgumentException("재설정 링크가 만료되었거나 이미 사용되었습니다. 다시 요청해 주세요");
+        }
+        if (!newPassword.equals(newPasswordConfirm)) {
+            throw new IllegalArgumentException("새 비밀번호가 서로 다릅니다");
+        }
+        PasswordPolicy.require(newPassword);
+
+        User user = reset.getUser();
+        user.changePassword(passwordEncoder.encode(newPassword));
+        reset.markUsed(LocalDateTime.now());
+        log.info("비밀번호 재설정 완료: userId={}", user.getId());
     }
 
     // ---------- 정리 ----------
@@ -210,8 +320,9 @@ public class AuthService {
     @Transactional
     public void purgeExpiredSignups() {
         long removed = pendings.deleteByExpiresAtBefore(LocalDateTime.now());
-        if (removed > 0) {
-            log.info("만료된 가입 대기 {}건 정리", removed);
+        long removedTokens = resetTokens.deleteByExpiresAtBefore(LocalDateTime.now());
+        if (removed > 0 || removedTokens > 0) {
+            log.info("만료 정리 — 가입 대기 {}건, 재설정 토큰 {}건", removed, removedTokens);
         }
     }
 

@@ -12,15 +12,14 @@ import org.springframework.stereotype.Component;
 import com.reviewticket.server.config.ReviewTicketProperties;
 
 /**
- * 이메일 인증 메일 발송.
+ * 인증·재설정 메일 발송.
  *
- * 발송 실패를 예외로 터뜨리지 않고 로그만 남긴다. 이유 — 메일 서버가
- * 잠깐 죽었다고 가입 자체를 되돌리면, 이미 만들어진 회원 정보를 지우는
- * 보상 처리가 필요해지고 그 과정에서 실패하면 상태가 더 꼬인다.
- * 가입은 성공시키고, 사용자는 인증 대기 화면에서 재발송을 누르면 된다.
+ * 발송 실패를 예외로 터뜨리지 않고 로그만 남긴다. 메일 서버가 잠깐 죽었다고
+ * 가입이나 재설정 요청 자체를 되돌리면 상태가 더 꼬인다. 사용자는 재발송을
+ * 누르면 된다.
  *
- * SMTP 설정이 비어 있으면 발송을 건너뛰고 링크를 로그에 남긴다.
- * 팀원이 자기 SMTP 계정 없이도 가입 흐름을 끝까지 테스트할 수 있어야 한다.
+ * SMTP 설정이 비어 있으면 발송을 건너뛴다. 토큰이 담긴 링크는 로그에 남기지
+ * 않는다 — 그 자체로 가입·재설정을 완료시킬 수 있는 자격증명이기 때문이다.
  */
 @Component
 public class VerificationMailer {
@@ -42,8 +41,10 @@ public class VerificationMailer {
     }
 
     /**
-     * 별도 스레드에서 보낸다. 동기로 보내면 가입 요청이 SMTP 왕복을 기다리게 되고,
-     * 메일 서버가 느리면 사용자가 멈춘 화면을 본다. 발송 성공 여부는 가입 성공과
+     * 회원가입 이메일 인증 메일.
+     *
+     * 별도 스레드에서 보낸다. 동기로 보내면 요청이 SMTP 왕복을 기다리게 되고,
+     * 메일 서버가 느리면 사용자가 멈춘 화면을 본다. 발송 성공 여부는 요청 성공과
      * 무관하므로(실패해도 재발송으로 해결한다) 기다릴 이유가 없다.
      *
      * 인자를 문자열로만 받는 이유 — 다른 스레드에서 JPA 엔티티를 건드리면
@@ -52,20 +53,7 @@ public class VerificationMailer {
     @Async
     public void send(String to, String token) {
         String link = properties.auth().baseUrl() + "/api/auth/verify?token=" + token;
-        String from = properties.mail().from();
-        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
-
-        if (mailSender == null || from == null || from.isBlank()) {
-            // 개발 중에는 이 링크를 눌러 인증을 끝낼 수 있다.
-            log.warn("SMTP 설정이 없어 메일을 보내지 않는다. 인증 링크: {}", link);
-            return;
-        }
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(from);
-        message.setTo(to);
-        message.setSubject("[ReviewTicket] 이메일 인증을 완료해 주세요");
-        message.setText("""
+        sendMail(to, "[ReviewTicket] 이메일 인증을 완료해 주세요", """
                 ReviewTicket 회원가입을 확인합니다.
 
                 아래 링크를 눌러 이메일 인증을 완료해 주세요.
@@ -75,13 +63,45 @@ public class VerificationMailer {
                 이 링크는 %d분 뒤 만료됩니다.
                 본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.
                 """.formatted(link, properties.auth().verificationTtl().toMinutes()));
+    }
+
+    /** 비밀번호 재설정 메일. */
+    @Async
+    public void sendPasswordReset(String to, String token) {
+        String link = properties.auth().baseUrl() + "/api/auth/password-reset?token=" + token;
+        sendMail(to, "[ReviewTicket] 비밀번호 재설정", """
+                비밀번호 재설정을 요청하셨습니다.
+
+                아래 링크를 눌러 새 비밀번호를 설정해 주세요.
+
+                %s
+
+                이 링크는 %d분 뒤 만료됩니다.
+                본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다. 비밀번호는 바뀌지 않습니다.
+                """.formatted(link, properties.auth().verificationTtl().toMinutes()));
+    }
+
+    private void sendMail(String to, String subject, String text) {
+        String from = properties.mail().from();
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+
+        if (mailSender == null || from == null || from.isBlank()) {
+            // 링크는 로그에 남기지 않는다 (자격증명이다). 발송이 꺼져 있다는 사실만 알린다.
+            log.warn("SMTP 설정이 없어 메일을 보내지 않는다: {} / {}", to, subject);
+            return;
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(from);
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(text);
 
         try {
             mailSender.send(message);
-            log.info("인증 메일 발송: {}", to);
+            log.info("메일 발송: {} / {}", to, subject);
         } catch (MailException e) {
-            // 링크를 함께 남긴다 — 개발 중에는 이걸 직접 눌러 진행할 수 있다.
-            log.error("인증 메일 발송 실패: {} / 인증 링크: {}", to, link, e);
+            log.error("메일 발송 실패: {} / {}", to, subject, e);
         }
     }
 }

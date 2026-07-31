@@ -1,12 +1,9 @@
 package com.reviewticket.server.account;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.reviewticket.server.auth.ConflictException;
-import com.reviewticket.server.auth.JwtProvider;
-import com.reviewticket.server.auth.PasswordPolicy;
 import com.reviewticket.server.auth.UnauthorizedException;
 import com.reviewticket.server.domain.Role;
 import com.reviewticket.server.domain.User;
@@ -16,13 +13,9 @@ import com.reviewticket.server.repository.UserRepository;
 public class AccountService {
 
     private final UserRepository users;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtProvider jwtProvider;
 
-    public AccountService(UserRepository users, PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
+    public AccountService(UserRepository users) {
         this.users = users;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtProvider = jwtProvider;
     }
 
     /**
@@ -54,33 +47,6 @@ public class AccountService {
 
         user.changeDisplayName(name);
         return name;
-    }
-
-    /**
-     * 비밀번호 변경. 기존 비밀번호를 먼저 확인한다 — 이게 없으면 토큰이
-     * 탈취된 순간 계정이 통째로 넘어간다.
-     *
-     * @return 새로 발급한 토큰. 토큰 버전이 올라가 방금까지 쓴 토큰은 죽으므로,
-     *         이걸 돌려주지 않으면 본인이 로그아웃된다.
-     */
-    @Transactional
-    public String changePassword(long userId, String currentPassword, String newPassword, String newPasswordConfirm) {
-        User user = load(userId);
-
-        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
-            throw new UnauthorizedException("기존 비밀번호가 올바르지 않습니다");
-        }
-        if (!newPassword.equals(newPasswordConfirm)) {
-            throw new IllegalArgumentException("새 비밀번호가 서로 다릅니다");
-        }
-        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("기존과 다른 비밀번호를 입력해 주세요");
-        }
-        PasswordPolicy.require(newPassword);
-
-        user.changePassword(passwordEncoder.encode(newPassword));
-        // 토큰 버전이 이미 올라간 상태의 user 로 발급해야 새 토큰이 유효하다.
-        return jwtProvider.issue(user);
     }
 
     private User load(long userId) {

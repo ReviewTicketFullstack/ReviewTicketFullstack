@@ -7,3 +7,6 @@ DB/Upload_Failure_log/*.log
 
 # DB 덤프
 DB/backups/
+
+# 공인 IP·방화벽 설정 등 접속 정보. GitHub·Notion에 올리지 않는다.
+접속정보/

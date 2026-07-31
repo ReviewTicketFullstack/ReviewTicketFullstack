@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +22,16 @@ import com.reviewticket.server.config.ReviewTicketProperties;
 
 @Configuration
 public class SecurityConfig {
+
+    /**
+     * Spring 이 직접 서빙하는 데모 정적 파일은 인증 대상이 아니다.
+     * 정적 리소스의 내부 forward 도 다시 보안 필터를 탈 수 있으므로,
+     * authorizeHttpRequests 의 공개 규칙과 별도로 필터 체인 자체에서 제외한다.
+     */
+    @Bean
+    public WebSecurityCustomizer demoStaticResources() {
+        return web -> web.ignoring().requestMatchers("/demo/**", "/assets/**", "/", "/favicon.ico", "/favicon.svg");
+    }
 
     /**
      * BCrypt. 기본 강도(10)를 그대로 쓴다 — 로그인 한 번에 약 50~100ms 로,
@@ -73,12 +84,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 가입, 로그인, 중복 검사, 이메일 인증은 토큰 없이 들어온다
                         .requestMatchers("/api/auth/**").permitAll()
-                        // 프로토타입 화면과 메뉴 목록은 공개
-                        .requestMatchers("/demo/**", "/", "/favicon.ico").permitAll()
-                        .requestMatchers("/api/foods").permitAll()
-                        // 리뷰 업로드는 아직 로그인 전 구조로 동작한다.
-                        // 주문 기능을 붙일 때 인증 필요로 바꾼다.
-                        .requestMatchers("/api/reviews").permitAll()
+                        // 프로토타입 화면은 공개
+                        .requestMatchers("/demo/**", "/assets/**", "/", "/favicon.ico", "/favicon.svg", "/error").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

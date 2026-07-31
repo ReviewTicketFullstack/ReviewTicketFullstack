@@ -1,19 +1,17 @@
 package com.reviewticket.server.web;
 
-import java.io.UncheckedIOException;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import com.reviewticket.server.ai.AiUnavailableException;
 import com.reviewticket.server.auth.ConflictException;
 import com.reviewticket.server.auth.UnauthorizedException;
 
@@ -29,22 +27,6 @@ public class ApiExceptionHandler {
                 "error", status.getReasonPhrase(),
                 "message", message,
                 "retryable", retryable));
-    }
-
-    /**
-     * 추론 서버 장애. 절대 '거부'로 내려보내지 않는다 — 우리 서버 잘못으로
-     * 정상 사용자가 티켓을 잃게 된다. 재시도 가능한 503 으로 알린다.
-     */
-    @ExceptionHandler(AiUnavailableException.class)
-    public ResponseEntity<Map<String, Object>> aiDown(AiUnavailableException e) {
-        log.error("추론 서버 호출 실패", e);
-        return body(HttpStatus.SERVICE_UNAVAILABLE,
-                "판정 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.", true);
-    }
-
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<Map<String, Object>> tooLarge(MaxUploadSizeExceededException e) {
-        return body(HttpStatus.PAYLOAD_TOO_LARGE, "사진이 너무 큽니다 (최대 15MB)", false);
     }
 
     @ExceptionHandler({ IllegalArgumentException.class, ConstraintViolationException.class })
@@ -69,15 +51,27 @@ public class ApiExceptionHandler {
         return body(HttpStatus.CONFLICT, e.getMessage(), false);
     }
 
+    /**
+     * DB 제약 위반. 실질적으로는 동시 가입 경합이다 — 두 요청이 중복 검사를
+     * 각자 통과한 뒤 저장 단계에서 UNIQUE 에 걸리는 경우다.
+     *
+     * 검사와 저장 사이의 틈은 애플리케이션 코드로 없앨 수 없다. 최종 방어선은
+     * DB 제약이고, 여기서 그 결과를 사용자가 읽을 수 있는 409 로 바꿔준다.
+     * 이 처리가 없으면 500 이 나가 "서버가 고장났다"로 보인다.
+     *
+     * 어느 제약에 걸렸는지는 알려주지 않는다 — 예외 메시지에 SQL 과 표·컬럼
+     * 이름이 들어 있어 그대로 내보내면 내부 구조가 노출된다.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> constraintViolation(DataIntegrityViolationException e) {
+        log.warn("DB 제약 위반 (동시 요청 경합으로 추정)", e);
+        return body(HttpStatus.CONFLICT,
+                "이미 사용 중인 정보입니다. 다시 시도해 주세요.", true);
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> unauthorized(UnauthorizedException e) {
         return body(HttpStatus.UNAUTHORIZED, e.getMessage(), false);
     }
 
-    /** 디코딩 실패 등. 사진이 깨졌거나 이미지가 아닌 경우다. */
-    @ExceptionHandler(UncheckedIOException.class)
-    public ResponseEntity<Map<String, Object>> imageBroken(UncheckedIOException e) {
-        log.warn("이미지 처리 실패", e);
-        return body(HttpStatus.BAD_REQUEST, "사진을 읽을 수 없습니다", false);
-    }
 }

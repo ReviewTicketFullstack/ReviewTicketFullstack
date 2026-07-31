@@ -7,14 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** application.yml 의 reviewticket.* 를 그대로 받는다. */
 @ConfigurationProperties(prefix = "reviewticket")
-public record ReviewTicketProperties(String uploadDir, String failureLogDir, String demoDir,
-        Ai ai, Duplicate duplicate, Auth auth, Mail mail, Cors cors) {
-
-    public record Ai(String baseUrl, double tau) {
-    }
-
-    public record Duplicate(int phashThreshold) {
-    }
+public record ReviewTicketProperties(String demoDir, Auth auth, Mail mail, Cors cors) {
 
     /**
      * @param jwtSecret       서명 키. 32바이트 이상. application-local.yml 에 둔다
