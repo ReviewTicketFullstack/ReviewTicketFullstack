@@ -20,15 +20,3 @@ export interface Order {
   createdAt: string;
   reviewDeadline: string;
 }
-
-/**
- * [DEPRECATED] 정규화 구조. 현재 사용되지 않습니다.
- * 향후 참고 기준으로 남깁니다.
- */
-/*
-export interface OrderItem {
-  menuItemId: string;
-  menuName: string;
-  price?: number;
-}
-*/

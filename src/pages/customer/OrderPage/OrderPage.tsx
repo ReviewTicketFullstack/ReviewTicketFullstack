@@ -3,7 +3,7 @@ import { Button } from "@/shared/ui";
 import { DetailStoreCard } from "./DetailStoreCard";
 import { MenuListCard, type MenuItemData } from "./MenuListCard";
 import { useParams } from "react-router-dom";
-import { saveOrder } from "@/features/order/orderStorage";
+import { saveOrder } from "@/entities/order/orderStorage";
 import { useNavigate } from "react-router-dom";
 
 const MENU_DATA: MenuItemData[] = [
