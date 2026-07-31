@@ -7,8 +7,8 @@ export function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 인증 로직 구현
-    console.log("Login:", { email, password });
+    // TODO: 인증 로직 구현. useAuth()의 authType(CUSTOMER/OWNER)에 따라
+    // 로그인 API를 분기하고, 응답으로 받은 user를 signin()에 전달한다.
   };
 
   return (

@@ -1,15 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import { Utensils, Store } from "lucide-react";
+import { useAuth } from "@/app/App";
 
 export function OnboardingPage() {
+  const { setAuthType } = useAuth();
   const navigate = useNavigate();
 
   const handleCustomerClick = () => {
-    navigate("/login", { state: { role: "customer" } });
+    setAuthType("CUSTOMER");
+    navigate("/login");
   };
 
   const handleOwnerClick = () => {
-    navigate("/login", { state: { role: "owner" } });
+    setAuthType("OWNER");
+    navigate("/login");
   };
 
   return (
@@ -30,7 +34,8 @@ export function OnboardingPage() {
             Review Ticket
           </h1>
           <p className="text-sm text-ink-700 leading-relaxed">
-            주문하고 리뷰를 작성하면<br />
+            주문하고 리뷰를 작성하면
+            <br />
             보상을 받을 수 있습니다.
           </p>
         </div>
@@ -64,7 +69,8 @@ export function OnboardingPage() {
                 고객님으로 로그인할게요!
               </h2>
               <p className="text-xs text-ink-700 leading-relaxed">
-                주문하고 리뷰를 작성해<br />
+                주문하고 리뷰를 작성해
+                <br />
                 다양한 혜택을 받아보세요.
               </p>
             </div>
@@ -90,7 +96,8 @@ export function OnboardingPage() {
                 사장님으로 로그인할게요!
               </h2>
               <p className="text-xs text-ink-700 leading-relaxed">
-                리뷰 이벤트를 운영하고<br />
+                리뷰 이벤트를 운영하고
+                <br />
                 매장을 관리해보세요.
               </p>
             </div>
@@ -105,7 +112,8 @@ export function OnboardingPage() {
       >
         <p className="text-xs text-ink-500 leading-relaxed">
           서비스를 이용하면 이용약관 및<br />
-          개인정보처리방침에 동의한 것으로<br />
+          개인정보처리방침에 동의한 것으로
+          <br />
           간주됩니다.
         </p>
       </div>
