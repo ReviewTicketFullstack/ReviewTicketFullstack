@@ -1,0 +1,70 @@
+# ReviewTicket 백엔드 설정
+#
+# 비밀번호는 여기 넣지 않는다 -> application-local.yml (git 제외 대상)
+# 팀원은 application-local.yml.example 을 복사해서 쓴다.
+
+spring:
+  application:
+    name: reviewticket-server
+
+  profiles:
+    # local 프로필이 application-local.yml 을 읽어 비밀번호를 채운다
+    active: local
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/reviewticket
+    username: reviewticket
+    # password 는 application-local.yml 에 있다
+
+  jpa:
+    hibernate:
+      # 스키마는 BackEnd/DB/*.sql 로 직접 관리한다. Spring 이 표를 만들거나 바꾸지 않는다.
+      # validate = 뜰 때 엔티티와 실제 표가 다르면 즉시 에러. 조용히 어긋나는 걸 막는다.
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+    # dialect 는 일부러 적지 않는다 — Boot 4/Hibernate 7 에서 MySQL8Dialect 같은
+    # 버전별 이름이 제거됐다. 안 적으면 드라이버가 알아서 감지한다.
+
+server:
+  port: 60921
+  tomcat:
+    threads:
+      max: 100                  # 기본 200 은 이 서버엔 과하다
+
+# ---- 이 서비스 전용 설정 ----
+reviewticket:
+  # 팀원 프로토타입을 /demo 로 서빙한다 (같은 출처라 CORS 가 필요 없다)
+  # Vite 프로젝트의 빌드 산출물. `FrontEnd/Login_design`에서 npm run build 후 생성된다.
+  demo-dir: ../../FrontEnd/Login_design/dist
+  auth:
+    # jwt-secret 은 application-local.yml 에 있다 (32바이트 이상)
+    # 로그인 유지 기간.
+    token-ttl: 1h
+    # 이메일 인증 링크 유효 기간
+    verification-ttl: 30m
+    # 인증 메일에 넣을 링크의 앞부분. 팀원 브라우저가 여는 주소여야 하므로
+    # localhost 로 두면 안 된다. 공인 IP를 그대로 쓴다 (BackEnd/접속정보/README.md 참고).
+    # 유동 IP라 바뀔 수 있음 — 바뀌면 여기도 같이 고친다.
+    base-url: http://59.9.88.135:60921
+  mail:
+    # 발신 주소. 비우면 메일을 보내지 않고 인증 링크를 로그에 남긴다.
+    # 실제 발송하려면 여기와 application-local.yml 의 spring.mail 을 채운다.
+    from: ""
+  cors:
+    # 프론트엔드를 Spring 이 아닌 다른 곳에서 띄울 때 필요한 허용 출처.
+    # /demo 로 서빙하는 경우는 같은 출처라 이 목록과 무관하다.
+    # 포트가 다르면 다른 출처다 — Vite(5173), Live Server(5500) 등을 넣어둔다.
+    allowed-origins:
+      - "http://localhost:*"
+      - "http://127.0.0.1:*"
+      # 팀원이 자기 PC 에서 프론트를 띄우고 이 서버를 호출하는 경우.
+      # 사설망 대역을 통째로 허용해 둔다.
+      - "http://192.168.*:*"
+      - "http://172.*:*"
+      - "http://10.*:*"
+logging:
+  level:
+    org.hibernate.SQL: debug

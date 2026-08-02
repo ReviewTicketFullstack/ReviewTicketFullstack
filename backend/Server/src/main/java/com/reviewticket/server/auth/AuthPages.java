@@ -1,0 +1,175 @@
+package com.reviewticket.server.auth;
+
+/**
+ * 메일 링크가 여는 HTML 페이지들.
+ *
+ * 이 페이지들은 React 앱과 별개다 — 메일 클라이언트가 여는 독립 페이지라
+ * 프레임워크 없이 순수 HTML + inline JS 로 자립해야 한다.
+ *
+ * 핵심 원칙: GET 으로 여는 순간에는 아무것도 바뀌지 않는다. 실제 동작
+ * (가입 확정, 비밀번호 변경)은 사용자가 버튼을 눌러 POST 할 때만 일어난다.
+ * 메일 클라이언트나 백신이 링크를 미리 열어도 계정이 만들어지거나 바뀌지 않는다.
+ *
+ * 토큰은 사용자가 URL 로 넘긴 값이므로 HTML 속성에 넣을 때 escape 한다.
+ */
+final class AuthPages {
+
+    private AuthPages() {
+    }
+
+    private static String escapeAttr(String raw) {
+        return raw.replace("&", "&amp;")
+                .replace("\"", "&quot;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("'", "&#39;");
+    }
+
+    private static final String STYLE = """
+            <style>
+              body { font-family: sans-serif; max-width: 26rem; margin: 3rem auto; padding: 0 1.5rem; line-height: 1.6; color: #1e293b; }
+              h1 { font-size: 1.4rem; }
+              button { width: 100%; padding: 0.8rem; font-size: 1rem; font-weight: 600; color: #fff; background: #2563eb; border: 0; border-radius: 0.5rem; cursor: pointer; margin-top: 1rem; }
+              button:disabled { background: #94a3b8; cursor: not-allowed; }
+              input { width: 100%; box-sizing: border-box; padding: 0.6rem; margin-top: 0.4rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 1rem; }
+              label { display: block; margin-top: 1rem; font-size: 0.9rem; font-weight: 600; }
+              .hint { font-size: 0.85rem; color: #64748b; }
+              .msg { margin-top: 1rem; padding: 0.8rem; border-radius: 0.5rem; }
+              .ok { background: #dcfce7; color: #166534; }
+              .bad { background: #fee2e2; color: #991b1b; }
+              .hidden { display: none; }
+            </style>
+            """;
+
+    /**
+     * 회원가입 완료 페이지. 버튼을 눌러야 POST /api/auth/verify 가 호출돼
+     * 실제 회원이 만들어진다. 성공하면 대기 중이던 앱이 폴링으로 감지한다.
+     */
+    static String signupVerify(String token) {
+        return """
+                <!doctype html><html lang="ko"><head><meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>회원가입 완료</title>%s</head><body>
+                <h1>회원가입을 완료합니다</h1>
+                <p class="hint">아래 버튼을 누르면 이메일 인증이 확인되고 회원가입이 끝납니다.</p>
+                <input type="hidden" id="token" value="%s">
+                <button id="btn" onclick="finish()">회원가입 완료하기</button>
+                <div id="msg"></div>
+                <script>
+                  async function finish() {
+                    var btn = document.getElementById('btn');
+                    var msg = document.getElementById('msg');
+                    var token = document.getElementById('token').value;
+                    btn.disabled = true; msg.className = ''; msg.textContent = '처리 중…';
+                    try {
+                      var res = await fetch('/api/auth/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: token })
+                      });
+                      var data = await res.json().catch(function(){ return {}; });
+                      if (res.ok) {
+                        btn.classList.add('hidden');
+                        msg.className = 'msg ok';
+                        msg.textContent = '회원가입이 완료되었습니다. 이 창을 닫고 로그인해 주세요.';
+                      } else {
+                        msg.className = 'msg bad';
+                        msg.textContent = data.message || '처리에 실패했습니다.';
+                        btn.disabled = false;
+                      }
+                    } catch (e) {
+                      msg.className = 'msg bad';
+                      msg.textContent = '서버에 연결할 수 없습니다.';
+                      btn.disabled = false;
+                    }
+                  }
+                </script>
+                </body></html>
+                """.formatted(STYLE, escapeAttr(token));
+    }
+
+    /**
+     * 비밀번호 재설정 페이지. 2단계다.
+     *   1) [인증하기] → 토큰 유효성 확인(부작용 없음) → 통과하면 폼을 연다
+     *   2) 새 비밀번호 + 확인 입력 → [비밀번호 변경] → POST 로 실제 변경
+     */
+    static String passwordReset(String token) {
+        return """
+                <!doctype html><html lang="ko"><head><meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>비밀번호 재설정</title>%s</head><body>
+                <h1>비밀번호 재설정</h1>
+                <input type="hidden" id="token" value="%s">
+
+                <div id="step1">
+                  <p class="hint">본인 확인을 위해 아래 버튼을 눌러 주세요.</p>
+                  <button id="verifyBtn" onclick="verify()">인증하기</button>
+                </div>
+
+                <form id="step2" class="hidden" onsubmit="submitReset(event)">
+                  <p class="hint">새 비밀번호를 입력해 주세요. 대문자, 소문자, 숫자, 특수문자를 모두 포함해 8자 이상.</p>
+                  <label>새 비밀번호
+                    <input type="password" id="pw" autocomplete="new-password" required>
+                  </label>
+                  <label>새 비밀번호 확인
+                    <input type="password" id="pw2" autocomplete="new-password" required>
+                  </label>
+                  <button type="submit" id="changeBtn">비밀번호 변경</button>
+                </form>
+
+                <div id="msg"></div>
+                <script>
+                  var token = document.getElementById('token').value;
+                  function show(cls, text) {
+                    var m = document.getElementById('msg');
+                    m.className = 'msg ' + cls; m.textContent = text;
+                  }
+                  async function verify() {
+                    var btn = document.getElementById('verifyBtn');
+                    btn.disabled = true; show('', '확인 중…');
+                    try {
+                      var res = await fetch('/api/auth/password-reset/check?token=' + encodeURIComponent(token));
+                      var data = await res.json().catch(function(){ return {}; });
+                      if (res.ok && data.valid) {
+                        document.getElementById('step1').classList.add('hidden');
+                        document.getElementById('step2').classList.remove('hidden');
+                        document.getElementById('msg').textContent = '';
+                      } else {
+                        show('bad', '재설정 링크가 만료되었거나 이미 사용되었습니다. 다시 요청해 주세요.');
+                      }
+                    } catch (e) {
+                      show('bad', '서버에 연결할 수 없습니다.');
+                      btn.disabled = false;
+                    }
+                  }
+                  async function submitReset(event) {
+                    event.preventDefault();
+                    var btn = document.getElementById('changeBtn');
+                    var pw = document.getElementById('pw').value;
+                    var pw2 = document.getElementById('pw2').value;
+                    if (pw !== pw2) { show('bad', '새 비밀번호가 서로 다릅니다.'); return; }
+                    btn.disabled = true; show('', '변경 중…');
+                    try {
+                      var res = await fetch('/api/auth/password-reset', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: token, newPassword: pw, newPasswordConfirm: pw2 })
+                      });
+                      var data = await res.json().catch(function(){ return {}; });
+                      if (res.ok) {
+                        document.getElementById('step2').classList.add('hidden');
+                        show('ok', '비밀번호가 변경되었습니다. 이 창을 닫고 새 비밀번호로 로그인해 주세요.');
+                      } else {
+                        show('bad', data.message || '변경에 실패했습니다.');
+                        btn.disabled = false;
+                      }
+                    } catch (e) {
+                      show('bad', '서버에 연결할 수 없습니다.');
+                      btn.disabled = false;
+                    }
+                  }
+                </script>
+                </body></html>
+                """.formatted(STYLE, escapeAttr(token));
+    }
+}

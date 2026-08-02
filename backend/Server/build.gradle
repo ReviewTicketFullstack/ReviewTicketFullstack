@@ -1,0 +1,51 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.reviewticket'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// 로그인. 여기서는 BCrypt 와 필터 체인만 쓴다 (세션은 끈다 — JWT 를 쓴다)
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	// 이메일 인증 메일 발송 (JavaMailSender)
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	// JWT. api 만 컴파일에 노출하고 구현체는 런타임에만 둔다 —
+	// 실수로 내부 클래스를 직접 import 하는 걸 막는다.
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	// Boot 4 모듈화로 RestTemplate 지원이 별도 모듈로 빠졌다. TestRestTemplate
+	// (spring-boot-resttestclient) 이 RestTemplateBuilder 를 필요로 하는데
+	// starter-webmvc 는 이걸 끌어오지 않는다. 테스트에서만 쓴다.
+	testImplementation 'org.springframework.boot:spring-boot-restclient'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// 한글 로그가 콘솔에서 깨지지 않게 출력 인코딩을 UTF-8 로 고정한다.
+// Java 18+ 는 file.encoding 이 이미 UTF-8 이지만, 콘솔 출력은 별도로
+// stdout/stderr.encoding 을 따르며 Windows 에서는 이게 CP949 로 잡힌다.
+// 터미널 쪽도 UTF-8 이어야 하므로 실행 전 한 번 chcp 65001 이 필요하다
+// (README 참고).
+tasks.named('bootRun') {
+	jvmArgs = ['-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8', '-Dstderr.encoding=UTF-8']
+}

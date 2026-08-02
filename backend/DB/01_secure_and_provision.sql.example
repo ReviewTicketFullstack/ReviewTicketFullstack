@@ -1,0 +1,23 @@
+-- 이 파일을 01_secure_and_provision.sql 로 복사한 뒤 비밀번호 두 개를 채운다.
+-- 복사본은 .gitignore 에 있어 커밋되지 않는다.
+--
+--   __ROOT_PW__ : root 계정 비밀번호 (관리용)
+--   __APP_PW__  : Spring Boot 가 붙을 앱 계정 비밀번호
+--                 (application-local.yml 에도 같은 값을 넣는다)
+--
+-- 실행:
+--   Get-Content "C:\dev\ReviewTicket\BackEnd\DB\01_secure_and_provision.sql" | & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root --default-character-set=utf8mb4
+--   (최초 설치 직후 root 는 빈 비밀번호라 -p 없이 접속된다)
+
+-- 1) root 비밀번호 설정
+ALTER USER 'root'@'localhost' IDENTIFIED BY '__ROOT_PW__';
+
+-- 2) 서비스 DB 생성 (utf8mb4 = 한글/이모지 안전)
+CREATE DATABASE IF NOT EXISTS reviewticket
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_0900_ai_ci;
+
+-- 3) 앱 전용 계정 (Spring Boot 가 이걸로 접속. root 로 붙이지 말 것)
+CREATE USER IF NOT EXISTS 'reviewticket'@'localhost' IDENTIFIED BY '__APP_PW__';
+GRANT ALL PRIVILEGES ON reviewticket.* TO 'reviewticket'@'localhost';
+FLUSH PRIVILEGES;
