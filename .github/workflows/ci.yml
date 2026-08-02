@@ -1,0 +1,72 @@
+# 이 CI는 PR을 main에 올릴 때 자동 실행됩니다.
+
+# 1. frontend-build
+# - frontend 폴더 이동
+# - Node 22 설치
+# - npm ci로 패키지 설치
+# - npm run build 실행
+# - React/TypeScript 빌드 오류 검사
+
+# 2. backend-build
+# - backend 폴더 이동
+# - Java 21 설치
+# - Gradle build 실행
+# - Spring Boot 컴파일 및 테스트 검사
+
+# 둘 중 하나라도 실패하면 PR merge 전에 문제를 수정해야 합니다.
+
+name: CI
+
+on:
+  # Pull Request가 생성되거나 업데이트될 때 실행
+  pull_request:
+    # main 브랜치로 들어가는 PR만 검사
+    branches:
+      - main
+
+jobs:
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+  backend-build:
+    name: Backend Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/Server
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+
+      - name: Build
+        run: ./gradlew build
