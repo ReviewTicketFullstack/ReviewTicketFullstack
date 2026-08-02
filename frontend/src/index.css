@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/* 디자인 토큰 — claude/design.md의 Colors · Typography · Elevation 정의를 그대로 옮긴다. */
+@theme {
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo",
+    system-ui, sans-serif;
+
+  /* Accent — 강조는 brand-800 하나로 수렴 */
+  --color-brand-50: oklch(0.978 0.011 17.3); /* #FFF5F5 */
+  --color-brand-100: oklch(0.96 0.02 28.9); /* #FFEDEA */
+  --color-brand-800: oklch(0.65 0.22 27.9); /* #F94239 — Primary */
+  --color-brand-900: oklch(0.598 0.232 29.6); /* #EA2013 — Danger */
+  --color-brand-950: oklch(
+    0.545 0.21 30.5
+  ); /* #CE1D09 — Primary/Danger hover */
+
+  /* Neutral */
+  --color-ink-900: oklch(0.252 0 0); /* #222222 */
+  --color-ink-700: oklch(0.475 0 0); /* #5C5C5C */
+  --color-ink-500: oklch(0.637 0 0); /* #8B8B8B */
+  --color-ink-300: oklch(0.792 0 0); /* #BBBBBB */
+  --color-line-100: oklch(0.925 0 0); /* #E6E6E6 */
+  --color-fill-100: oklch(0.97 0 0); /* #F5F5F5 — Muted 배경 */
+  --color-surface: oklch(1 0 0); /* #FFFFFF */
+  --color-surface-sub: oklch(0.985 0 0); /* #FAFAFA */
+
+  /* 상태 */
+  --color-green-700: oklch(0.64 0.124 172.3); /* #01A484 — Success */
+  --color-star: oklch(0.827 0.171 80.5); /* #FFB803 — 별점 */
+
+  /* Elevation — 역할명 그림자 */
+  --shadow-flat: 0 1px 2px oklch(0 0 0 / 6%);
+  --shadow-header: 0 4px 6px oklch(0 0 0 / 4%);
+  --shadow-dock: 0 -4px 8px oklch(0 0 0 / 6%); /* Y 음수 — 위로만 */
+  --shadow-raised: 0 2px 16px oklch(0 0 0 / 8%);
+  --shadow-sheet: 0 4px 20px oklch(0 0 0 / 32%);
+
+  /* Animations for Onboarding */
+  --keyframes-fadeIn: fadeIn;
+  --keyframes-slideUp: slideUp;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

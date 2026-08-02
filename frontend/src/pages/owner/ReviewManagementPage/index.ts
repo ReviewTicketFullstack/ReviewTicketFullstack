@@ -1,0 +1,1 @@
+export { ReviewManagementPage } from './ReviewManagementPage';
