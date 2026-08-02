@@ -62,11 +62,13 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final ApplicationEventPublisher events;
     private final ReviewTicketProperties properties;
+    private final EmailDomainValidator domainValidator;
 
     public AuthService(UserRepository users, PendingSignupRepository pendings,
             PasswordResetTokenRepository resetTokens,
             PasswordEncoder passwordEncoder, JwtProvider jwtProvider,
-            ApplicationEventPublisher events, ReviewTicketProperties properties) {
+            ApplicationEventPublisher events, ReviewTicketProperties properties,
+            EmailDomainValidator domainValidator) {
         this.users = users;
         this.pendings = pendings;
         this.resetTokens = resetTokens;
@@ -74,6 +76,7 @@ public class AuthService {
         this.jwtProvider = jwtProvider;
         this.events = events;
         this.properties = properties;
+        this.domainValidator = domainValidator;
     }
 
     // ---------- 중복 검사 ----------
@@ -105,6 +108,9 @@ public class AuthService {
 
         if (email.length() > MAX_EMAIL_LENGTH) {
             throw new IllegalArgumentException("이메일이 너무 깁니다");
+        }
+        if (!domainValidator.hasMailServer(email)) {
+            throw new IllegalArgumentException("메일을 받을 수 없는 이메일 주소입니다");
         }
         if (displayName.isEmpty()) {
             throw new IllegalArgumentException(
