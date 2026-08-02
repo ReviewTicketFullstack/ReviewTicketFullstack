@@ -5,24 +5,24 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
 
   const signin = (user: User) => {
     setUser(user);
-    setUserRole(user.role);
+    setSelectedRole(null); // 선택 상태 초기화 (계속 기억하려면 user.role)
   };
 
   const signout = () => {
     setUser(null);
-    setUserRole(null);
+    setSelectedRole(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        userRole,
-        setUserRole,
+        selectedRole,
+        setSelectedRole,
         signin,
         signout,
       }}

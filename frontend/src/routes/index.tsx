@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { CustomerLayout, OwnerLayout, AuthLayout } from "@/shared/layout";
+import { useAuth } from "@/app/providers";
+
 import {
   HomePage,
   OrderPage,
@@ -13,6 +15,16 @@ import {
   ReviewManagementPage,
 } from "@/pages";
 
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -25,13 +37,25 @@ export function AppRoutes() {
         <Route path="/signup/owner" element={<OwnerSignUpPage />} />
       </Route>
 
-      <Route element={<CustomerLayout />}>
+      <Route
+        element={
+          <ProtectedRoute>
+            <CustomerLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/home" element={<HomePage />} />
         <Route path="/order/:storeId" element={<OrderPage />} />
         <Route path="/order-history" element={<OrderHistoryPage />} />
       </Route>
 
-      <Route element={<OwnerLayout />}>
+      <Route
+        element={
+          <ProtectedRoute>
+            <OwnerLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="stores" element={<StoreManagementPage />} />
         <Route path="menu" element={<MenuManagementPage />} />
         <Route path="reviews" element={<ReviewManagementPage />} />

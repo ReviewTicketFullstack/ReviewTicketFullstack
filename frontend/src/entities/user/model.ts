@@ -4,29 +4,20 @@
 
 export type UserRole = "CUSTOMER" | "OWNER";
 
-export interface CustomerUser {
-  uid: string;
+export interface User {
+  id: number;
   email: string;
-  nickname: string;
+  displayName: string;
+  role: UserRole;
   createdAt: string;
-  role: "CUSTOMER";
 }
-
-export interface OwnerUser {
-  uid: string;
-  email: string;
-  storeName: string;
-  createdAt: string;
-  role: "OWNER";
-}
-
-export type User = CustomerUser | OwnerUser;
 
 export interface AuthContextType {
   user: User | null;
-  userRole: UserRole | null;
+
+  selectedRole: UserRole | null; // 온보딩에서 선택한 역할
 
   signin: (user: User) => void;
   signout: () => void;
-  setUserRole: (type: UserRole | null) => void;
+  setSelectedRole: (role: UserRole | null) => void;
 }
