@@ -8,9 +8,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.reviewticket.server.auth.AuthAttemptLogger;
+import com.reviewticket.server.domain.AuthAction;
 import com.reviewticket.server.domain.Role;
 import com.reviewticket.server.domain.User;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -25,9 +28,11 @@ import jakarta.validation.constraints.NotBlank;
 public class AccountController {
 
     private final AccountService accountService;
+    private final AuthAttemptLogger attemptLogger;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, AuthAttemptLogger attemptLogger) {
         this.accountService = accountService;
+        this.attemptLogger = attemptLogger;
     }
 
     public record MeResponse(long userId, String email, String displayName, Role role) {
@@ -46,9 +51,16 @@ public class AccountController {
 
     @PatchMapping(value = "/name", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ChangeNameResponse changeName(@AuthenticationPrincipal User user,
-            @Valid @RequestBody ChangeNameRequest request) {
-        String changed = accountService.changeDisplayName(user.getId(), request.displayName());
-        return new ChangeNameResponse(changed);
+            @Valid @RequestBody ChangeNameRequest request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        try {
+            String changed = accountService.changeDisplayName(user.getId(), request.displayName());
+            attemptLogger.record(AuthAction.NICKNAME_CHANGE, user.getEmail(), request.displayName(), ip, true);
+            return new ChangeNameResponse(changed);
+        } catch (RuntimeException e) {
+            attemptLogger.record(AuthAction.NICKNAME_CHANGE, user.getEmail(), request.displayName(), ip, false);
+            throw e;
+        }
     }
 
     // 비밀번호 변경은 /api/auth/password-reset 흐름으로 옮겼다.
