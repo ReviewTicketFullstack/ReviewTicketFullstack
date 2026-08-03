@@ -93,13 +93,6 @@ export function LoginPage() {
           type="button"
           className="flex-1 text-center text-sm text-ink-700 hover:text-brand-800"
         >
-          아이디찾기
-        </button>
-        <div className="h-5 border-r border-line-100" />
-        <button
-          type="button"
-          className="flex-1 text-center text-sm text-ink-700 hover:text-brand-800"
-        >
           비밀번호찾기
         </button>
       </div>
