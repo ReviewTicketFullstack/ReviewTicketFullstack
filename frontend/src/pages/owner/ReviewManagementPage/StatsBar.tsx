@@ -12,8 +12,8 @@ export function StatsBar({
   pendingCount,
 }: StatsBarProps) {
   return (
-    <div className="flex gap-30">
-      <div className="flex flex-1 items-center justify-center gap-6 rounded-lg bg-neutral-100 p-4">
+    <div className="flex items-center justify-between rounded-lg bg-neutral-100 p-4">
+      <div className="flex items-center gap-6">
         <span className="flex items-center gap-2">
           <span className="size-2.5 rounded-full bg-green-600" />
           리뷰완료 {completedCount}
@@ -23,9 +23,9 @@ export function StatsBar({
           리뷰미작성 {pendingCount}
         </span>
       </div>
-      <div className="flex flex-1 items-center justify-center rounded-lg bg-neutral-100 p-4">
+      <span>
         총리뷰수 {totalCount}, 전체별점 {averageRating.toFixed(1)}
-      </div>
+      </span>
     </div>
   );
 }
