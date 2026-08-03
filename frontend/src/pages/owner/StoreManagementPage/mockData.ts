@@ -8,5 +8,5 @@ export interface StoreInfo {
 }
 
 export const store: StoreInfo = {
-  name: '만나분식-강남역점',
+  name: '도미너피자',
 };

@@ -10,8 +10,12 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-52 flex-col border-r border-neutral-200 bg-neutral-50 p-4">
-      <div className="mb-6 rounded-lg bg-neutral-200 p-4 text-center font-semibold">
-        {storeName || '가게 정보'}
+      <img src="/logo.svg" alt="Review Ticket" className="mb-4 h-15 w-auto" />
+      <div className="mb-6 flex items-center gap-2 rounded-lg bg-neutral-200 p-3">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-neutral-300">
+          <span className="text-[10px] text-neutral-500">Image</span>
+        </div>
+        <span className="flex-1 truncate font-semibold">{storeName || '가게 정보'}</span>
       </div>
       <nav className="flex flex-col gap-3">
         <NavLink to="/owner/stores" className={navLinkClassName}>가게관리</NavLink>
