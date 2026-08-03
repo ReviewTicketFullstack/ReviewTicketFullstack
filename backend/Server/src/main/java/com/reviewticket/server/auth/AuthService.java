@@ -62,11 +62,13 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final ApplicationEventPublisher events;
     private final ReviewTicketProperties properties;
+    private final EmailDomainValidator domainValidator;
 
     public AuthService(UserRepository users, PendingSignupRepository pendings,
             PasswordResetTokenRepository resetTokens,
             PasswordEncoder passwordEncoder, JwtProvider jwtProvider,
-            ApplicationEventPublisher events, ReviewTicketProperties properties) {
+            ApplicationEventPublisher events, ReviewTicketProperties properties,
+            EmailDomainValidator domainValidator) {
         this.users = users;
         this.pendings = pendings;
         this.resetTokens = resetTokens;
@@ -74,6 +76,7 @@ public class AuthService {
         this.jwtProvider = jwtProvider;
         this.events = events;
         this.properties = properties;
+        this.domainValidator = domainValidator;
     }
 
     // ---------- 중복 검사 ----------
@@ -105,6 +108,9 @@ public class AuthService {
 
         if (email.length() > MAX_EMAIL_LENGTH) {
             throw new IllegalArgumentException("이메일이 너무 깁니다");
+        }
+        if (!domainValidator.hasMailServer(email)) {
+            throw new IllegalArgumentException("메일을 받을 수 없는 이메일 주소입니다");
         }
         if (displayName.isEmpty()) {
             throw new IllegalArgumentException(
@@ -308,6 +314,24 @@ public class AuthService {
         user.changePassword(passwordEncoder.encode(newPassword));
         reset.markUsed(LocalDateTime.now());
         log.info("비밀번호 재설정 완료: userId={}", user.getId());
+    }
+
+    // ---------- 시도 로그 조회 ----------
+    // AuthAttemptLogger 가 성공/실패와 무관하게 이메일을 남기려고 부른다.
+
+    /**
+     * 재설정 토큰이 가리키는 회원의 이메일. 유효성과 무관하게 조회만 한다 —
+     * 만료·이미 사용된 토큰이어도 시도 로그에는 이메일을 남기고 싶어서다.
+     */
+    @Transactional(readOnly = true)
+    public Optional<String> resolveResetTokenEmail(String token) {
+        return resetTokens.findByToken(token).map(t -> t.getUser().getEmail());
+    }
+
+    /** 가입 여부와 무관하게 해당 이메일 회원의 표시 이름을 찾는다. 로그인 실패 로그용. */
+    @Transactional(readOnly = true)
+    public Optional<String> displayNameForEmail(String rawEmail) {
+        return users.findByEmail(normalizeEmail(rawEmail)).map(User::getDisplayName);
     }
 
     // ---------- 정리 ----------
