@@ -8,6 +8,7 @@ export interface InputHelperTextProps {
   children: ReactNode;
   variant?: "error" | "info";
   id?: string;
+  visible?: boolean;
 }
 
 export function InputHelperText({

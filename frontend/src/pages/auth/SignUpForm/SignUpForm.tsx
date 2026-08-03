@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Input, Button } from "@/shared/ui";
 import { validatePassword, validateEmail } from "@/shared/lib/validation";
 import type { UserRole } from "@/entities/user";
+import { InputHelperText } from "@/shared/ui/InputHelperText";
 
 export interface SignUpFormProps {
   authType: UserRole;
@@ -19,6 +20,7 @@ export interface SignUpFormData {
 export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   const [email, setEmail] = useState("");
   const [emailDuplicated, setEmailDuplicated] = useState<boolean | null>(null);
+  const [emailMessage, setEmailMessage] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [nickname, setNickname] = useState("");
@@ -39,9 +41,22 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
     isStoreNameOrNicknameValid &&
     emailDuplicated === false;
 
-  const handleDuplicateCheck = () => {
+  const handleDuplicateCheck = async () => {
     if (!isEmailValid) return;
-    setEmailDuplicated(false);
+
+    try {
+      const response = await fetch(
+        `/api/auth/check-email?email=${encodeURIComponent(email)}`,
+      );
+
+      const data = await response.json();
+
+      setEmailDuplicated(!data.available);
+      setEmailMessage(data.message);
+    } catch (error) {
+      setEmailDuplicated(null);
+      setEmailMessage("이메일 확인 중 오류가 발생했습니다.");
+    }
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -84,10 +99,12 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
               onChange={(e) => {
                 setEmail(e.target.value);
                 setEmailDuplicated(null);
+                setEmailMessage("");
               }}
               autoComplete="email"
             />
           </div>
+
           <button
             type="button"
             onClick={handleDuplicateCheck}
@@ -97,6 +114,13 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
             중복확인
           </button>
         </div>
+
+        <InputHelperText
+          variant={emailDuplicated === true ? "error" : "info"}
+          visible={emailMessage.length > 0}
+        >
+          {emailMessage}
+        </InputHelperText>
 
         {emailDuplicated === false && (
           <p className="text-xs text-green-700">이용 가능한 이메일입니다.</p>
