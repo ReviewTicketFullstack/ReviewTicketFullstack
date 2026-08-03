@@ -22,7 +22,9 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [nickname, setNickname] = useState("");
+  const [nicknameDuplicated, setNicknameDuplicated] = useState<boolean | null>(null);
   const [storeName, setStoreName] = useState("");
+  const [storeNameDuplicated, setStoreNameDuplicated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const isPasswordValid = validatePassword(password);
@@ -32,12 +34,18 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   const isStoreNameOrNicknameValid =
     authType === "CUSTOMER" ? nickname.length > 0 : storeName.length > 0;
 
+  const isNameDuplicateChecked =
+    authType === "CUSTOMER"
+      ? nicknameDuplicated === false
+      : storeNameDuplicated === false;
+
   const isFormValid =
     isEmailValid &&
     isPasswordValid &&
     isPasswordConfirmed &&
     isStoreNameOrNicknameValid &&
-    emailDuplicated === false;
+    emailDuplicated === false &&
+    isNameDuplicateChecked;
 
   const handleDuplicateCheck = async () => {
     if (!isEmailValid) return;
@@ -52,6 +60,38 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
       setEmailDuplicated(!data.available);
     } catch (error) {
       setEmailDuplicated(null);
+    }
+  };
+
+  const handleNicknameCheck = async () => {
+    if (!nickname) return;
+
+    try {
+      const response = await fetch(
+        `/api/auth/check-name?name=${encodeURIComponent(nickname)}`,
+      );
+
+      const data = await response.json();
+
+      setNicknameDuplicated(!data.available);
+    } catch (error) {
+      setNicknameDuplicated(null);
+    }
+  };
+
+  const handleStoreNameCheck = async () => {
+    if (!storeName) return;
+
+    try {
+      const response = await fetch(
+        `/api/auth/check-name?name=${encodeURIComponent(storeName)}`,
+      );
+
+      const data = await response.json();
+
+      setStoreNameDuplicated(!data.available);
+    } catch (error) {
+      setStoreNameDuplicated(null);
     }
   };
 
@@ -143,18 +183,70 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
         />
 
         {authType === "CUSTOMER" ? (
-          <Input
-            placeholder="닉네임"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            autoComplete="nickname"
-          />
+          <>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  placeholder="닉네임"
+                  value={nickname}
+                  onChange={(e) => {
+                    setNickname(e.target.value);
+                    setNicknameDuplicated(null);
+                  }}
+                  autoComplete="nickname"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleNicknameCheck}
+                disabled={!nickname}
+                className="h-11 rounded-lg bg-brand-800 px-4 text-xs font-semibold text-white transition-colors hover:bg-brand-950 disabled:cursor-not-allowed disabled:bg-ink-300"
+              >
+                중복확인
+              </button>
+            </div>
+
+            {nicknameDuplicated === false && (
+              <p className="text-xs text-green-700">이용 가능한 이름입니다.</p>
+            )}
+
+            {nicknameDuplicated === true && (
+              <p className="text-xs text-red-700">이미 사용 중인 이름입니다.</p>
+            )}
+          </>
         ) : (
-          <Input
-            placeholder="상호명을 입력해주세요"
-            value={storeName}
-            onChange={(e) => setStoreName(e.target.value)}
-          />
+          <>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  placeholder="상호명을 입력해주세요"
+                  value={storeName}
+                  onChange={(e) => {
+                    setStoreName(e.target.value);
+                    setStoreNameDuplicated(null);
+                  }}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleStoreNameCheck}
+                disabled={!storeName}
+                className="h-11 rounded-lg bg-brand-800 px-4 text-xs font-semibold text-white transition-colors hover:bg-brand-950 disabled:cursor-not-allowed disabled:bg-ink-300"
+              >
+                중복확인
+              </button>
+            </div>
+
+            {storeNameDuplicated === false && (
+              <p className="text-xs text-green-700">이용 가능한 이름입니다.</p>
+            )}
+
+            {storeNameDuplicated === true && (
+              <p className="text-xs text-red-700">이미 사용 중인 이름입니다.</p>
+            )}
+          </>
         )}
       </div>
 
