@@ -18,6 +18,29 @@ CREATE DATABASE IF NOT EXISTS reviewticket
   COLLATE utf8mb4_0900_ai_ci;
 
 -- 3) 앱 전용 계정 (Spring Boot 가 이걸로 접속. root 로 붙이지 말 것)
+--
+-- @'localhost' 인 이유 — MySQL 계정은 (아이디, 접속 출처) 쌍이다. 이 계정은
+-- DB 와 같은 PC 에서만 쓸 수 있고, 외부에서는 비밀번호가 맞아도 거부된다.
 CREATE USER IF NOT EXISTS 'reviewticket'@'localhost' IDENTIFIED BY '__APP_PW__';
 GRANT ALL PRIVILEGES ON reviewticket.* TO 'reviewticket'@'localhost';
 FLUSH PRIVILEGES;
+
+-- 4) MySQL 을 외부 네트워크에 노출하지 않는다.
+--
+-- 기본 설치는 모든 인터페이스(0.0.0.0:3306)에서 접속을 기다린다. 백엔드는
+-- 같은 PC 에서 localhost 로 붙으므로(application.yml 의 jdbc:mysql://localhost)
+-- 외부 노출이 필요 없고, 열어두면 DB 전체가 그대로 공격 표면이 된다.
+--
+-- my.ini 의 [mysqld] 에 아래 한 줄을 넣는다. 접속을 거부하는 것이 아니라
+-- 외부 인터페이스에서 아예 대기하지 않게 되므로, 계정 인증 단계까지 오지 못한다.
+-- (파일 인코딩 문제를 피하려고 주석 없이 값만 넣는다)
+--
+--   bind-address=127.0.0.1
+--
+-- Windows 기본 경로: C:\ProgramData\MySQL\MySQL Server 8.4\my.ini
+-- 적용하려면 서비스 재시작: Restart-Service MySQL84
+--
+-- 확인 — host 가 전부 localhost 여야 한다. % 인 계정이 있으면 어디서든
+-- 접속할 수 있으므로 함께 정리한다.
+--
+--   SELECT user, host FROM mysql.user;
