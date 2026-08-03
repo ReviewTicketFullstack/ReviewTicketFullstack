@@ -24,10 +24,6 @@ export function StoreManagementPage() {
           <span className="text-xs text-gray-400">Image</span>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <span className="text-sm font-semibold text-neutral-600">가게 주소</span>
-          <span className="text-sm text-ink-700">{store.address}</span>
-        </div>
       </div>
     </div>
   );

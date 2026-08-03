@@ -5,10 +5,8 @@
 
 export interface StoreInfo {
   name: string;
-  address: string;
 }
 
 export const store: StoreInfo = {
   name: '도미너피자',
-  address: '서울특별시 강남구 강남대로 396 강남역',
 };
