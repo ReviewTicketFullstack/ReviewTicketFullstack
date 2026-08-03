@@ -5,7 +5,8 @@ import { menuItems } from './mockData';
 export function MenuManagementPage() {
   return (
     <div className="flex flex-col gap-4 p-6">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-ink-900">메뉴관리</h1>
         <button
           type="button"
           disabled
