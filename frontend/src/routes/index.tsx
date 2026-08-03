@@ -58,6 +58,7 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       >
+
         <Route path="stores" element={<StoreManagementPage />} />
         <Route path="menu" element={<MenuManagementPage />} />
         <Route path="reviews" element={<ReviewManagementPage />} />
