@@ -1,6 +1,6 @@
 // 비번 정규식 조건
 export const passwordRegex =
-  /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*])[\w!@#$%^&*]{6,14}$/;
+  /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,14}$/;
 
 // 비번 일치 함수
 export function validatePassword(password: string): boolean {

@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from 'react';
-import { Input, Button } from '@/shared/ui';
-import { validatePassword, validateEmail } from '@/shared/lib/validation';
-import type { UserRole } from '@/entities/user';
+import { useState, type FormEvent } from "react";
+import { Input, Button } from "@/shared/ui";
+import { validatePassword, validateEmail } from "@/shared/lib/validation";
+import type { UserRole } from "@/entities/user";
 
 export interface SignUpFormProps {
   authType: UserRole;
@@ -13,29 +13,30 @@ export interface SignUpFormData {
   password: string;
   passwordConfirm: string;
   nickname?: string;
-  businessName?: string;
+  storeName?: string;
 }
 
 export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [emailDuplicated, setEmailDuplicated] = useState<boolean | null>(null);
-  const [password, setPassword] = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [businessName, setBusinessName] = useState('');
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [storeName, setStoreName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const isPasswordValid = validatePassword(password);
-  const isPasswordConfirmed = password === passwordConfirm && password.length > 0;
+  const isPasswordConfirmed =
+    password === passwordConfirm && password.length > 0;
   const isEmailValid = validateEmail(email);
-  const isBusinessNameOrNicknameValid =
-    authType === 'CUSTOMER' ? nickname.length > 0 : businessName.length > 0;
+  const isStoreNameOrNicknameValid =
+    authType === "CUSTOMER" ? nickname.length > 0 : storeName.length > 0;
 
   const isFormValid =
     isEmailValid &&
     isPasswordValid &&
     isPasswordConfirmed &&
-    isBusinessNameOrNicknameValid &&
+    isStoreNameOrNicknameValid &&
     emailDuplicated === false;
 
   const handleDuplicateCheck = () => {
@@ -53,16 +54,15 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
         email,
         password,
         passwordConfirm,
-        ...(authType === 'CUSTOMER' && { nickname }),
-        ...(authType === 'OWNER' && { businessName }),
+        ...(authType === "CUSTOMER" && { nickname }),
+        ...(authType === "OWNER" && { storeName }),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const greetingText =
-    authType === 'CUSTOMER' ? '고객님' : '사장님';
+  const greetingText = authType === "CUSTOMER" ? "고객님" : "사장님";
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
@@ -108,9 +108,9 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
-          helperText="영어, 숫자, 특수문자를 포함하여 6자리 이상 15자리 미만으로 입력해주세요"
+          helperText="영문 대/소문자, 숫자, 특수문자를 포함한 6~14자리로 입력해주세요"
           showHelperText={password.length > 0 && !isPasswordValid}
-          error={password.length > 0 && !isPasswordValid ? '비밀번호 형식이 맞지 않습니다.' : undefined}
+          error={getPasswordError(password)}
         />
 
         <Input
@@ -121,12 +121,12 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
           autoComplete="new-password"
           error={
             passwordConfirm.length > 0 && password !== passwordConfirm
-              ? '비밀번호가 일치하지 않습니다.'
+              ? "비밀번호가 일치하지 않습니다."
               : undefined
           }
         />
 
-        {authType === 'CUSTOMER' ? (
+        {authType === "CUSTOMER" ? (
           <Input
             placeholder="닉네임"
             value={nickname}
@@ -136,8 +136,8 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
         ) : (
           <Input
             placeholder="상호명을 입력해주세요"
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
           />
         )}
       </div>
@@ -148,8 +148,34 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
         size="large"
         disabled={!isFormValid || isLoading}
       >
-        {isLoading ? '회원가입 중...' : '회원가입하기'}
+        {isLoading ? "회원가입 중..." : "회원가입하기"}
       </Button>
     </form>
   );
+}
+
+export function getPasswordError(password: string): string | undefined {
+  if (!password) return undefined;
+
+  if (!/[A-Z]/.test(password)) {
+    return "대문자를 포함해주세요.";
+  }
+
+  if (!/[a-z]/.test(password)) {
+    return "소문자를 포함해주세요.";
+  }
+
+  if (!/\d/.test(password)) {
+    return "숫자를 포함해주세요.";
+  }
+
+  if (!/[!@#$%^&*]/.test(password)) {
+    return "특수문자를 포함해주세요.";
+  }
+
+  if (password.length < 6 || password.length > 14) {
+    return "6~14자리로 입력해주세요.";
+  }
+
+  return undefined;
 }

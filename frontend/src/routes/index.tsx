@@ -8,8 +8,8 @@ import {
   OrderHistoryPage,
   OnboardingPage,
   LoginPage,
-  CustomerSignUpPage,
-  OwnerSignUpPage,
+  SignUpPage,
+  EmailVerificationPage,
   StoreManagementPage,
   MenuManagementPage,
   ReviewManagementPage,
@@ -33,8 +33,10 @@ export function AppRoutes() {
       <Route element={<AuthLayout />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup/customer" element={<CustomerSignUpPage />} />
-        <Route path="/signup/owner" element={<OwnerSignUpPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/email-verification" element={<EmailVerificationPage />} />
+        {/* <Route path="/signup/customer" element={<SignUpPage />} />
+        <Route path="/signup/owner" element={<SignUpPage />} /> */}
       </Route>
 
       <Route

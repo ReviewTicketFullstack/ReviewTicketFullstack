@@ -27,9 +27,10 @@ export function SignUpPage() {
       const payload = {
         email: data.email,
         password: data.password,
+        passwordConfirm: data.passwordConfirm,
         role: selectedRole,
-        ...(selectedRole === "CUSTOMER" && { nickname: data.nickname }),
-        ...(selectedRole === "OWNER" && { businessName: data.businessName }),
+        displayName:
+          selectedRole === "CUSTOMER" ? data.nickname : data.storeName,
       };
 
       const response = await fetch("/api/auth/signup", {
@@ -42,8 +43,9 @@ export function SignUpPage() {
         throw new Error("회원가입 실패");
       }
 
-      alert("회원가입 성공! 로그인해주세요.");
-      navigate("/login", { replace: true });
+      navigate(`/email-verification?email=${encodeURIComponent(data.email)}`, {
+        replace: true,
+      });
     } catch (error) {
       alert(
         error instanceof Error

@@ -83,6 +83,7 @@ export function LoginPage() {
       <div className="flex items-center justify-between">
         <button
           type="button"
+          onClick={() => navigate("/signup")}
           className="flex-1 text-center text-sm text-ink-700 hover:text-brand-800"
         >
           회원가입하기
