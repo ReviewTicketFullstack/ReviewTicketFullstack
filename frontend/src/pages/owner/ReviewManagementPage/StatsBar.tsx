@@ -12,7 +12,7 @@ export function StatsBar({
   pendingCount,
 }: StatsBarProps) {
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-30">
       <div className="flex flex-1 items-center justify-center gap-6 rounded-lg bg-neutral-100 p-4">
         <span className="flex items-center gap-2">
           <span className="size-2.5 rounded-full bg-green-600" />
