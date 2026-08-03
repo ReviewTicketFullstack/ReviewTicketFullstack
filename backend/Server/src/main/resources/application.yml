@@ -54,17 +54,12 @@ reviewticket:
     # 실제 발송하려면 여기와 application-local.yml 의 spring.mail 을 채운다.
     from: ""
   cors:
-    # 프론트엔드를 Spring 이 아닌 다른 곳에서 띄울 때 필요한 허용 출처.
-    # /demo 로 서빙하는 경우는 같은 출처라 이 목록과 무관하다.
-    # 포트가 다르면 다른 출처다 — Vite(5173), Live Server(5500) 등을 넣어둔다.
+    # 쿠키를 쓰지 않고 Authorization 헤더로만 인증하므로(allowCredentials 꺼짐)
+    # 출처를 전부 열어도 쿠키 기반 CSRF 같은 위험이 생기지 않는다.
+    # 팀원이 localhost, LAN IP, 이 서버의 공인 IP 등 어디서 접속하든
+    # 매번 목록에 추가할 필요 없게 전부 허용한다.
     allowed-origins:
-      - "http://localhost:*"
-      - "http://127.0.0.1:*"
-      # 팀원이 자기 PC 에서 프론트를 띄우고 이 서버를 호출하는 경우.
-      # 사설망 대역을 통째로 허용해 둔다.
-      - "http://192.168.*:*"
-      - "http://172.*:*"
-      - "http://10.*:*"
+      - "*"
 logging:
   level:
     org.hibernate.SQL: debug
