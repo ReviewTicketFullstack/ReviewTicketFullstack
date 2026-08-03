@@ -17,11 +17,9 @@ export function CompletedReviewItem({ review }: CompletedReviewItemProps) {
       </div>
       <p className="text-sm text-ink-700">{review.comment}</p>
       {review.photo && (
-        <img
-          src={review.photo}
-          alt="리뷰 사진"
-          className="h-24 w-24 rounded-md object-cover"
-        />
+        <div className="flex h-24 w-24 items-center justify-center rounded-md bg-gray-200">
+          <span className="text-xs text-gray-400">Image</span>
+        </div>
       )}
     </Card>
   );
