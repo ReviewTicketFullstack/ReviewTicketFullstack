@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.reviewticket.server.auth.ConflictException;
+import com.reviewticket.server.auth.TooManyRequestsException;
 import com.reviewticket.server.auth.UnauthorizedException;
 
 import jakarta.validation.ConstraintViolationException;
@@ -72,6 +73,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> unauthorized(UnauthorizedException e) {
         return body(HttpStatus.UNAUTHORIZED, e.getMessage(), false);
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<Map<String, Object>> tooManyRequests(TooManyRequestsException e) {
+        return body(HttpStatus.TOO_MANY_REQUESTS, e.getMessage(), true);
     }
 
 }

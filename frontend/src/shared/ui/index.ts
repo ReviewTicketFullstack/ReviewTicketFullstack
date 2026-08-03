@@ -3,6 +3,7 @@ export * from "./Badge";
 export * from "./CountBadge";
 export * from "./Modal";
 export * from "./Input";
+export * from "./InputHelperText";
 export * from "./Textarea";
 export * from "./Card";
 export * from "./EmptyState";

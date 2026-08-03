@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.reviewticket.server.domain.AuthAction;
 import com.reviewticket.server.domain.Role;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -22,9 +24,16 @@ import jakarta.validation.constraints.NotNull;
 public class AuthController {
 
     private final AuthService authService;
+    private final LoginRateLimiter loginRateLimiter;
+    private final SignupRateLimiter signupRateLimiter;
+    private final AuthAttemptLogger attemptLogger;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter,
+            SignupRateLimiter signupRateLimiter, AuthAttemptLogger attemptLogger) {
         this.authService = authService;
+        this.loginRateLimiter = loginRateLimiter;
+        this.signupRateLimiter = signupRateLimiter;
+        this.attemptLogger = attemptLogger;
     }
 
     // ---------- 요청/응답 ----------
@@ -106,18 +115,27 @@ public class AuthController {
      * 실제 회원 생성은 {@link #verify(String)} 에서 일어난다.
      */
     @PostMapping(value = "/signup", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public SignUpResponse signUp(@Valid @RequestBody SignUpRequest request) {
-        if (!request.password().equals(request.passwordConfirm())) {
-            throw new IllegalArgumentException("비밀번호가 서로 다릅니다");
+    public SignUpResponse signUp(@Valid @RequestBody SignUpRequest request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        signupRateLimiter.checkAllowed(ip);
+        try {
+            if (!request.password().equals(request.passwordConfirm())) {
+                throw new IllegalArgumentException("비밀번호가 서로 다릅니다");
+            }
+            authService.requestSignUp(request.email(), request.password(),
+                    request.role(), request.displayName());
+            attemptLogger.record(AuthAction.SIGNUP, request.email(), request.displayName(), ip, true);
+            return new SignUpResponse(request.email().trim().toLowerCase(),
+                    "인증 메일을 보냈습니다. 메일의 링크를 눌러야 회원가입이 완료됩니다.");
+        } catch (RuntimeException e) {
+            attemptLogger.record(AuthAction.SIGNUP, request.email(), request.displayName(), ip, false);
+            throw e;
         }
-        authService.requestSignUp(request.email(), request.password(),
-                request.role(), request.displayName());
-        return new SignUpResponse(request.email().trim().toLowerCase(),
-                "인증 메일을 보냈습니다. 메일의 링크를 눌러야 회원가입이 완료됩니다.");
     }
 
     @PostMapping("/resend")
-    public void resend(@RequestParam("email") @NotBlank String email) {
+    public void resend(@RequestParam("email") @NotBlank String email, HttpServletRequest httpRequest) {
+        signupRateLimiter.checkAllowed(httpRequest.getRemoteAddr());
         authService.resendVerification(email);
     }
 
@@ -166,17 +184,36 @@ public class AuthController {
 
     /** 페이지의 변경 버튼이 부른다. 여기서 실제 비밀번호가 바뀐다. */
     @PostMapping(value = "/password-reset", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public MessageResponse resetPassword(@Valid @RequestBody ResetConfirm request) {
-        authService.resetPassword(request.token(), request.newPassword(), request.newPasswordConfirm());
-        return new MessageResponse("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.");
+    public MessageResponse resetPassword(@Valid @RequestBody ResetConfirm request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        String email = authService.resolveResetTokenEmail(request.token()).orElse(null);
+        try {
+            authService.resetPassword(request.token(), request.newPassword(), request.newPasswordConfirm());
+            attemptLogger.record(AuthAction.PASSWORD_CHANGE, email, null, ip, true);
+            return new MessageResponse("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.");
+        } catch (RuntimeException e) {
+            attemptLogger.record(AuthAction.PASSWORD_CHANGE, email, null, ip, false);
+            throw e;
+        }
     }
 
     // ---------- 로그인 ----------
 
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        AuthService.LoginResult result = authService.login(request.email(), request.password());
-        return new LoginResponse(result.token(), result.expiresInSeconds(),
-                result.user().getId(), result.user().getDisplayName(), result.user().getRole());
+    public LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        loginRateLimiter.checkAllowed(ip);
+        try {
+            AuthService.LoginResult result = authService.login(request.email(), request.password());
+            loginRateLimiter.recordSuccess(ip);
+            attemptLogger.record(AuthAction.LOGIN, result.user().getEmail(), result.user().getDisplayName(), ip, true);
+            return new LoginResponse(result.token(), result.expiresInSeconds(),
+                    result.user().getId(), result.user().getDisplayName(), result.user().getRole());
+        } catch (UnauthorizedException e) {
+            loginRateLimiter.recordFailure(ip);
+            String displayName = authService.displayNameForEmail(request.email()).orElse(null);
+            attemptLogger.record(AuthAction.LOGIN, request.email(), displayName, ip, false);
+            throw e;
+        }
     }
 }

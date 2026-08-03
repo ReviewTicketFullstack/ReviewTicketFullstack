@@ -1,15 +1,43 @@
 import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/app/providers";
+import { login } from "@/api/authApi";
+import type { FormEvent } from "react";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const navigate = useNavigate();
+
+  const { signin } = useAuth();
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: 인증 로직 구현. useAuth()의 authType(CUSTOMER/OWNER)에 따라
-    // 로그인 API를 분기하고, 응답으로 받은 user를 signin()에 전달한다.
+
+    try {
+      const user = await login({
+        email,
+        password,
+      });
+
+      signin(user);
+
+      if (user.role === "CUSTOMER") {
+        navigate("/home");
+      }
+
+      if (user.role === "OWNER") {
+        navigate("/stores");
+      }
+    } catch (error) {
+      alert("로그인 정보를 확인해주세요.");
+    }
   };
+
+  // TODO: 인증 로직 구현. useAuth()의 authType(CUSTOMER/OWNER)에 따라
+  // 로그인 API를 분기하고, 응답으로 받은 user를 signin()에 전달한다.
 
   return (
     <div className="flex flex-col gap-8 px-5 py-8">
@@ -30,7 +58,10 @@ export function LoginPage() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="password" className="text-xs font-semibold text-ink-900">
+          <label
+            htmlFor="password"
+            className="text-xs font-semibold text-ink-900"
+          >
             비밀번호
           </label>
           <input
@@ -52,6 +83,7 @@ export function LoginPage() {
       <div className="flex items-center justify-between">
         <button
           type="button"
+          onClick={() => navigate("/signup")}
           className="flex-1 text-center text-sm text-ink-700 hover:text-brand-800"
         >
           회원가입하기
