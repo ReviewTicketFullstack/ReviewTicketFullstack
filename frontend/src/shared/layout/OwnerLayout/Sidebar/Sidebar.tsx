@@ -15,9 +15,9 @@ export function Sidebar() {
         <span className="flex-1 truncate font-semibold">{store.name}</span>
       </div>
       <nav className="flex flex-col gap-3">
-        <NavLink to="/owner/stores" className={navLinkClassName}>가게관리</NavLink>
-        <NavLink to="/owner/menu" className={navLinkClassName}>메뉴관리</NavLink>
-        <NavLink to="/owner/reviews" className={navLinkClassName}>리뷰관리</NavLink>
+        <NavLink to="/stores" className={navLinkClassName}>가게관리</NavLink>
+        <NavLink to="/menu" className={navLinkClassName}>메뉴관리</NavLink>
+        <NavLink to="/reviews" className={navLinkClassName}>리뷰관리</NavLink>
       </nav>
     </aside>
   );
