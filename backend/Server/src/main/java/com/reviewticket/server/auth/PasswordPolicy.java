@@ -1,12 +1,16 @@
 package com.reviewticket.server.auth;
 
 /**
- * 비밀번호 형식 규칙. 대문자, 소문자, 숫자, 특수문자를 모두 포함하고 8자 이상.
+ * 비밀번호 형식 규칙. 대문자, 소문자, 숫자, 특수문자를 모두 포함하고 6~14자.
  * 예: Abc123!@
  *
  * 프론트에서도 같은 규칙으로 즉시 검사하지만, 여기서 다시 본다.
  * 프론트 검증은 사용자 편의를 위한 것이고 우회할 수 있다 — 규칙을
  * 실제로 강제하는 곳은 서버뿐이다.
+ *
+ * 길이와 허용 특수문자는 프론트의 passwordRegex 와 같은 값이어야 한다.
+ * 서버가 더 엄격하면 화면 안내대로 입력한 사용자가 제출 단계에서 거부당한다
+ * (이전에 서버만 8자 이상이라 6~7자가 그렇게 실패했다).
  *
  * 정규식 하나로 몰아넣지 않고 조건별로 나눈 이유: 어떤 조건이 빠졌는지
  * 사용자에게 알려줄 수 있다. "형식이 틀렸습니다"만 띄우면 뭘 고쳐야
@@ -14,11 +18,13 @@ package com.reviewticket.server.auth;
  */
 public final class PasswordPolicy {
 
-    public static final int MIN_LENGTH = 8;
-    public static final int MAX_LENGTH = 72; // BCrypt 가 72바이트를 넘으면 조용히 잘라낸다
+    public static final int MIN_LENGTH = 6;
 
-    /** 키보드로 칠 수 있는 ASCII 특수문자 전부. */
-    private static final String SPECIALS = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+    /** 프론트와 같은 상한. BCrypt 한계(72바이트)보다 훨씬 짧아 잘림 걱정은 없다. */
+    public static final int MAX_LENGTH = 14;
+
+    /** 프론트 passwordRegex 가 허용하는 특수문자와 같은 집합. */
+    private static final String SPECIALS = "!@#$%^&*";
 
     private PasswordPolicy() {
     }

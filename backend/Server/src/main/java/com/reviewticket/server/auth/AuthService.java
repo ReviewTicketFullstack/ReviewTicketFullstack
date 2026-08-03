@@ -40,7 +40,7 @@ public class AuthService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /** 재발송 최소 간격. 없으면 남의 메일함에 무한정 보낼 수 있다. */
-    private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
+    private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(30);
 
     private static final int MAX_DISPLAY_NAME_LENGTH = 32;
 
@@ -162,8 +162,14 @@ public class AuthService {
         }
         PendingSignup pending = found.get();
 
-        LocalDateTime createdAt = pending.getCreatedAt();
-        if (createdAt != null && createdAt.isAfter(LocalDateTime.now().minus(RESEND_COOLDOWN))) {
+        // 마지막 발송 시각을 만료시각에서 거꾸로 계산한다. 발송할 때마다
+        // expiresAt 을 "지금 + verificationTtl" 로 새로 잡으므로 그 차가 곧 발송 시각이다.
+        //
+        // createdAt 을 쓰면 안 된다 — 그 값은 대기 행이 처음 만들어진 시각에
+        // 고정돼(insertable=false, updatable=false) 재발송해도 갱신되지 않는다.
+        // 그래서 최초 가입 직후 한 번만 막히고 그 뒤로는 무제한이었다.
+        LocalDateTime lastSentAt = pending.getExpiresAt().minus(properties.auth().verificationTtl());
+        if (lastSentAt.isAfter(LocalDateTime.now().minus(RESEND_COOLDOWN))) {
             throw new IllegalArgumentException(
                     "인증 메일을 방금 보냈습니다. " + RESEND_COOLDOWN.toSeconds() + "초 뒤에 다시 시도해 주세요");
         }
