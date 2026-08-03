@@ -19,10 +19,17 @@ name: CI
 
 on:
   # Pull Request가 생성되거나 업데이트될 때 실행
-  pull_request:
-    # main 브랜치로 들어가는 PR만 검사
+  push:
+    # main, dev 브랜치로 들어가는 PR만 검사
     branches:
       - main
+      - dev
+
+  pull_request:
+    # main, dev 브랜치로 들어가는 PR만 검사
+    branches:
+      - main
+      - dev
 
 jobs:
   frontend-build:
