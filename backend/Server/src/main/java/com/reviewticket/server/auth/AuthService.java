@@ -154,7 +154,16 @@ public class AuthService {
     /** 인증 메일 재발송. 토큰을 새로 만들어 옛 링크는 무효화한다. */
     @Transactional
     public void resendVerification(String rawEmail) {
-        Optional<PendingSignup> found = pendings.findByEmail(normalizeEmail(rawEmail));
+        String email = normalizeEmail(rawEmail);
+
+        // 가입 때 한 검사를 여기서 다시 한다. 대기 행이 만들어진 뒤에도
+        // 도메인의 MX 가 사라질 수 있고, 가입 당시 DNS 조회가 실패해
+        // "판단 보류"로 통과한 건이 이 버튼으로 반복 발송될 수 있다.
+        if (!domainValidator.hasMailServer(email)) {
+            throw new IllegalArgumentException("메일을 받을 수 없는 이메일 주소입니다");
+        }
+
+        Optional<PendingSignup> found = pendings.findByEmail(email);
         if (found.isEmpty()) {
             // 대기 건이 없어도 성공처럼 조용히 끝낸다. 여기서 404 를 내면
             // 어떤 이메일이 가입 대기 중인지 알아낼 수 있다.
