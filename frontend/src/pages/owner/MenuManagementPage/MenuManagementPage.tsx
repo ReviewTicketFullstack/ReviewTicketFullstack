@@ -18,15 +18,19 @@ export function MenuManagementPage() {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-ink-900">메뉴관리</h1>
-        <button
-          type="button"
-          disabled
-          className="cursor-not-allowed rounded-lg bg-neutral-300 px-4 py-2 font-semibold text-neutral-500"
-        >
-          메뉴 추가
-        </button>
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-bold text-ink-900">메뉴관리</h1>
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            disabled
+            className="cursor-not-allowed rounded-lg bg-neutral-300 px-4 py-2 font-semibold text-neutral-500"
+          >
+            메뉴 추가
+          </button>
+        </div>
       </div>
 
       <Card className="overflow-hidden p-0">
