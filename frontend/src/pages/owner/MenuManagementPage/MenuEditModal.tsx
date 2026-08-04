@@ -25,7 +25,7 @@ export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
         className="flex w-full max-w-2xl flex-col gap-8 rounded-2xl bg-white p-10 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <SamplePhotoStrip />
+        {hasReviewEvent && <SamplePhotoStrip />}
 
         <div className="w-fit rounded-lg bg-neutral-200 px-4 py-2 text-sm font-semibold">
           {store.name}
