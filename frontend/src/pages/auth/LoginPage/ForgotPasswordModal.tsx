@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Modal, Button, Input } from "@/shared/ui";
-import { checkEmail, requestPasswordReset } from "@/shared/api/api";
+import { requestPasswordReset } from "@/shared/api/api";
 import { validateEmail } from "@/shared/lib";
 import { ApiError } from "@/shared/api";
 
