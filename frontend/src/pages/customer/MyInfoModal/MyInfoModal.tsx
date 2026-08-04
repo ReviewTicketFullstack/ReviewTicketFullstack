@@ -34,6 +34,17 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     setPasswordMessage("");
   }, [open, user?.displayName]);
 
+  // TODO: remove debug logs
+  useEffect(() => {
+    if (nameChecked !== null) {
+      console.group('📍 MyInfoModal Helper Text - Name');
+      console.log('State: nameChecked =', nameChecked);
+      console.log('Message:', nameMessage);
+      console.log('Will render:', nameChecked ? '사용할 수 있습니다' : '이미 쓰이고 있는 이름입니다');
+      console.groupEnd();
+    }
+  }, [nameChecked, nameMessage]);
+
   const isNameChanged =
     nickname.trim().length > 0 && nickname !== user?.displayName;
   // 이름을 바꾸지 않았다면 중복확인 없이도 닫을 수 있어야 한다.
@@ -44,6 +55,15 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
 
     try {
       const data = await checkName(nickname.trim());
+
+      // TODO: remove debug logs
+      console.group('🔍 check-name API Response (MyInfoModal)');
+      console.log('Endpoint:', 'check-name');
+      console.log('Full Response:', data);
+      console.log('Available:', data.available);
+      console.log('Message:', data.message);
+      console.groupEnd();
+
       setNameChecked(data.available);
       if (data.available) {
         setNameMessage("사용할 수 있습니다");

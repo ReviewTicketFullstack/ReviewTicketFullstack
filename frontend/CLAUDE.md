@@ -13,8 +13,8 @@
 
 1. Understand the requirement.
 2. Inspect the existing implementation.
-3. Propose a plan if needed.
-4. Implement and verify.
+3. Implement with minimal changes.
+4. Verify when possible.
 5. Summarize the changes.
 
 ## Engineering Principles
@@ -28,31 +28,33 @@
 
 ### Code
 
-- Respect the existing architecture and patterns.
+- Respect the existing architecture.
 - Keep changes minimal and focused.
 - Avoid unnecessary abstractions (YAGNI).
 - Do not refactor unrelated code.
+- Modify existing code before creating new files or layers.
+
+### Frontend
+
+- Read `claude/design.md` before UI work.
+- Follow the existing design system.
+- Preserve behavior unless requested.
+- Prefer CSS/Tailwind over JSX changes for visual updates.
+
+### TypeScript
+
+- Follow strict mode.
+- Never use `any` unless explicitly approved.
+- Prefer type inference and local types.
+- Create new interfaces/types only when they improve the current implementation.
+- Minimize type assertions.
 
 ### Debugging
 
 - Fix root causes, not symptoms.
 - Do not hide errors.
-- Consider failure paths.
-- Explain remaining uncertainty.
-
-### Frontend
-
-- Read `claude/design.md` before any UI work. It is the source of truth for visual design.
-- Follow the existing design system.
-- Avoid generic AI-style UI.
-- Preserve DOM structure, state, props, and behavior unless requested.
-- Prefer CSS/Tailwind over JSX changes for visual updates.
-
-### TypeScript
-
-- Never use `any`; prefer `unknown`.
-- Minimize type assertions.
-- Follow strict mode.
+- Add temporary debug logs when useful.
+- Mark temporary logs with `// TODO: remove debug logs`.
 
 ### Testing
 
@@ -63,7 +65,7 @@
 ### Dependencies
 
 - Reuse existing dependencies.
-- Explain and get approval before adding new ones.
+- Get approval before adding new ones.
 
 ### Git & Security
 
@@ -71,12 +73,6 @@
 - Never run destructive Git commands.
 - Never expose secrets.
 - Confirm before modifying `.env`.
-
-### Performance
-
-- Consider complexity for large datasets.
-- Explain performance trade-offs.
-- Optimize only with measurable evidence.
 
 ### Language
 
@@ -86,18 +82,23 @@
 ## Engineering Mindset
 
 - Correctness over cleverness.
-- Readability over brevity.
+- Simplicity over abstraction.
+- Readability over clever design.
 - Evidence over assumptions.
 
 ### MVP Development
 
-- Prefer the simplest implementation that satisfies the current requirements.
-- Do not design for hypothetical future features.
-- Small duplication is acceptable if it improves clarity.
-- Refactor only when duplication or complexity becomes a real problem.
-- Optimize for development speed during MVP unless otherwise requested.
+This project is an MVP and requirements change frequently.
+
+- Optimize for iteration speed over architectural perfection.
+- Prefer code that is easy to modify tomorrow over code prepared for hypothetical future requirements.
+- Avoid creating interfaces, hooks, utilities, wrappers, or extension points without an immediate use case.
+- Keep logic in the same file if it has only one consumer.
+- Prefer modifying existing files over creating new ones.
+- Small duplication is acceptable when it improves clarity.
+- Refactor only after duplication or complexity becomes a real problem.
 
 ### Decision Making
 
-- When multiple valid implementations exist, prefer the one with the lowest complexity.
-- Avoid introducing reusable abstractions until at least two real use cases exist.
+- When multiple solutions are valid, choose the simplest one.
+- If two solutions are equally correct, choose the one with fewer files and less code.

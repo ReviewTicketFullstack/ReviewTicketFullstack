@@ -17,12 +17,15 @@ export class ApiError extends Error {
   readonly status: number;
   /** 잠시 후 같은 요청을 다시 보내볼 만한지 (429, 네트워크 실패 등). */
   readonly retryable: boolean;
+  /** 서버에서 제공하는 에러 코드 (errorCode). */
+  readonly error?: string;
 
-  constructor(message: string, status: number, retryable = false) {
+  constructor(message: string, status: number, retryable = false, error?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.retryable = retryable;
+    this.error = error;
   }
 }
 
@@ -88,6 +91,7 @@ async function toApiError(response: Response): Promise<ApiError> {
       body.message || fallbackMessage(response.status),
       response.status,
       Boolean(body.retryable),
+      body.error,
     );
   } catch {
     return new ApiError(fallbackMessage(response.status), response.status);
