@@ -46,8 +46,16 @@ export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-neutral-600">메뉴 설정</span>
-          <div className={lockedFieldClassName}>메뉴 이미지</div>
-          <div className={lockedFieldClassName}>{menu.price.toLocaleString('ko-KR')}원</div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-neutral-400  w-25">메뉴 이미지</span>
+            <div className={lockedFieldClassName}>메뉴 이미지</div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-neutral-400  w-25">가격</span>
+            <div className={lockedFieldClassName}>{menu.price.toLocaleString('ko-KR')}원</div>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
