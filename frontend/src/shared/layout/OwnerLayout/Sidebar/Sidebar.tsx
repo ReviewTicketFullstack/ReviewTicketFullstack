@@ -9,7 +9,10 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-65 flex-col border-r border-neutral-200 bg-neutral-50 p-4">
-      <img src="/logo.svg" alt="Review Ticket" className="mb-4 h-20 w-auto" />
+      <div className="mb-4 flex items-center justify-center gap-2">
+        <img src="/logo.svg" alt="Review Ticket" className="h-20 w-auto" />
+        <span className="text-xl font-semibold text-ink-900">사장님</span>
+      </div>
       <div className="mb-6 flex items-center gap-2 rounded-lg bg-neutral-200 p-3">
         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-neutral-300">
           <span className="text-[10px] text-neutral-500">Image</span>
