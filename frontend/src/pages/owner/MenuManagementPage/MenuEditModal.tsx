@@ -22,7 +22,7 @@ export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-md flex-col gap-6 rounded-2xl bg-white p-6 shadow-xl"
+        className="flex w-full max-w-2xl flex-col gap-8 rounded-2xl bg-white p-10 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <SamplePhotoStrip />
