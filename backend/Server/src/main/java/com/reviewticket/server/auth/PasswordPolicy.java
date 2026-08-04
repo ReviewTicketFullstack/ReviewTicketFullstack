@@ -29,18 +29,22 @@ public final class PasswordPolicy {
     private PasswordPolicy() {
     }
 
+    /** 어긋난 조건 하나를 (errorCode, message) 쌍으로 담는다. */
+    public record Violation(String errorCode, String message) {
+    }
+
     /**
-     * @return 어긋난 조건을 설명하는 문장, 규칙을 지켰으면 null
+     * @return 어긋난 조건, 규칙을 지켰으면 null
      */
-    public static String validate(String password) {
+    public static Violation validate(String password) {
         if (password == null || password.isEmpty()) {
-            return "비밀번호를 입력해 주세요";
+            return new Violation("PASSWORD_TOO_SHORT", "비밀번호를 입력해 주세요");
         }
         if (password.length() < MIN_LENGTH) {
-            return "비밀번호는 " + MIN_LENGTH + "자 이상이어야 합니다";
+            return new Violation("PASSWORD_TOO_SHORT", "비밀번호는 " + MIN_LENGTH + "자 이상이어야 합니다");
         }
         if (password.length() > MAX_LENGTH) {
-            return "비밀번호는 " + MAX_LENGTH + "자 이하여야 합니다";
+            return new Violation("PASSWORD_TOO_LONG", "비밀번호는 " + MAX_LENGTH + "자 이하여야 합니다");
         }
 
         boolean upper = false;
@@ -59,30 +63,30 @@ public final class PasswordPolicy {
                 special = true;
             } else {
                 // 공백과 한글 등. 허용하면 나중에 본인도 못 치는 비밀번호가 생긴다.
-                return "비밀번호에 쓸 수 없는 문자가 있습니다: '" + c + "'";
+                return new Violation("PASSWORD_INVALID_CHAR", "비밀번호에 쓸 수 없는 문자가 있습니다: '" + c + "'");
             }
         }
 
         if (!upper) {
-            return "비밀번호에 대문자가 필요합니다";
+            return new Violation("PASSWORD_MISSING_UPPER", "비밀번호에 대문자가 필요합니다");
         }
         if (!lower) {
-            return "비밀번호에 소문자가 필요합니다";
+            return new Violation("PASSWORD_MISSING_LOWER", "비밀번호에 소문자가 필요합니다");
         }
         if (!digit) {
-            return "비밀번호에 숫자가 필요합니다";
+            return new Violation("PASSWORD_MISSING_DIGIT", "비밀번호에 숫자가 필요합니다");
         }
         if (!special) {
-            return "비밀번호에 특수문자가 필요합니다";
+            return new Violation("PASSWORD_MISSING_SPECIAL", "비밀번호에 특수문자가 필요합니다");
         }
         return null;
     }
 
     /** 규칙을 어기면 400 으로 나가도록 예외를 던진다. */
     public static void require(String password) {
-        String problem = validate(password);
-        if (problem != null) {
-            throw new IllegalArgumentException(problem);
+        Violation violation = validate(password);
+        if (violation != null) {
+            throw new ValidationException(violation.errorCode(), violation.message());
         }
     }
 }

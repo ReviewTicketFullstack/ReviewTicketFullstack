@@ -1,5 +1,6 @@
 package com.reviewticket.server.web;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.reviewticket.server.auth.ConflictException;
 import com.reviewticket.server.auth.TooManyRequestsException;
 import com.reviewticket.server.auth.UnauthorizedException;
+import com.reviewticket.server.auth.ValidationException;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -23,16 +25,28 @@ public class ApiExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
-    private static ResponseEntity<Map<String, Object>> body(HttpStatus status, String message, boolean retryable) {
-        return ResponseEntity.status(status).body(Map.of(
-                "error", status.getReasonPhrase(),
-                "message", message,
-                "retryable", retryable));
+    /**
+     * errorCode 가 있으면 message 는 응답에서 뺀다 — 문구는 프론트가 errorCode 로
+     * 직접 채운다. errorCode 가 없는 예외(로그인, 비밀번호 재설정 등 아직 코드를
+     * 안 붙인 곳)는 지금처럼 message 를 그대로 내려준다.
+     */
+    private static ResponseEntity<Map<String, Object>> body(
+            HttpStatus status, String errorCode, String message, boolean retryable) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("error", status.getReasonPhrase());
+        if (errorCode != null) {
+            payload.put("errorCode", errorCode);
+        } else {
+            payload.put("message", message);
+        }
+        payload.put("retryable", retryable);
+        return ResponseEntity.status(status).body(payload);
     }
 
     @ExceptionHandler({ IllegalArgumentException.class, ConstraintViolationException.class })
     public ResponseEntity<Map<String, Object>> badRequest(Exception e) {
-        return body(HttpStatus.BAD_REQUEST, e.getMessage(), false);
+        String errorCode = e instanceof ValidationException ve ? ve.getErrorCode() : null;
+        return body(HttpStatus.BAD_REQUEST, errorCode, e.getMessage(), false);
     }
 
     /** @Valid 가 걸린 요청 본문의 첫 위반 사유를 그대로 보여준다. */
@@ -43,13 +57,13 @@ public class ApiExceptionHandler {
                 .filter(m -> m != null && !m.isBlank())
                 .findFirst()
                 .orElse("입력값이 올바르지 않습니다");
-        return body(HttpStatus.BAD_REQUEST, message, false);
+        return body(HttpStatus.BAD_REQUEST, null, message, false);
     }
 
     /** 이미 쓰이고 있는 이메일·닉네임. 형식 오류와 달리 다른 값을 쓰라고 안내해야 한다. */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, Object>> conflict(ConflictException e) {
-        return body(HttpStatus.CONFLICT, e.getMessage(), false);
+        return body(HttpStatus.CONFLICT, e.getErrorCode(), e.getMessage(), false);
     }
 
     /**
@@ -66,18 +80,18 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> constraintViolation(DataIntegrityViolationException e) {
         log.warn("DB 제약 위반 (동시 요청 경합으로 추정)", e);
-        return body(HttpStatus.CONFLICT,
+        return body(HttpStatus.CONFLICT, null,
                 "이미 사용 중인 정보입니다. 다시 시도해 주세요.", true);
     }
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> unauthorized(UnauthorizedException e) {
-        return body(HttpStatus.UNAUTHORIZED, e.getMessage(), false);
+        return body(HttpStatus.UNAUTHORIZED, null, e.getMessage(), false);
     }
 
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<Map<String, Object>> tooManyRequests(TooManyRequestsException e) {
-        return body(HttpStatus.TOO_MANY_REQUESTS, e.getMessage(), true);
+        return body(HttpStatus.TOO_MANY_REQUESTS, null, e.getMessage(), true);
     }
 
 }
