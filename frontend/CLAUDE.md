@@ -42,6 +42,7 @@
 
 ### Frontend
 
+- Read `claude/design.md` before any UI work. It is the source of truth for visual design.
 - Follow the existing design system.
 - Avoid generic AI-style UI.
 - Preserve DOM structure, state, props, and behavior unless requested.

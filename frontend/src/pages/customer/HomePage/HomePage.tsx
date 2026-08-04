@@ -12,18 +12,11 @@ export function HomePage() {
         <Card className="flex items-center justify-center p-6">
           <div className="text-center">
             <p className="text-3xl font-bold leading-14 text-left">
-              안녕하세요?
+              안녕하세요!
+            </p>    
+            <p className="text-6xl font-bold leading-14 text-left">
+               {user?.displayName} 님!
             </p>
-            {
-              <p className="text-6xl font-bold leading-14 text-left">
-                이도연님!
-              </p>
-            }
-            {
-              <p className="text-6xl font-bold leading-14 text-left">
-                {user?.displayName}
-              </p>
-            }
           </div>
         </Card>
       </div>
