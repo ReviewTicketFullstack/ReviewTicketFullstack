@@ -64,7 +64,7 @@ public class AuthController {
             String displayName, Role role) {
     }
 
-    public record AvailabilityResponse(boolean available, String message) {
+    public record AvailabilityResponse(boolean available) {
     }
 
     public record VerifiedResponse(boolean verified) {
@@ -93,21 +93,18 @@ public class AuthController {
 
     // ---------- 중복 검사 ----------
 
-    /**
-     * 사용 가능할 때는 메시지를 비워 둔다 — 프론트가 그 경우 자체 문구
-     * ("이용 가능한 이메일입니다")를 보여주므로, 여기서도 채우면 같은 뜻이 중복 표시된다.
-     */
+    /** 사용 가능 여부만 돌려준다. 문구는 프론트가 직접 채운다. */
     @GetMapping("/check-email")
     public AvailabilityResponse checkEmail(@RequestParam("email") @NotBlank String email) {
         boolean taken = authService.emailTaken(email);
-        return new AvailabilityResponse(!taken, taken ? "이미 가입된 이메일입니다" : "");
+        return new AvailabilityResponse(!taken);
     }
 
     /** 고객 닉네임과 사장 가게 이름이 같은 이름 공간이라 API 도 하나다. */
     @GetMapping("/check-name")
     public AvailabilityResponse checkName(@RequestParam("name") @NotBlank String name) {
         boolean taken = authService.displayNameTaken(name);
-        return new AvailabilityResponse(!taken, taken ? "이미 쓰이고 있는 이름입니다" : "사용할 수 있습니다");
+        return new AvailabilityResponse(!taken);
     }
 
     // ---------- 가입 ----------

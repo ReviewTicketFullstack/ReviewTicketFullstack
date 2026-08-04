@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Modal, Button, Input } from "@/shared/ui";
-import { requestPasswordReset } from "@/api/authApi";
+import { checkEmail, requestPasswordReset } from "@/api/authApi";
 import { validateEmail } from "@/shared/lib";
 import { ApiError } from "@/shared/api";
 
@@ -27,6 +27,12 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
     setError("");
 
     try {
+      const availabilityResponse = await checkEmail(email);
+      if (availabilityResponse.available) {
+        setError("등록되지 않은 이메일입니다.");
+        return;
+      }
+
       const response = await requestPasswordReset(email);
       setMessage(response.message);
     } catch (err) {

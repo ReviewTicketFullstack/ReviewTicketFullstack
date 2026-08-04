@@ -34,7 +34,8 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     setPasswordMessage("");
   }, [open, user?.displayName]);
 
-  const isNameChanged = nickname.trim().length > 0 && nickname !== user?.displayName;
+  const isNameChanged =
+    nickname.trim().length > 0 && nickname !== user?.displayName;
   // 이름을 바꾸지 않았다면 중복확인 없이도 닫을 수 있어야 한다.
   const canSave = !isNameChanged || nameChecked === true;
 
@@ -44,7 +45,11 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     try {
       const data = await checkName(nickname.trim());
       setNameChecked(data.available);
-      setNameMessage(data.message);
+      if (data.available) {
+        setNameMessage("사용할 수 있습니다");
+      } else {
+        setNameMessage("이미 쓰이고 있는 이름입니다");
+      }
     } catch (error) {
       setNameChecked(null);
       setNameMessage(
