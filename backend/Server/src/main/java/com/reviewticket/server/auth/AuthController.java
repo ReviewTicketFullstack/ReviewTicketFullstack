@@ -118,7 +118,7 @@ public class AuthController {
         String ip = httpRequest.getRemoteAddr();
         try {
             if (!request.password().equals(request.passwordConfirm())) {
-                throw new IllegalArgumentException("비밀번호가 서로 다릅니다");
+                throw new ValidationException("PASSWORD_MISMATCH", "비밀번호가 서로 다릅니다");
             }
             authService.requestSignUp(request.email(), request.password(),
                     request.role(), request.displayName());

@@ -107,26 +107,26 @@ public class AuthService {
         String displayName = rawDisplayName == null ? "" : rawDisplayName.trim();
 
         if (email.length() > MAX_EMAIL_LENGTH) {
-            throw new IllegalArgumentException("이메일이 너무 깁니다");
+            throw new ValidationException("EMAIL_TOO_LONG", "이메일이 너무 깁니다");
         }
         if (!domainValidator.hasMailServer(email)) {
-            throw new IllegalArgumentException("메일을 받을 수 없는 이메일 주소입니다");
+            throw new ValidationException("EMAIL_DOMAIN_INVALID", "유효하지 않은 이메일 주소입니다");
         }
         if (displayName.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new ValidationException("NAME_REQUIRED",
                     role == Role.OWNER ? "가게 이름을 입력해 주세요" : "닉네임을 입력해 주세요");
         }
         if (displayName.length() > MAX_DISPLAY_NAME_LENGTH) {
-            throw new IllegalArgumentException("이름은 " + MAX_DISPLAY_NAME_LENGTH + "자 이하여야 합니다");
+            throw new ValidationException("NAME_TOO_LONG", "이름은 " + MAX_DISPLAY_NAME_LENGTH + "자 이하여야 합니다");
         }
         PasswordPolicy.require(rawPassword);
 
         // 이미 가입을 마친 회원과의 충돌은 무조건 거부한다.
         if (users.existsByEmail(email)) {
-            throw new ConflictException("이미 가입된 이메일입니다");
+            throw new ConflictException("EMAIL_TAKEN", "이미 가입된 이메일입니다");
         }
         if (users.existsByDisplayName(displayName)) {
-            throw new ConflictException(
+            throw new ConflictException("NAME_TAKEN",
                     role == Role.OWNER ? "이미 쓰이고 있는 가게 이름입니다" : "이미 쓰이고 있는 닉네임입니다");
         }
 
@@ -135,7 +135,7 @@ public class AuthService {
 
         // 다른 사람이 같은 이름으로 대기 중이면 거부한다.
         if (pendings.existsByDisplayName(displayName)) {
-            throw new ConflictException(
+            throw new ConflictException("NAME_TAKEN",
                     role == Role.OWNER ? "이미 쓰이고 있는 가게 이름입니다" : "이미 쓰이고 있는 닉네임입니다");
         }
         // 위 delete 를 DB 에 먼저 반영해야 UNIQUE 제약과 부딪히지 않는다.
