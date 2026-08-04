@@ -74,13 +74,16 @@ export function getVerificationStatus(
   });
 }
 
-export function resendVerification(email: string): Promise<void> {
-  return request<void>("/auth/resend", { method: "POST", query: { email } });
+export function resendVerification(email: string): Promise<MessageResponse> {
+  return request<MessageResponse>("/auth/resend", {
+    method: "POST",
+    query: { email },
+  });
 }
 
 /** 가입되지 않은 이메일이어도 항상 성공한다 — 가입 여부가 새어나가지 않게 하려는 설계다. */
-export function requestPasswordReset(email: string): Promise<void> {
-  return request<void>("/auth/password-reset/request", {
+export function requestPasswordReset(email: string): Promise<MessageResponse> {
+  return request<MessageResponse>("/auth/password-reset/request", {
     method: "POST",
     body: { email },
   });
