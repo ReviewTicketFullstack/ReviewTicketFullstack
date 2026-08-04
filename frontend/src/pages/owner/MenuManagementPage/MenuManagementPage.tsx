@@ -1,8 +1,21 @@
+import { useState } from 'react';
 import { Card } from '@/shared/ui';
 import { MenuListItem } from './MenuListItem';
-import { menuItems } from './mockData';
+import { MenuEditModal } from './MenuEditModal';
+import { menuItems as initialMenuItems, type MenuListItem as MenuListItemType } from './mockData';
 
 export function MenuManagementPage() {
+  const [menuItems, setMenuItems] = useState(initialMenuItems);
+  const [selectedMenu, setSelectedMenu] = useState<MenuListItemType | null>(null);
+
+  const handleApply = (hasReviewEvent: boolean) => {
+    if (!selectedMenu) return;
+    setMenuItems((items) =>
+      items.map((item) => (item.id === selectedMenu.id ? { ...item, hasReviewEvent } : item))
+    );
+    setSelectedMenu(null);
+  };
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
@@ -19,10 +32,18 @@ export function MenuManagementPage() {
       <Card className="overflow-hidden p-0">
         <div className="divide-y divide-gray-200">
           {menuItems.map((menu) => (
-            <MenuListItem key={menu.id} menu={menu} />
+            <MenuListItem key={menu.id} menu={menu} onClick={() => setSelectedMenu(menu)} />
           ))}
         </div>
       </Card>
+
+      {selectedMenu && (
+        <MenuEditModal
+          menu={selectedMenu}
+          onClose={() => setSelectedMenu(null)}
+          onApply={handleApply}
+        />
+      )}
     </div>
   );
 }
