@@ -17,9 +17,9 @@ export function Sidebar() {
         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-neutral-300">
           <span className="text-[10px] text-neutral-500">Image</span>
         </div>
-        <span className="flex-1 truncate font-semibold">{user?.displayName}</span>
+        <span className="flex-1 truncate font-semibold pl-2">{user?.displayName}</span>
       </div>
-      <nav className="flex flex-col gap-5">
+      <nav className="flex flex-col gap-5 pl-4">
         <NavLink to="/stores" className={navLinkClassName}>가게관리</NavLink>
         <NavLink to="/menu" className={navLinkClassName}>메뉴관리</NavLink>
         <NavLink to="/reviews" className={navLinkClassName}>리뷰관리</NavLink>
