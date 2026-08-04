@@ -9,7 +9,19 @@ package com.reviewticket.server.auth;
  */
 public class ConflictException extends RuntimeException {
 
+    private final String errorCode;
+
     public ConflictException(String message) {
+        this(null, message);
+    }
+
+    /** errorCode 는 프론트가 문자열 비교 없이 분기할 수 있는 고정값. 없으면 null. */
+    public ConflictException(String errorCode, String message) {
         super(message);
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
     }
 }

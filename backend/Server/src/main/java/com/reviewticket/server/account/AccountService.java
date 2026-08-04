@@ -7,15 +7,18 @@ import com.reviewticket.server.auth.ConflictException;
 import com.reviewticket.server.auth.UnauthorizedException;
 import com.reviewticket.server.domain.Role;
 import com.reviewticket.server.domain.User;
+import com.reviewticket.server.repository.PendingSignupRepository;
 import com.reviewticket.server.repository.UserRepository;
 
 @Service
 public class AccountService {
 
     private final UserRepository users;
+    private final PendingSignupRepository pendings;
 
-    public AccountService(UserRepository users) {
+    public AccountService(UserRepository users, PendingSignupRepository pendings) {
         this.users = users;
+        this.pendings = pendings;
     }
 
     /**
@@ -40,7 +43,11 @@ public class AccountService {
         if (name.equals(user.getDisplayName())) {
             return name;
         }
-        if (users.existsByDisplayName(name)) {
+        // 가입 대기 중인 이름도 예약된 것으로 본다. 가입 화면의 중복 검사
+        // (AuthService.displayNameTaken)와 같은 기준이어야 한다. users 만 보면
+        // 대기자의 이름을 가로챌 수 있고, 그러면 그 사람이 인증 링크를 눌렀을 때
+        // verify() 에서 충돌이 나 가입 자체가 무산된다.
+        if (users.existsByDisplayName(name) || pendings.existsByDisplayName(name)) {
             throw new ConflictException(
                     user.getRole() == Role.OWNER ? "이미 쓰이고 있는 가게 이름입니다" : "이미 쓰이고 있는 닉네임입니다");
         }

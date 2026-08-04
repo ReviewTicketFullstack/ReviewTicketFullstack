@@ -1,1 +1,1 @@
-export type { User, UserRole, AuthContextType } from "./model";
+export type { User, UserRole, LoginResponse, AuthContextType } from "./model";

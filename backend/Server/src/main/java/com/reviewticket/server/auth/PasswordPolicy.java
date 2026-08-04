@@ -1,12 +1,16 @@
 package com.reviewticket.server.auth;
 
 /**
- * 비밀번호 형식 규칙. 대문자, 소문자, 숫자, 특수문자를 모두 포함하고 8자 이상.
+ * 비밀번호 형식 규칙. 대문자, 소문자, 숫자, 특수문자를 모두 포함하고 6~14자.
  * 예: Abc123!@
  *
  * 프론트에서도 같은 규칙으로 즉시 검사하지만, 여기서 다시 본다.
  * 프론트 검증은 사용자 편의를 위한 것이고 우회할 수 있다 — 규칙을
  * 실제로 강제하는 곳은 서버뿐이다.
+ *
+ * 길이와 허용 특수문자는 프론트의 passwordRegex 와 같은 값이어야 한다.
+ * 서버가 더 엄격하면 화면 안내대로 입력한 사용자가 제출 단계에서 거부당한다
+ * (이전에 서버만 8자 이상이라 6~7자가 그렇게 실패했다).
  *
  * 정규식 하나로 몰아넣지 않고 조건별로 나눈 이유: 어떤 조건이 빠졌는지
  * 사용자에게 알려줄 수 있다. "형식이 틀렸습니다"만 띄우면 뭘 고쳐야
@@ -14,27 +18,33 @@ package com.reviewticket.server.auth;
  */
 public final class PasswordPolicy {
 
-    public static final int MIN_LENGTH = 8;
-    public static final int MAX_LENGTH = 72; // BCrypt 가 72바이트를 넘으면 조용히 잘라낸다
+    public static final int MIN_LENGTH = 6;
 
-    /** 키보드로 칠 수 있는 ASCII 특수문자 전부. */
-    private static final String SPECIALS = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+    /** 프론트와 같은 상한. BCrypt 한계(72바이트)보다 훨씬 짧아 잘림 걱정은 없다. */
+    public static final int MAX_LENGTH = 14;
+
+    /** 프론트 passwordRegex 가 허용하는 특수문자와 같은 집합. */
+    private static final String SPECIALS = "!@#$%^&*";
 
     private PasswordPolicy() {
     }
 
+    /** 어긋난 조건 하나를 (errorCode, message) 쌍으로 담는다. */
+    public record Violation(String errorCode, String message) {
+    }
+
     /**
-     * @return 어긋난 조건을 설명하는 문장, 규칙을 지켰으면 null
+     * @return 어긋난 조건, 규칙을 지켰으면 null
      */
-    public static String validate(String password) {
+    public static Violation validate(String password) {
         if (password == null || password.isEmpty()) {
-            return "비밀번호를 입력해 주세요";
+            return new Violation("PASSWORD_TOO_SHORT", "비밀번호를 입력해 주세요");
         }
         if (password.length() < MIN_LENGTH) {
-            return "비밀번호는 " + MIN_LENGTH + "자 이상이어야 합니다";
+            return new Violation("PASSWORD_TOO_SHORT", "비밀번호는 " + MIN_LENGTH + "자 이상이어야 합니다");
         }
         if (password.length() > MAX_LENGTH) {
-            return "비밀번호는 " + MAX_LENGTH + "자 이하여야 합니다";
+            return new Violation("PASSWORD_TOO_LONG", "비밀번호는 " + MAX_LENGTH + "자 이하여야 합니다");
         }
 
         boolean upper = false;
@@ -53,30 +63,30 @@ public final class PasswordPolicy {
                 special = true;
             } else {
                 // 공백과 한글 등. 허용하면 나중에 본인도 못 치는 비밀번호가 생긴다.
-                return "비밀번호에 쓸 수 없는 문자가 있습니다: '" + c + "'";
+                return new Violation("PASSWORD_INVALID_CHAR", "비밀번호에 쓸 수 없는 문자가 있습니다: '" + c + "'");
             }
         }
 
         if (!upper) {
-            return "비밀번호에 대문자가 필요합니다";
+            return new Violation("PASSWORD_MISSING_UPPER", "비밀번호에 대문자가 필요합니다");
         }
         if (!lower) {
-            return "비밀번호에 소문자가 필요합니다";
+            return new Violation("PASSWORD_MISSING_LOWER", "비밀번호에 소문자가 필요합니다");
         }
         if (!digit) {
-            return "비밀번호에 숫자가 필요합니다";
+            return new Violation("PASSWORD_MISSING_DIGIT", "비밀번호에 숫자가 필요합니다");
         }
         if (!special) {
-            return "비밀번호에 특수문자가 필요합니다";
+            return new Violation("PASSWORD_MISSING_SPECIAL", "비밀번호에 특수문자가 필요합니다");
         }
         return null;
     }
 
     /** 규칙을 어기면 400 으로 나가도록 예외를 던진다. */
     public static void require(String password) {
-        String problem = validate(password);
-        if (problem != null) {
-            throw new IllegalArgumentException(problem);
+        Violation violation = validate(password);
+        if (violation != null) {
+            throw new ValidationException(violation.errorCode(), violation.message());
         }
     }
 }

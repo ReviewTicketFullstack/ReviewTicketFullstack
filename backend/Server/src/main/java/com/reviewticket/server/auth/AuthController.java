@@ -25,14 +25,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final LoginRateLimiter loginRateLimiter;
-    private final SignupRateLimiter signupRateLimiter;
     private final AuthAttemptLogger attemptLogger;
 
     public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter,
-            SignupRateLimiter signupRateLimiter, AuthAttemptLogger attemptLogger) {
+            AuthAttemptLogger attemptLogger) {
         this.authService = authService;
         this.loginRateLimiter = loginRateLimiter;
-        this.signupRateLimiter = signupRateLimiter;
         this.attemptLogger = attemptLogger;
     }
 
@@ -66,7 +64,7 @@ public class AuthController {
             String displayName, Role role) {
     }
 
-    public record AvailabilityResponse(boolean available, String message) {
+    public record AvailabilityResponse(boolean available) {
     }
 
     public record VerifiedResponse(boolean verified) {
@@ -93,19 +91,24 @@ public class AuthController {
     public record MessageResponse(String message) {
     }
 
+    /** password-reset/request 성공 응답. code 값은 항상 "YES_EXISTING_EMAIL". */
+    public record ResetRequestResponse(String code) {
+    }
+
     // ---------- 중복 검사 ----------
 
+    /** 사용 가능 여부만 돌려준다. 문구는 프론트가 직접 채운다. */
     @GetMapping("/check-email")
     public AvailabilityResponse checkEmail(@RequestParam("email") @NotBlank String email) {
         boolean taken = authService.emailTaken(email);
-        return new AvailabilityResponse(!taken, taken ? "이미 가입된 이메일입니다" : "사용할 수 있습니다");
+        return new AvailabilityResponse(!taken);
     }
 
     /** 고객 닉네임과 사장 가게 이름이 같은 이름 공간이라 API 도 하나다. */
     @GetMapping("/check-name")
     public AvailabilityResponse checkName(@RequestParam("name") @NotBlank String name) {
         boolean taken = authService.displayNameTaken(name);
-        return new AvailabilityResponse(!taken, taken ? "이미 쓰이고 있는 이름입니다" : "사용할 수 있습니다");
+        return new AvailabilityResponse(!taken);
     }
 
     // ---------- 가입 ----------
@@ -117,10 +120,9 @@ public class AuthController {
     @PostMapping(value = "/signup", consumes = MediaType.APPLICATION_JSON_VALUE)
     public SignUpResponse signUp(@Valid @RequestBody SignUpRequest request, HttpServletRequest httpRequest) {
         String ip = httpRequest.getRemoteAddr();
-        signupRateLimiter.checkAllowed(ip);
         try {
             if (!request.password().equals(request.passwordConfirm())) {
-                throw new IllegalArgumentException("비밀번호가 서로 다릅니다");
+                throw new ValidationException("PASSWORD_MISMATCH", "비밀번호가 서로 다릅니다");
             }
             authService.requestSignUp(request.email(), request.password(),
                     request.role(), request.displayName());
@@ -135,7 +137,6 @@ public class AuthController {
 
     @PostMapping("/resend")
     public void resend(@RequestParam("email") @NotBlank String email, HttpServletRequest httpRequest) {
-        signupRateLimiter.checkAllowed(httpRequest.getRemoteAddr());
         authService.resendVerification(email);
     }
 
@@ -163,11 +164,20 @@ public class AuthController {
 
     // ---------- 비밀번호 재설정 ----------
 
-    /** 재설정 요청. 이메일 존재 여부와 무관하게 항상 200 (열거 방지). */
+    /**
+     * 재설정 요청. 존재 여부를 프론트에 그대로 알려준다.
+     *
+     * 원래는 계정 열거 방지를 위해 존재 여부와 무관하게 항상 같은 응답을
+     * 줬는데, "가입되지 않은 이메일입니다" 를 화면에 보여주는 UX 를 위해
+     * 의도적으로 그 방어를 풀기로 했다(제품 결정, 2026-08-04).
+     */
     @PostMapping(value = "/password-reset/request", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public MessageResponse requestPasswordReset(@Valid @RequestBody ResetRequest request) {
-        authService.requestPasswordReset(request.email());
-        return new MessageResponse("입력하신 이메일이 가입돼 있다면 재설정 메일을 보냈습니다.");
+    public ResetRequestResponse requestPasswordReset(@Valid @RequestBody ResetRequest request) {
+        boolean exists = authService.requestPasswordReset(request.email());
+        if (!exists) {
+            throw new ValidationException("NO_EXISTING_EMAIL", "가입되지 않은 이메일입니다");
+        }
+        return new ResetRequestResponse("YES_EXISTING_EMAIL");
     }
 
     /** 재설정 메일 링크가 여는 페이지. GET 은 부작용 없음. */
