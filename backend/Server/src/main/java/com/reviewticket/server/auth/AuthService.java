@@ -264,35 +264,35 @@ public class AuthService {
     /**
      * 재설정 요청. 토큰을 만들고 본인 이메일로 재설정 메일을 보낸다.
      *
-     * 이메일 존재 여부와 무관하게 항상 조용히 끝낸다 — 여기서 "없는 이메일"을
-     * 알려주면 어떤 주소가 가입돼 있는지 알아낼 수 있다. 존재하지 않으면
-     * 아무것도 하지 않고, 프론트에는 동일하게 "메일을 보냈다"고 표시한다.
+     * 존재 여부를 이제 그대로 알려준다(제품 결정, 2026-08-04) — 열거 방지보다
+     * "가입되지 않은 이메일입니다" 라는 UX 를 우선하기로 했다.
+     *
+     * @return 그 이메일로 가입된 회원이 있었는지
      */
     @Transactional
-    public void requestPasswordReset(String rawEmail) {
+    public boolean requestPasswordReset(String rawEmail) {
         Optional<User> found = users.findByEmail(normalizeEmail(rawEmail));
         if (found.isEmpty()) {
-            return;
+            return false;
         }
         User user = found.get();
 
-        // 재발송 간격 제한. 쿨다운이면 조용히 끝낸다 — 예외를 던지면 "존재하는
-        // 이메일 + 최근 요청"만 400 이 나가고 없는 이메일은 200 이라, 응답 차이로
-        // 가입 여부를 알아낼 수 있다(계정 열거). 열거를 막으려면 존재하든 아니든
-        // 쿨다운이든 항상 같은 200 을 줘야 한다. 여기서는 메일만 보내지 않고 리턴.
+        // 재발송 간격 제한. 쿨다운이면 메일만 다시 안 보내고 조용히 끝낸다 —
+        // 계정은 실제로 존재하므로 존재 여부 응답(true)은 그대로 준다.
         boolean recentlySent = resetTokens.findTopByUserOrderByIdDesc(user)
                 .map(PasswordResetToken::getCreatedAt)
                 .map(createdAt -> createdAt != null
                         && createdAt.isAfter(LocalDateTime.now().minus(RESEND_COOLDOWN)))
                 .orElse(false);
         if (recentlySent) {
-            return;
+            return true;
         }
 
         String token = newToken();
         resetTokens.save(new PasswordResetToken(
                 user, token, LocalDateTime.now().plus(properties.auth().verificationTtl())));
         events.publishEvent(new PasswordResetMailRequested(user.getEmail(), token));
+        return true;
     }
 
     /**

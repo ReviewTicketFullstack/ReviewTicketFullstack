@@ -2,11 +2,16 @@ import type { MenuListItem as MenuListItemType } from './mockData';
 
 interface MenuListItemProps {
   menu: MenuListItemType;
+  onClick?: () => void;
 }
 
-export function MenuListItem({ menu }: MenuListItemProps) {
+export function MenuListItem({ menu, onClick }: MenuListItemProps) {
   return (
-    <div className="flex w-full gap-4 p-4 text-left">
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full gap-4 p-4 text-left hover:bg-neutral-50"
+    >
       <div className="flex-shrink-0">
         <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-gray-200">
           <span className="text-xs text-gray-400">Image</span>
@@ -26,6 +31,6 @@ export function MenuListItem({ menu }: MenuListItemProps) {
           {menu.price.toLocaleString('ko-KR')}원
         </span>
       </div>
-    </div>
+    </button>
   );
 }

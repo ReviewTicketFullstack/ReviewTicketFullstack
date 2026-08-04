@@ -6,7 +6,7 @@ import { getVerificationStatus, resendVerification } from "@/api/authApi";
 import { ApiError } from "@/shared/api";
 import { Mail, MailCheck } from "lucide-react";
 
-/** 메일 인증은 다른 창에서 끝난다 — 이 화면은 주기적으로 물어보는 수밖에 없다. */
+/** 비밀번호 재설정 시 메일 인증 관련 로직 */
 const STATUS_POLL_INTERVAL_MS = 5000;
 
 export function EmailVerificationPage() {
