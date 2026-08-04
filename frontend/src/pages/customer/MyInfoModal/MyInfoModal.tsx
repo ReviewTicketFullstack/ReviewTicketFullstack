@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal } from "@/shared/ui/Modal/Modal";
 import { Button } from "@/shared/ui";
+import { InputHelperText } from "@/shared/ui/InputHelperText";
+import { useAuth } from "@/app/providers";
+import { changeDisplayName } from "@/api/accountApi";
+import { checkName, requestPasswordReset } from "@/api/authApi";
+import { ApiError } from "@/shared/api";
 import { ArrowLeft } from "lucide-react";
 
 export interface MyInfoModalProps {
@@ -9,19 +14,91 @@ export interface MyInfoModalProps {
 }
 
 export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
-  const [nickname, setNickname] = useState("사용자");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [isNicknameDuplicate, setIsNicknameDuplicate] = useState(false);
+  const { user, updateDisplayName } = useAuth();
+  const [nickname, setNickname] = useState(user?.displayName ?? "");
+  const [nameChecked, setNameChecked] = useState<boolean | null>(null);
+  const [nameMessage, setNameMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
-  const handleDuplicateCheck = () => {
-    // TODO: API 호출로 중복 확인
-    setIsNicknameDuplicate(false);
+  // 모달을 다시 열면 서버가 알고 있는 이름에서 시작한다.
+  useEffect(() => {
+    if (!open) return;
+
+    setNickname(user?.displayName ?? "");
+    setNameChecked(null);
+    setNameMessage("");
+    setSaveError("");
+    setPasswordMessage("");
+  }, [open, user?.displayName]);
+
+  const isNameChanged = nickname.trim().length > 0 && nickname !== user?.displayName;
+  // 이름을 바꾸지 않았다면 중복확인 없이도 닫을 수 있어야 한다.
+  const canSave = !isNameChanged || nameChecked === true;
+
+  const handleDuplicateCheck = async () => {
+    if (!isNameChanged) return;
+
+    try {
+      const data = await checkName(nickname.trim());
+      setNameChecked(data.available);
+      setNameMessage(data.message);
+    } catch (error) {
+      setNameChecked(null);
+      setNameMessage(
+        error instanceof ApiError
+          ? error.message
+          : "이름 확인 중 오류가 발생했습니다.",
+      );
+    }
   };
 
-  const handleSave = () => {
-    // TODO: API 호출로 정보 저장
-    onClose();
+  const handleSave = async () => {
+    if (!isNameChanged) {
+      onClose();
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError("");
+
+    try {
+      const result = await changeDisplayName(nickname.trim());
+      updateDisplayName(result.displayName);
+      onClose();
+    } catch (error) {
+      setSaveError(
+        error instanceof ApiError ? error.message : "저장하지 못했습니다.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  /**
+   * 로그인한 상태에서 바로 비밀번호를 바꾸는 API 는 없다.
+   * 서버는 메일 링크로 본인을 한 번 더 확인하는 재설정 흐름만 제공한다.
+   */
+  const handlePasswordReset = async () => {
+    if (!user?.email) return;
+
+    setIsSendingReset(true);
+    setPasswordMessage("");
+
+    try {
+      const response = await requestPasswordReset(user.email);
+      setPasswordMessage(response.message);
+    } catch (error) {
+      setPasswordMessage(
+        error instanceof ApiError
+          ? error.message
+          : "재설정 메일을 보내지 못했습니다.",
+      );
+    } finally {
+      setIsSendingReset(false);
+    }
   };
 
   return (
@@ -51,7 +128,12 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
             <input
               type="text"
               value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                setNameChecked(null);
+                setNameMessage("");
+                setSaveError("");
+              }}
               placeholder="닉네임을 입력하세요"
               className="flex-1 px-3 py-2 border border-line-100 rounded-lg text-base focus:outline-none focus:border-brand-800 text-ink-900"
             />
@@ -59,14 +141,22 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
               variant="secondary"
               size="medium"
               onClick={handleDuplicateCheck}
+              disabled={!isNameChanged}
             >
               중복확인
             </Button>
           </div>
-          {isNicknameDuplicate && (
-            <p className="text-xs text-brand-900 mt-2">
-              이미 사용 중인 닉네임입니다.
-            </p>
+          {nameMessage && (
+            <div className="mt-2">
+              <InputHelperText variant={nameChecked ? "info" : "error"}>
+                {nameMessage}
+              </InputHelperText>
+            </div>
+          )}
+          {saveError && (
+            <div className="mt-2">
+              <InputHelperText variant="error">{saveError}</InputHelperText>
+            </div>
           )}
         </div>
 
@@ -75,24 +165,21 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
           <label className="block text-sm font-semibold text-ink-900">
             비밀번호 변경
           </label>
-          <div>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="현재 비밀번호"
-              className="w-full px-3 py-2 border border-line-100 rounded-lg text-base focus:outline-none focus:border-brand-800 text-ink-900"
-            />
-          </div>
-          <div>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="새 비밀번호"
-              className="w-full px-3 py-2 border border-line-100 rounded-lg text-base focus:outline-none focus:border-brand-800 text-ink-900"
-            />
-          </div>
+          <p className="text-xs text-ink-700 leading-relaxed">
+            본인 확인을 위해 가입 이메일로 재설정 링크를 보내드려요.
+          </p>
+          <Button
+            variant="secondary"
+            size="medium"
+            fullWidth
+            onClick={handlePasswordReset}
+            disabled={isSendingReset || !user?.email}
+          >
+            {isSendingReset ? "보내는 중..." : "비밀번호 재설정 메일 받기"}
+          </Button>
+          {passwordMessage && (
+            <InputHelperText>{passwordMessage}</InputHelperText>
+          )}
         </div>
 
         {/* Ticket Information */}
@@ -104,8 +191,14 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
 
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-line-100">
-        <Button variant="primary" size="large" fullWidth onClick={handleSave}>
-          저장
+        <Button
+          variant="primary"
+          size="large"
+          fullWidth
+          onClick={handleSave}
+          disabled={!canSave || isSaving}
+        >
+          {isSaving ? "저장 중..." : "저장"}
         </Button>
       </div>
     </Modal>

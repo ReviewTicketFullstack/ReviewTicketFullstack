@@ -25,14 +25,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final LoginRateLimiter loginRateLimiter;
-    private final SignupRateLimiter signupRateLimiter;
     private final AuthAttemptLogger attemptLogger;
 
     public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter,
-            SignupRateLimiter signupRateLimiter, AuthAttemptLogger attemptLogger) {
+            AuthAttemptLogger attemptLogger) {
         this.authService = authService;
         this.loginRateLimiter = loginRateLimiter;
-        this.signupRateLimiter = signupRateLimiter;
         this.attemptLogger = attemptLogger;
     }
 
@@ -95,10 +93,14 @@ public class AuthController {
 
     // ---------- 중복 검사 ----------
 
+    /**
+     * 사용 가능할 때는 메시지를 비워 둔다 — 프론트가 그 경우 자체 문구
+     * ("이용 가능한 이메일입니다")를 보여주므로, 여기서도 채우면 같은 뜻이 중복 표시된다.
+     */
     @GetMapping("/check-email")
     public AvailabilityResponse checkEmail(@RequestParam("email") @NotBlank String email) {
         boolean taken = authService.emailTaken(email);
-        return new AvailabilityResponse(!taken, taken ? "이미 가입된 이메일입니다" : "사용할 수 있습니다");
+        return new AvailabilityResponse(!taken, taken ? "이미 가입된 이메일입니다" : "");
     }
 
     /** 고객 닉네임과 사장 가게 이름이 같은 이름 공간이라 API 도 하나다. */
@@ -117,7 +119,6 @@ public class AuthController {
     @PostMapping(value = "/signup", consumes = MediaType.APPLICATION_JSON_VALUE)
     public SignUpResponse signUp(@Valid @RequestBody SignUpRequest request, HttpServletRequest httpRequest) {
         String ip = httpRequest.getRemoteAddr();
-        signupRateLimiter.checkAllowed(ip);
         try {
             if (!request.password().equals(request.passwordConfirm())) {
                 throw new IllegalArgumentException("비밀번호가 서로 다릅니다");
@@ -135,7 +136,6 @@ public class AuthController {
 
     @PostMapping("/resend")
     public void resend(@RequestParam("email") @NotBlank String email, HttpServletRequest httpRequest) {
-        signupRateLimiter.checkAllowed(httpRequest.getRemoteAddr());
         authService.resendVerification(email);
     }
 
