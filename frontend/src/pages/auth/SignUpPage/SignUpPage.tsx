@@ -6,7 +6,7 @@ import { ApiError } from "@/shared/api";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
 import { useEffect, useState } from "react";
 
-type ErrorCode =
+type SignupErrorCode =
   | "EMAIL_TOO_LONG"
   | "EMAIL_DOMAIN_INVALID"
   | "NAME_REQUIRED"
@@ -22,8 +22,30 @@ type ErrorCode =
   | "EMAIL_TAKEN"
   | "NAME_TAKEN";
 
-function getErrorMessage(errorCode: string, selectedRole: string): string {
-  const baseMessages: Record<string, string> = {
+function isSignupErrorCode(value: string): value is SignupErrorCode {
+  return [
+    "EMAIL_TOO_LONG",
+    "EMAIL_DOMAIN_INVALID",
+    "NAME_REQUIRED",
+    "NAME_TOO_LONG",
+    "PASSWORD_TOO_SHORT",
+    "PASSWORD_TOO_LONG",
+    "PASSWORD_INVALID_CHAR",
+    "PASSWORD_MISSING_UPPER",
+    "PASSWORD_MISSING_LOWER",
+    "PASSWORD_MISSING_DIGIT",
+    "PASSWORD_MISSING_SPECIAL",
+    "PASSWORD_MISMATCH",
+    "EMAIL_TAKEN",
+    "NAME_TAKEN",
+  ].includes(value);
+}
+
+function getErrorMessage(
+  errorCode: SignupErrorCode,
+  selectedRole: string,
+): string {
+  const baseMessages = {
     EMAIL_TOO_LONG: "이메일이 너무 깁니다",
     EMAIL_DOMAIN_INVALID: "유효하지 않은 이메일 주소입니다",
     NAME_REQUIRED:
@@ -71,8 +93,8 @@ export function SignUpPage() {
     const requestUrl = "/api/auth/signup";
     const requestBody = {
       email: data.email,
-      password: "***" as any,
-      passwordConfirm: "***" as any,
+      password: "***",
+      passwordConfirm: "***",
       role: selectedRole,
       displayName:
         (selectedRole === "CUSTOMER" ? data.nickname : data.storeName) ?? "",
@@ -114,10 +136,16 @@ export function SignUpPage() {
       if (err instanceof ApiError) {
         console.groupCollapsed("[Signup] Error Response");
         console.log("Status:", err.status);
-        console.log("Error code:", err.error);
+        console.log("Error code:", err.errorCode);
         console.log("Raw message:", err.message);
 
-        const errorCode = err.error || "UNKNOWN";
+        const errorCode = err.errorCode;
+
+        if (!errorCode || !isSignupErrorCode(errorCode)) {
+          setError("회원가입 중 오류가 발생했습니다.");
+          return;
+        }
+
         const uiMessage = getErrorMessage(errorCode, selectedRole);
         console.log("Parsed errorCode:", errorCode);
         console.log("Mapped UI message:", uiMessage);
@@ -129,8 +157,6 @@ export function SignUpPage() {
         console.log("Error type:", err instanceof Error ? "Error" : typeof err);
         console.log("Error details:", err);
         console.groupEnd();
-
-        setError("회원가입 중 오류가 발생했습니다.");
       }
     }
   };

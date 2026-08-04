@@ -125,9 +125,6 @@ async function readBody(response: Response) {
 // Auth API
 // ============================================================================
 
-// TODO: mock mode 제거
-const MOCK_SIGNUP_ENABLED = true;
-
 export interface LoginRequest {
   email: string;
   password: string;
@@ -162,137 +159,31 @@ export function login(data: LoginRequest): Promise<LoginResponse> {
   return request<LoginResponse>("/auth/login", { method: "POST", body: data });
 }
 
-export async function signUp(data: SignUpRequest): Promise<SignUpResponse> {
-  if (MOCK_SIGNUP_ENABLED) {
-    return handleMockSignUp(data);
-  }
-
+export function signUp(data: SignUpRequest): Promise<SignUpResponse> {
   return request<SignUpResponse>("/auth/signup", {
     method: "POST",
     body: data,
   });
 }
 
-async function handleMockSignUp(data: SignUpRequest): Promise<SignUpResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // TODO: remove mock mode
-  console.groupCollapsed("[Signup] Mock Mode - Simulating response");
-  console.log("Input data:", {
-    email: data.email,
-    role: data.role,
-    displayName: data.displayName,
-    passwordMatch: data.password === data.passwordConfirm,
-  });
-
-  if (data.email.toLowerCase().includes("taken")) {
-    console.log("Mock result: EMAIL_TAKEN");
-    console.groupEnd();
-    throw new ApiError("이미 가입된 이메일입니다", 400, false, "EMAIL_TAKEN");
-  }
-
-  if (data.displayName.toLowerCase().includes("taken")) {
-    console.log("Mock result: NAME_TAKEN");
-    console.groupEnd();
-    throw new ApiError(
-      data.role === "CUSTOMER"
-        ? "이미 쓰이고 있는 닉네임입니다"
-        : "이미 쓰이고 있는 가게 이름입니다",
-      400,
-      false,
-      "NAME_TAKEN",
-    );
-  }
-
-  if (data.password !== data.passwordConfirm) {
-    console.log("Mock result: PASSWORD_MISMATCH");
-    console.groupEnd();
-    throw new ApiError(
-      "비밀번호가 서로 다릅니다",
-      400,
-      false,
-      "PASSWORD_MISMATCH",
-    );
-  }
-
-  if (!data.email.includes("@")) {
-    console.log("Mock result: EMAIL_DOMAIN_INVALID");
-    console.groupEnd();
-    throw new ApiError(
-      "유효하지 않은 이메일 주소입니다",
-      400,
-      false,
-      "EMAIL_DOMAIN_INVALID",
-    );
-  }
-
-  console.log("Mock result: Success");
-  console.groupEnd();
-  return {
-    email: data.email.toLowerCase().trim(),
-    message:
-      "인증 메일을 보냈습니다. 메일의 링크를 눌러야 회원가입이 완료됩니다.",
-  };
-}
-
-export async function checkEmail(
+export function checkEmail(
   email: string,
   signal?: AbortSignal,
 ): Promise<AvailabilityResponse> {
-  if (MOCK_SIGNUP_ENABLED) {
-    return handleMockCheckEmail(email);
-  }
-
   return request<AvailabilityResponse>("/auth/check-email", {
     query: { email },
     signal,
   });
 }
 
-export async function checkName(
+export function checkName(
   name: string,
   signal?: AbortSignal,
 ): Promise<AvailabilityResponse> {
-  if (MOCK_SIGNUP_ENABLED) {
-    return handleMockCheckName(name);
-  }
-
   return request<AvailabilityResponse>("/auth/check-name", {
     query: { name },
     signal,
   });
-}
-
-async function handleMockCheckEmail(
-  email: string,
-): Promise<AvailabilityResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  // TODO: remove mock mode
-  console.groupCollapsed("[Signup] Mock Mode - checkEmail");
-  console.log("Email:", email);
-
-  const available = !email.toLowerCase().includes("taken");
-  console.log("Available:", available);
-  console.groupEnd();
-
-  return { available };
-}
-
-async function handleMockCheckName(
-  name: string,
-): Promise<AvailabilityResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  // TODO: remove mock mode
-  console.groupCollapsed("[Signup] Mock Mode - checkName");
-  console.log("Name:", name);
-
-  const available = !name.toLowerCase().includes("taken");
-  console.log("Available:", available);
-  console.groupEnd();
-
-  return { available };
 }
 
 export function getVerificationStatus(
