@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Modal, Button, Input } from "@/shared/ui";
-import { checkEmail, requestPasswordReset } from "@/api/authApi";
+import { checkEmail, requestPasswordReset } from "@/shared/api/api";
 import { validateEmail } from "@/shared/lib";
 import { ApiError } from "@/shared/api";
 
@@ -13,7 +13,10 @@ export interface ForgotPasswordModalProps {
  * 재설정 메일만 요청한다. 실제 비밀번호 변경은 메일 링크가 여는
  * 서버 페이지(GET /api/auth/password-reset)에서 이뤄진다.
  */
-export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps) {
+export function ForgotPasswordModal({
+  open,
+  onClose,
+}: ForgotPasswordModalProps) {
   const [email, setEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState("");
@@ -27,17 +30,15 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
     setError("");
 
     try {
-      const availabilityResponse = await checkEmail(email);
-      if (availabilityResponse.available) {
-        setError("등록되지 않은 이메일입니다.");
-        return;
-      }
-
       const response = await requestPasswordReset(email);
-      setMessage(response.message);
+      if (response.code === "YES_EXISTING_EMAIL") {
+        setMessage("가입한 이메일로 재설정 링크를 보냈습니다.");
+      }
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : "재설정 메일을 보내지 못했습니다.",
+        err instanceof ApiError
+          ? err.message
+          : "재설정 메일을 보내지 못했습니다.",
       );
     } finally {
       setIsSending(false);

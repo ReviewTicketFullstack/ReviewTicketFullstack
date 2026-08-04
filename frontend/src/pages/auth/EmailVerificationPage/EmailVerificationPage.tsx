@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Button } from "@/shared/ui";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
-import { getVerificationStatus, resendVerification } from "@/api/authApi";
+import { getVerificationStatus, resendVerification } from "@/shared/api/api";
 import { ApiError } from "@/shared/api";
 import { Mail, MailCheck } from "lucide-react";
 

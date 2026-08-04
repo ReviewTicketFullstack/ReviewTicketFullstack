@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/providers";
-import { login } from "@/api/authApi";
+import { login } from "@/shared/api/api";
 import { ApiError } from "@/shared/api";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";

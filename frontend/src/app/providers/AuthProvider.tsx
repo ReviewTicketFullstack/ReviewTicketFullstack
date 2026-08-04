@@ -1,6 +1,17 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { User, UserRole, LoginResponse, AuthContextType } from "@/entities/user";
-import { getMe } from "@/api/accountApi";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import type {
+  User,
+  UserRole,
+  LoginResponse,
+  AuthContextType,
+} from "@/entities/user";
+import { getMe } from "@/shared/api/api";
 import { clearToken, getToken, saveToken } from "@/shared/lib/token";
 
 const AuthContext = createContext<AuthContextType | null>(null);

@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { Input, Button } from "@/shared/ui";
 import { validatePassword, validateEmail } from "@/shared/lib/validation";
 import type { UserRole } from "@/entities/user";
+import { checkEmail, checkName } from "@/shared/api/api";
 
 export interface SignUpFormProps {
   authType: UserRole;
@@ -22,9 +23,13 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [nickname, setNickname] = useState("");
-  const [nicknameDuplicated, setNicknameDuplicated] = useState<boolean | null>(null);
+  const [nicknameDuplicated, setNicknameDuplicated] = useState<boolean | null>(
+    null,
+  );
   const [storeName, setStoreName] = useState("");
-  const [storeNameDuplicated, setStoreNameDuplicated] = useState<boolean | null>(null);
+  const [storeNameDuplicated, setStoreNameDuplicated] = useState<
+    boolean | null
+  >(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const isPasswordValid = validatePassword(password);
@@ -50,9 +55,14 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   // TODO: remove debug logs
   useEffect(() => {
     if (emailDuplicated !== null) {
-      console.group('📍 SignUpForm Helper Text - Email');
-      console.log('State: emailDuplicated =', emailDuplicated);
-      console.log('Will render:', emailDuplicated ? '이미 가입된 이메일입니다.' : '이용 가능한 이메일입니다.');
+      console.group("📍 SignUpForm Helper Text - Email");
+      console.log("State: emailDuplicated =", emailDuplicated);
+      console.log(
+        "Will render:",
+        emailDuplicated
+          ? "이미 가입된 이메일입니다."
+          : "이용 가능한 이메일입니다.",
+      );
       console.groupEnd();
     }
   }, [emailDuplicated]);
@@ -60,9 +70,14 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   // TODO: remove debug logs
   useEffect(() => {
     if (nicknameDuplicated !== null) {
-      console.group('📍 SignUpForm Helper Text - Nickname');
-      console.log('State: nicknameDuplicated =', nicknameDuplicated);
-      console.log('Will render:', nicknameDuplicated ? '이미 사용 중인 이름입니다.' : '이용 가능한 이름입니다.');
+      console.group("📍 SignUpForm Helper Text - Nickname");
+      console.log("State: nicknameDuplicated =", nicknameDuplicated);
+      console.log(
+        "Will render:",
+        nicknameDuplicated
+          ? "이미 사용 중인 이름입니다."
+          : "이용 가능한 이름입니다.",
+      );
       console.groupEnd();
     }
   }, [nicknameDuplicated]);
@@ -70,9 +85,14 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   // TODO: remove debug logs
   useEffect(() => {
     if (storeNameDuplicated !== null) {
-      console.group('📍 SignUpForm Helper Text - StoreName');
-      console.log('State: storeNameDuplicated =', storeNameDuplicated);
-      console.log('Will render:', storeNameDuplicated ? '이미 사용 중인 이름입니다.' : '이용 가능한 이름입니다.');
+      console.group("📍 SignUpForm Helper Text - StoreName");
+      console.log("State: storeNameDuplicated =", storeNameDuplicated);
+      console.log(
+        "Will render:",
+        storeNameDuplicated
+          ? "이미 사용 중인 이름입니다."
+          : "이용 가능한 이름입니다.",
+      );
       console.groupEnd();
     }
   }, [storeNameDuplicated]);
@@ -81,18 +101,13 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
     if (!isEmailValid) return;
 
     try {
-      const response = await fetch(
-        `/api/auth/check-email?email=${encodeURIComponent(email)}`,
-      );
-
-      const data = await response.json();
+      const data = await checkEmail(email);
 
       // TODO: remove debug logs
-      console.group('🔍 check-email API Response');
-      console.log('Endpoint:', 'check-email');
-      console.log('Full Response:', data);
-      console.log('Available:', data.available);
-      console.log('Message:', data.message);
+      console.group("🔍 check-email API Response");
+      console.log("Endpoint:", "check-email");
+      console.log("Full Response:", data);
+      console.log("Available:", data.available);
       console.groupEnd();
 
       setEmailDuplicated(!data.available);
@@ -105,18 +120,13 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
     if (!nickname) return;
 
     try {
-      const response = await fetch(
-        `/api/auth/check-name?name=${encodeURIComponent(nickname)}`,
-      );
-
-      const data = await response.json();
+      const data = await checkName(nickname);
 
       // TODO: remove debug logs
-      console.group('🔍 check-name API Response (nickname)');
-      console.log('Endpoint:', 'check-name');
-      console.log('Full Response:', data);
-      console.log('Available:', data.available);
-      console.log('Message:', data.message);
+      console.group("🔍 check-name API Response (nickname)");
+      console.log("Endpoint:", "check-name");
+      console.log("Full Response:", data);
+      console.log("Available:", data.available);
       console.groupEnd();
 
       setNicknameDuplicated(!data.available);
@@ -129,18 +139,13 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
     if (!storeName) return;
 
     try {
-      const response = await fetch(
-        `/api/auth/check-name?name=${encodeURIComponent(storeName)}`,
-      );
-
-      const data = await response.json();
+      const data = await checkName(storeName);
 
       // TODO: remove debug logs
-      console.group('🔍 check-name API Response (storeName)');
-      console.log('Endpoint:', 'check-name');
-      console.log('Full Response:', data);
-      console.log('Available:', data.available);
-      console.log('Message:', data.message);
+      console.group("🔍 check-name API Response (storeName)");
+      console.log("Endpoint:", "check-name");
+      console.log("Full Response:", data);
+      console.log("Available:", data.available);
       console.groupEnd();
 
       setStoreNameDuplicated(!data.available);

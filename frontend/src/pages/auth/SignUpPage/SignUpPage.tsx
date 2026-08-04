@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/providers";
 import { SignUpForm, type SignUpFormData } from "../SignUpForm";
-import { signUp } from "@/api/authApi";
+import { signUp } from "@/shared/api/api";
 import { ApiError } from "@/shared/api";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
 import { useEffect, useState } from "react";
@@ -26,7 +26,10 @@ function getErrorMessage(errorCode: string, selectedRole: string): string {
   const baseMessages: Record<string, string> = {
     EMAIL_TOO_LONG: "이메일이 너무 깁니다",
     EMAIL_DOMAIN_INVALID: "유효하지 않은 이메일 주소입니다",
-    NAME_REQUIRED: selectedRole === "CUSTOMER" ? "닉네임을 입력해 주세요" : "가게 이름을 입력해 주세요",
+    NAME_REQUIRED:
+      selectedRole === "CUSTOMER"
+        ? "닉네임을 입력해 주세요"
+        : "가게 이름을 입력해 주세요",
     NAME_TOO_LONG: "이름은 14자 이하여야 합니다",
     PASSWORD_TOO_SHORT: "비밀번호는 6자 이상이어야 합니다",
     PASSWORD_TOO_LONG: "비밀번호는 14자 이하여야 합니다",
@@ -37,7 +40,10 @@ function getErrorMessage(errorCode: string, selectedRole: string): string {
     PASSWORD_MISSING_SPECIAL: "비밀번호에 특수문자가 필요합니다",
     PASSWORD_MISMATCH: "비밀번호가 서로 다릅니다",
     EMAIL_TAKEN: "이미 가입된 이메일입니다",
-    NAME_TAKEN: selectedRole === "CUSTOMER" ? "이미 쓰이고 있는 닉네임입니다" : "이미 쓰이고 있는 가게 이름입니다",
+    NAME_TAKEN:
+      selectedRole === "CUSTOMER"
+        ? "이미 쓰이고 있는 닉네임입니다"
+        : "이미 쓰이고 있는 가게 이름입니다",
   };
 
   return baseMessages[errorCode] || "회원가입 중 오류가 발생했습니다.";
@@ -97,9 +103,12 @@ export function SignUpPage() {
       console.groupEnd();
 
       // 서버가 정규화한 이메일(소문자·공백 제거)을 그대로 들고 간다.
-      navigate(`/email-verification?email=${encodeURIComponent(response.email)}`, {
-        replace: true,
-      });
+      navigate(
+        `/email-verification?email=${encodeURIComponent(response.email)}`,
+        {
+          replace: true,
+        },
+      );
     } catch (err) {
       // TODO: remove debug logs
       if (err instanceof ApiError) {

@@ -1,2 +1,2 @@
-export { request, ApiError } from "./client";
-export type { RequestOptions } from "./client";
+export { request, ApiError } from "@/shared/api/api";
+export type { RequestOptions } from "@/shared/api/api";

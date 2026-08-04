@@ -3,8 +3,8 @@ import { Modal } from "@/shared/ui/Modal/Modal";
 import { Button } from "@/shared/ui";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
 import { useAuth } from "@/app/providers";
-import { changeDisplayName } from "@/api/accountApi";
-import { checkName, requestPasswordReset } from "@/api/authApi";
+import { changeDisplayName } from "@/shared/api/api";
+import { checkName, requestPasswordReset } from "@/shared/api/api";
 import { ApiError } from "@/shared/api";
 import { ArrowLeft } from "lucide-react";
 
@@ -37,10 +37,13 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
   // TODO: remove debug logs
   useEffect(() => {
     if (nameChecked !== null) {
-      console.group('📍 MyInfoModal Helper Text - Name');
-      console.log('State: nameChecked =', nameChecked);
-      console.log('Message:', nameMessage);
-      console.log('Will render:', nameChecked ? '사용할 수 있습니다' : '이미 쓰이고 있는 이름입니다');
+      console.group("📍 MyInfoModal Helper Text - Name");
+      console.log("State: nameChecked =", nameChecked);
+      console.log("Message:", nameMessage);
+      console.log(
+        "Will render:",
+        nameChecked ? "사용할 수 있습니다" : "이미 쓰이고 있는 이름입니다",
+      );
       console.groupEnd();
     }
   }, [nameChecked, nameMessage]);
@@ -57,11 +60,10 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
       const data = await checkName(nickname.trim());
 
       // TODO: remove debug logs
-      console.group('🔍 check-name API Response (MyInfoModal)');
-      console.log('Endpoint:', 'check-name');
-      console.log('Full Response:', data);
-      console.log('Available:', data.available);
-      console.log('Message:', data.message);
+      console.group("🔍 check-name API Response (MyInfoModal)");
+      console.log("Endpoint:", "check-name");
+      console.log("Full Response:", data);
+      console.log("Available:", data.available);
       console.groupEnd();
 
       setNameChecked(data.available);
@@ -114,7 +116,9 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
 
     try {
       const response = await requestPasswordReset(user.email);
-      setPasswordMessage(response.message);
+      if (response.code === "YES_EXISTING_EMAIL") {
+        setPasswordMessage("비밀번호 재설정 메일을 보냈습니다.");
+      }
     } catch (error) {
       setPasswordMessage(
         error instanceof ApiError
