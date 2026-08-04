@@ -44,7 +44,11 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     try {
       const data = await checkName(nickname.trim());
       setNameChecked(data.available);
-      setNameMessage(data.message);
+      if (data.available) {
+        setNameMessage("사용할 수 있습니다");
+      } else {
+        setNameMessage("이미 사용 중인 이름입니다.");
+      }
     } catch (error) {
       setNameChecked(null);
       setNameMessage(
