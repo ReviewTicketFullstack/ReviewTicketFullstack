@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/shared/ui';
-import { store } from '../StoreManagementPage/mockData';
+import { useAuth } from '@/app/providers';
 import { SamplePhotoStrip } from './SamplePhotoStrip';
 import type { MenuListItem as MenuListItemType } from './mockData';
 
@@ -14,6 +14,7 @@ const lockedFieldClassName =
   'w-full cursor-not-allowed rounded-lg border border-neutral-200 bg-neutral-100 px-3 py-2 text-sm text-neutral-400';
 
 export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
+  const { user } = useAuth();
   const [hasReviewEvent, setHasReviewEvent] = useState(menu.hasReviewEvent);
 
   return (
@@ -28,7 +29,7 @@ export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
         {hasReviewEvent && <SamplePhotoStrip />}
 
         <div className="w-fit rounded-lg bg-neutral-200 px-4 py-2 text-sm font-semibold">
-          {store.name}
+          {user?.displayName}
         </div>
 
         <div className="flex items-center gap-4">
