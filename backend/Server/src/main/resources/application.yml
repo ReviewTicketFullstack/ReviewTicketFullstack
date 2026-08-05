@@ -28,13 +28,14 @@ spring:
     # dialect 는 일부러 적지 않는다 — Boot 4/Hibernate 7 에서 MySQL8Dialect 같은
     # 버전별 이름이 제거됐다. 안 적으면 드라이버가 알아서 감지한다.
 
-  jackson:
-    serialization:
-      # 시각을 "2026-08-04T09:30:00Z" 같은 ISO 8601 문자열로 내보낸다.
-      # 켜 두면 숫자(에포크 초)로 나가서 프론트가 그대로 쓸 수 없다.
-      # Spring Boot 기본값도 false 지만, 주문 API 응답 형식이 여기에 달려 있어
-      # 나중에 누가 바꾸지 않도록 명시해 둔다.
-      write-dates-as-timestamps: false
+  # 시각 형식은 따로 설정하지 않는다.
+  #
+  # Boot 4 는 Jackson 3(tools.jackson)을 쓰는데, 거기서는 날짜를 ISO 8601
+  # 문자열로 내보내는 것이 기본이다. Jackson 2 에서 쓰던
+  # spring.jackson.serialization.write-dates-as-timestamps 는 그 자리에
+  # 더 이상 없어서, 적어 두면 기동 자체가 실패한다.
+  #
+  # 주문 API 의 시각은 Instant 로 내보내므로 "2026-08-04T09:30:00Z" 형태가 된다.
 
 server:
   port: 60921
