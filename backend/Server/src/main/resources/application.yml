@@ -28,6 +28,14 @@ spring:
     # dialect 는 일부러 적지 않는다 — Boot 4/Hibernate 7 에서 MySQL8Dialect 같은
     # 버전별 이름이 제거됐다. 안 적으면 드라이버가 알아서 감지한다.
 
+  jackson:
+    serialization:
+      # 시각을 "2026-08-04T09:30:00Z" 같은 ISO 8601 문자열로 내보낸다.
+      # 켜 두면 숫자(에포크 초)로 나가서 프론트가 그대로 쓸 수 없다.
+      # Spring Boot 기본값도 false 지만, 주문 API 응답 형식이 여기에 달려 있어
+      # 나중에 누가 바꾸지 않도록 명시해 둔다.
+      write-dates-as-timestamps: false
+
 server:
   port: 60921
   tomcat:
@@ -58,6 +66,11 @@ reviewticket:
     # 발신 주소. 비우면 메일을 보내지 않고 인증 링크를 로그에 남긴다.
     # 실제 발송하려면 여기와 application-local.yml 의 spring.mail 을 채운다.
     from: ""
+  order:
+    # 주문 후 리뷰를 쓸 수 있는 기간. 지금은 개발 중이라 짧게 잡아 두었고,
+    # 마감 동작을 바로 확인할 수 있다. 실제 정책이 정해지면 이 줄만 고친다
+    # (프론트는 서버가 계산해 내려준 마감 시각을 그대로 표시한다).
+    review-ttl: 1m
   cors:
     # 쿠키를 쓰지 않고 Authorization 헤더로만 인증하므로(allowCredentials 꺼짐)
     # 출처를 전부 열어도 쿠키 기반 CSRF 같은 위험이 생기지 않는다.

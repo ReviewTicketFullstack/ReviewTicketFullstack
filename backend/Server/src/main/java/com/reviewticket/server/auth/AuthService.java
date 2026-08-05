@@ -24,6 +24,7 @@ import com.reviewticket.server.mail.VerificationMailRequested;
 import com.reviewticket.server.repository.PasswordResetTokenRepository;
 import com.reviewticket.server.repository.PendingSignupRepository;
 import com.reviewticket.server.repository.UserRepository;
+import com.reviewticket.server.store.StoreService;
 
 /**
  * 가입, 이메일 인증, 로그인.
@@ -63,12 +64,13 @@ public class AuthService {
     private final ApplicationEventPublisher events;
     private final ReviewTicketProperties properties;
     private final EmailDomainValidator domainValidator;
+    private final StoreService storeService;
 
     public AuthService(UserRepository users, PendingSignupRepository pendings,
             PasswordResetTokenRepository resetTokens,
             PasswordEncoder passwordEncoder, JwtProvider jwtProvider,
             ApplicationEventPublisher events, ReviewTicketProperties properties,
-            EmailDomainValidator domainValidator) {
+            EmailDomainValidator domainValidator, StoreService storeService) {
         this.users = users;
         this.pendings = pendings;
         this.resetTokens = resetTokens;
@@ -77,6 +79,7 @@ public class AuthService {
         this.events = events;
         this.properties = properties;
         this.domainValidator = domainValidator;
+        this.storeService = storeService;
     }
 
     // ---------- 중복 검사 ----------
@@ -219,6 +222,13 @@ public class AuthService {
 
         User created = users.save(pending.toUser());
         pendings.delete(pending);
+
+        // 사장은 가입만 하면 가게가 생긴다. 가입 화면에서 받은 이름이 곧
+        // 가게 이름이므로, 여기서 만들지 않으면 사장이 가게를 따로 등록하기
+        // 전까지 고객 홈 목록에 아무것도 뜨지 않는다.
+        if (created.getRole() == Role.OWNER) {
+            storeService.createForOwner(created);
+        }
 
         log.info("회원 생성: id={} email={} role={}", created.getId(), created.getEmail(), created.getRole());
         return created.getEmail();
