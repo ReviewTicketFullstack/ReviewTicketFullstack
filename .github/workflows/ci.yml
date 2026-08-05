@@ -23,6 +23,8 @@ on:
     # main 브랜치로 들어가는 PR만 검사
     branches:
       - main
+      - dev
+      - front-customer
 
 jobs:
   frontend-build:
