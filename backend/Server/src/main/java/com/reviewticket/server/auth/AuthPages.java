@@ -34,6 +34,7 @@ final class AuthPages {
               input { width: 100%; box-sizing: border-box; padding: 0.6rem; margin-top: 0.4rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 1rem; }
               label { display: block; margin-top: 1rem; font-size: 0.9rem; font-weight: 600; }
               .hint { font-size: 0.85rem; color: #64748b; }
+              .field-error { margin-top: 0.4rem; font-size: 0.8rem; color: #b91c1c; }
               .msg { margin-top: 1rem; padding: 0.8rem; border-radius: 0.5rem; }
               .ok { background: #dcfce7; color: #166534; }
               .bad { background: #fee2e2; color: #991b1b; }
@@ -107,13 +108,15 @@ final class AuthPages {
                 </div>
 
                 <form id="step2" class="hidden" onsubmit="submitReset(event)">
-                  <p class="hint">새 비밀번호를 입력해 주세요. 대문자, 소문자, 숫자, 특수문자를 모두 포함해 8자 이상.</p>
+                  <p class="hint">새 비밀번호를 입력해 주세요.<br>비밀번호는 대문자, 소문자, 숫자, 특수문자를 모두 포함해 6자~14자 사이로 만들어 주세요.</p>
                   <label>새 비밀번호
-                    <input type="password" id="pw" autocomplete="new-password" required>
+                    <input type="password" id="pw" autocomplete="new-password" oninput="onPasswordInput()" required>
                   </label>
+                  <div id="pwError" class="field-error"></div>
                   <label>새 비밀번호 확인
-                    <input type="password" id="pw2" autocomplete="new-password" required>
+                    <input type="password" id="pw2" autocomplete="new-password" oninput="onConfirmInput()" required>
                   </label>
+                  <div id="pw2Error" class="field-error"></div>
                   <button type="submit" id="changeBtn">비밀번호 변경</button>
                 </form>
 
@@ -124,6 +127,48 @@ final class AuthPages {
                     var m = document.getElementById('msg');
                     m.className = 'msg ' + cls; m.textContent = text;
                   }
+                  // 줄바꿈이 필요한 곳에만 쓴다. 코드에 직접 적은 문구만 넘길 것 —
+                  // 서버가 보낸 값은 show() 로 넣어야 한다(그쪽은 textContent 라 안전하다).
+                  function showHtml(cls, html) {
+                    var m = document.getElementById('msg');
+                    m.className = 'msg ' + cls; m.innerHTML = html;
+                  }
+
+                  // 서버가 errorCode 만 보내므로(message 는 빠진다) 문구는 여기서 채운다.
+                  var ERROR_TEXT = {
+                    PASSWORD_TOO_SHORT: '비밀번호는 6자 이상이어야 합니다.',
+                    PASSWORD_TOO_LONG: '비밀번호는 14자 이하여야 합니다.',
+                    PASSWORD_INVALID_CHAR: '비밀번호에 쓸 수 없는 문자가 있습니다.',
+                    PASSWORD_MISSING_UPPER: '비밀번호에 대문자가 필요합니다.',
+                    PASSWORD_MISSING_LOWER: '비밀번호에 소문자가 필요합니다.',
+                    PASSWORD_MISSING_DIGIT: '비밀번호에 숫자가 필요합니다.',
+                    PASSWORD_MISSING_SPECIAL: '비밀번호에 특수문자가 필요합니다.'
+                  };
+
+                  // 가입 화면(SignUpForm 의 getPasswordError)과 같은 순서·문구를 쓴다.
+                  // 이 페이지는 React 앱과 분리돼 있어 그 함수를 가져다 쓸 수 없다.
+                  function passwordError(pw) {
+                    if (!pw) return '';
+                    if (!/[A-Z]/.test(pw)) return '대문자를 포함해주세요.';
+                    if (!/[a-z]/.test(pw)) return '소문자를 포함해주세요.';
+                    if (!/[0-9]/.test(pw)) return '숫자를 포함해주세요.';
+                    if (!/[!@#$%%^&*]/.test(pw)) return '특수문자를 포함해주세요.';
+                    if (/[^A-Za-z0-9!@#$%%^&*]/.test(pw)) return '사용할 수 없는 문자가 있습니다.';
+                    if (pw.length < 6 || pw.length > 14) return '6~14자리로 입력해주세요.';
+                    return '';
+                  }
+                  function onPasswordInput() {
+                    document.getElementById('pwError').textContent =
+                      passwordError(document.getElementById('pw').value);
+                    onConfirmInput();
+                  }
+                  function onConfirmInput() {
+                    var pw = document.getElementById('pw').value;
+                    var pw2 = document.getElementById('pw2').value;
+                    document.getElementById('pw2Error').textContent =
+                      (pw2 && pw !== pw2) ? '비밀번호가 서로 다릅니다.' : '';
+                  }
+
                   async function verify() {
                     var btn = document.getElementById('verifyBtn');
                     btn.disabled = true; show('', '확인 중…');
@@ -158,9 +203,9 @@ final class AuthPages {
                       var data = await res.json().catch(function(){ return {}; });
                       if (res.ok) {
                         document.getElementById('step2').classList.add('hidden');
-                        show('ok', '비밀번호가 변경되었습니다. 이 창을 닫고 새 비밀번호로 로그인해 주세요.');
+                        showHtml('ok', '비밀번호가 변경되었습니다.<br>이 창을 닫고 새 비밀번호로 로그인해 주세요.');
                       } else {
-                        show('bad', data.message || '변경에 실패했습니다.');
+                        show('bad', ERROR_TEXT[data.errorCode] || data.message || '변경에 실패했습니다.');
                         btn.disabled = false;
                       }
                     } catch (e) {
