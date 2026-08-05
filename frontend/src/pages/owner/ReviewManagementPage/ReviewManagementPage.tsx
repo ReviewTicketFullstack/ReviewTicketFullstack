@@ -9,6 +9,7 @@ export function ReviewManagementPage() {
   const [activeTab, setActiveTab] = useState<ReviewTab>('completed');
 
   const totalCount = completedReviews.length;
+  // 평균 별점 — 리뷰 0개일 때 0으로 나누는 걸 막기 위해 totalCount 체크 먼저
   const averageRating =
     totalCount === 0
       ? 0
@@ -28,6 +29,7 @@ export function ReviewManagementPage() {
       <ReviewTabs active={activeTab} onChange={setActiveTab} />
 
       <div className="flex flex-col gap-3">
+        {/* activeTab에 따라 리뷰완료/리뷰미작성 리스트를 다르게 렌더링 */}
         {activeTab === 'completed'
           ? completedReviews.map((review) => (
               <CompletedReviewItem key={review.id} review={review} />
