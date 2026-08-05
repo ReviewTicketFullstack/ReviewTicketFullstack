@@ -12,7 +12,7 @@ spring:
     active: local
 
   datasource:
-    url: jdbc:mysql://localhost:3306/reviewticket
+    url: jdbc:mysql://localhost:21096/reviewticket
     username: reviewticket
     # password 는 application-local.yml 에 있다
 
