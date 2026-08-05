@@ -34,23 +34,28 @@ public final class PasswordPolicy {
     }
 
     /**
+     * 판정 순서는 가입 화면(SignUpForm 의 getPasswordError)과 같다 —
+     * 대문자, 소문자, 숫자, 특수문자, 사용 불가 문자, 길이.
+     *
+     * 순서를 맞춰야 하는 이유: 어긋난 조건이 여럿이어도 문구는 맨 앞에서 걸린
+     * 하나만 나간다. 서버가 길이를 먼저 보면, 같은 비밀번호를 두고 화면은
+     * "대문자를 포함해주세요"라고 하는데 서버는 "6자 이상이어야 합니다"라고
+     * 답하는 일이 생긴다. 판정 결과는 같아도 사용자는 서로 다른 지적을 받는다.
+     *
      * @return 어긋난 조건, 규칙을 지켰으면 null
      */
     public static Violation validate(String password) {
         if (password == null || password.isEmpty()) {
             return new Violation("PASSWORD_TOO_SHORT", "비밀번호를 입력해 주세요");
         }
-        if (password.length() < MIN_LENGTH) {
-            return new Violation("PASSWORD_TOO_SHORT", "비밀번호는 " + MIN_LENGTH + "자 이상이어야 합니다");
-        }
-        if (password.length() > MAX_LENGTH) {
-            return new Violation("PASSWORD_TOO_LONG", "비밀번호는 " + MAX_LENGTH + "자 이하여야 합니다");
-        }
 
+        // 문자 종류를 먼저 훑어 두고, 판정은 아래에서 순서대로 한다.
+        // 훑는 도중에 바로 돌려주면 "사용 불가 문자"가 대문자 검사보다 앞서게 된다.
         boolean upper = false;
         boolean lower = false;
         boolean digit = false;
         boolean special = false;
+        Character invalidChar = null;
         for (int i = 0; i < password.length(); i++) {
             char c = password.charAt(i);
             if (c >= 'A' && c <= 'Z') {
@@ -61,9 +66,10 @@ public final class PasswordPolicy {
                 digit = true;
             } else if (SPECIALS.indexOf(c) >= 0) {
                 special = true;
-            } else {
+            } else if (invalidChar == null) {
                 // 공백과 한글 등. 허용하면 나중에 본인도 못 치는 비밀번호가 생긴다.
-                return new Violation("PASSWORD_INVALID_CHAR", "비밀번호에 쓸 수 없는 문자가 있습니다: '" + c + "'");
+                // 첫 글자만 기억한다 — 어차피 한 번에 하나만 알려준다.
+                invalidChar = c;
             }
         }
 
@@ -78,6 +84,15 @@ public final class PasswordPolicy {
         }
         if (!special) {
             return new Violation("PASSWORD_MISSING_SPECIAL", "비밀번호에 특수문자가 필요합니다");
+        }
+        if (invalidChar != null) {
+            return new Violation("PASSWORD_INVALID_CHAR", "비밀번호에 쓸 수 없는 문자가 있습니다: '" + invalidChar + "'");
+        }
+        if (password.length() < MIN_LENGTH) {
+            return new Violation("PASSWORD_TOO_SHORT", "비밀번호는 " + MIN_LENGTH + "자 이상이어야 합니다");
+        }
+        if (password.length() > MAX_LENGTH) {
+            return new Violation("PASSWORD_TOO_LONG", "비밀번호는 " + MAX_LENGTH + "자 이하여야 합니다");
         }
         return null;
     }

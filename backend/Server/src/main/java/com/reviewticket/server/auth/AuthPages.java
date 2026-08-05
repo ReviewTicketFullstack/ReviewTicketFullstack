@@ -135,14 +135,17 @@ final class AuthPages {
                   }
 
                   // 서버가 errorCode 만 보내므로(message 는 빠진다) 문구는 여기서 채운다.
+                  // 문구는 아래 passwordError() 가 돌려주는 것과 같게 맞춘다 — 서버와
+                  // 판정 순서가 같아 같은 조건에서 두 문구가 함께 뜰 수 있는데,
+                  // 그때 표현까지 다르면 서로 다른 지적을 받은 것처럼 보인다.
                   var ERROR_TEXT = {
-                    PASSWORD_TOO_SHORT: '비밀번호는 6자 이상이어야 합니다.',
-                    PASSWORD_TOO_LONG: '비밀번호는 14자 이하여야 합니다.',
-                    PASSWORD_INVALID_CHAR: '비밀번호에 쓸 수 없는 문자가 있습니다.',
-                    PASSWORD_MISSING_UPPER: '비밀번호에 대문자가 필요합니다.',
-                    PASSWORD_MISSING_LOWER: '비밀번호에 소문자가 필요합니다.',
-                    PASSWORD_MISSING_DIGIT: '비밀번호에 숫자가 필요합니다.',
-                    PASSWORD_MISSING_SPECIAL: '비밀번호에 특수문자가 필요합니다.'
+                    PASSWORD_TOO_SHORT: '6~14자리로 입력해주세요.',
+                    PASSWORD_TOO_LONG: '6~14자리로 입력해주세요.',
+                    PASSWORD_INVALID_CHAR: '사용할 수 없는 문자가 있습니다.',
+                    PASSWORD_MISSING_UPPER: '대문자를 포함해주세요.',
+                    PASSWORD_MISSING_LOWER: '소문자를 포함해주세요.',
+                    PASSWORD_MISSING_DIGIT: '숫자를 포함해주세요.',
+                    PASSWORD_MISSING_SPECIAL: '특수문자를 포함해주세요.'
                   };
 
                   // 가입 화면(SignUpForm 의 getPasswordError)과 같은 순서·문구를 쓴다.
