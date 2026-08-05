@@ -9,7 +9,18 @@ package com.reviewticket.server.auth;
  */
 public class ConflictException extends RuntimeException {
 
-    public ConflictException(String message) {
+    private final String errorCode;
+
+    /**
+     * errorCode 는 필수다 — 응답에 나가는 것은 이 코드뿐이고, 문구는 화면이
+     * 채운다. message 는 서버 로그와 스택트레이스에서 읽으려고 남긴다.
+     */
+    public ConflictException(String errorCode, String message) {
         super(message);
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
     }
 }

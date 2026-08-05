@@ -42,6 +42,7 @@
 
 ### Frontend
 
+- Read `claude/design.md` before any UI work. It is the source of truth for visual design.
 - Follow the existing design system.
 - Avoid generic AI-style UI.
 - Preserve DOM structure, state, props, and behavior unless requested.
@@ -87,3 +88,16 @@
 - Correctness over cleverness.
 - Readability over brevity.
 - Evidence over assumptions.
+
+### MVP Development
+
+- Prefer the simplest implementation that satisfies the current requirements.
+- Do not design for hypothetical future features.
+- Small duplication is acceptable if it improves clarity.
+- Refactor only when duplication or complexity becomes a real problem.
+- Optimize for development speed during MVP unless otherwise requested.
+
+### Decision Making
+
+- When multiple valid implementations exist, prefer the one with the lowest complexity.
+- Avoid introducing reusable abstractions until at least two real use cases exist.
