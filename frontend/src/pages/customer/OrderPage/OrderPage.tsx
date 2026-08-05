@@ -5,6 +5,7 @@ import { MenuListCard, type MenuItemData } from "./MenuListCard";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { createOrder } from "@/api/orderApi";
+import { saveOrder } from "@/entities/order/orderStorage";
 import { ApiError } from "@/shared/api";
 
 /**
@@ -43,7 +44,9 @@ export function OrderPage() {
 
     try {
       // 가격은 보내지 않는다. 서버가 menuId 로 조회해 담는다.
-      await createOrder(Number(storeId), selectedMenu.id);
+      const order = await createOrder(Number(storeId), selectedMenu.id);
+      // 서버가 준 주문을 그대로 사본에 남긴다. 서버에 닿지 못할 때 쓴다.
+      saveOrder(order);
       setSelectedMenu(null);
       // replace 로 이동해 뒤로가기가 주문 화면으로 돌아오지 않게 한다.
       navigate("/order-history", { replace: true });

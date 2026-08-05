@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getMyOrders } from '@/api/orderApi';
+import { getOrderHistory, replaceOrderHistory } from '@/entities/order/orderStorage';
 import { ApiError } from '@/shared/api';
 import { OrderHistoryItem } from './OrderHistoryItem';
 import type { Order } from '@/entities/order';
@@ -13,12 +14,24 @@ export function OrderHistoryPage() {
     const controller = new AbortController();
 
     getMyOrders(controller.signal)
-      .then(setOrders)
+      .then((serverOrders) => {
+        setOrders(serverOrders);
+        // 다음에 서버가 응답하지 못할 때 보여줄 사본을 갱신해 둔다.
+        replaceOrderHistory(serverOrders);
+      })
       .catch((e: unknown) => {
         // 요청 취소(StrictMode 의 이중 마운트)는 실패가 아니다.
         if (e instanceof DOMException && e.name === 'AbortError') return;
+
+        // 서버에 닿지 못하면 사본이라도 보여준다. 빈 화면보다는 낫다.
+        const cached = getOrderHistory();
+        setOrders(cached);
         setError(
-          e instanceof ApiError ? e.message : '주문내역을 불러오지 못했습니다.',
+          cached.length > 0
+            ? '서버에 연결하지 못해 저장된 내역을 보여줍니다.'
+            : e instanceof ApiError
+              ? e.message
+              : '주문내역을 불러오지 못했습니다.',
         );
       })
       .finally(() => {
@@ -39,20 +52,26 @@ export function OrderHistoryPage() {
         <div className="text-center py-12">
           <p className="text-gray-500">불러오는 중...</p>
         </div>
-      ) : error ? (
-        <div className="text-center py-12">
-          <p className="text-red-600">{error}</p>
-        </div>
-      ) : orders.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">주문내역이 없습니다.</p>
-        </div>
       ) : (
-        <div className="space-y-4">
-          {orders.map((order) => (
-            <OrderHistoryItem key={order.id} order={order} />
-          ))}
-        </div>
+        <>
+          {error && (
+            <p className="rounded-lg bg-gray-100 px-4 py-3 text-sm text-gray-600">
+              {error}
+            </p>
+          )}
+
+          {orders.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">주문내역이 없습니다.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {orders.map((order) => (
+                <OrderHistoryItem key={order.id} order={order} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
