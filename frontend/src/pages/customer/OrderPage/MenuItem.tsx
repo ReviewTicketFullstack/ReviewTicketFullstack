@@ -1,7 +1,9 @@
 export interface MenuItemData {
+  id: number;
   name: string;
-  price: string;
-  reviewBadge: boolean;
+  /** 원 단위 정수. 표시 형식은 이 컴포넌트가 맡는다 */
+  price: number;
+  reviewEvent: boolean;
 }
 
 export interface MenuItemProps {
@@ -28,7 +30,7 @@ export function MenuItem({ menu, onClick }: MenuItemProps) {
         {/* Name + Review Badge */}
         <div className="flex items-center gap-2">
           <span className="font-bold text-base">{menu.name}</span>
-          {menu.reviewBadge && (
+          {menu.reviewEvent && (
             <span className="inline-block bg-red-700 text-white text-xs font-semibold px-2 py-0.5 rounded">
               리뷰
             </span>
@@ -36,7 +38,9 @@ export function MenuItem({ menu, onClick }: MenuItemProps) {
         </div>
 
         {/* Price */}
-        <span className="text-sm text-gray-600">{menu.price}</span>
+        <span className="text-sm text-gray-600">
+          {menu.price.toLocaleString("ko-KR")}원
+        </span>
       </div>
     </button>
   );
