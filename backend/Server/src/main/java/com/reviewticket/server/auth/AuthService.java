@@ -160,7 +160,7 @@ public class AuthService {
         // 도메인의 MX 가 사라질 수 있고, 가입 당시 DNS 조회가 실패해
         // "판단 보류"로 통과한 건이 이 버튼으로 반복 발송될 수 있다.
         if (!domainValidator.hasMailServer(email)) {
-            throw new IllegalArgumentException("메일을 받을 수 없는 이메일 주소입니다");
+            throw new ValidationException("EMAIL_DOMAIN_INVALID", "메일을 받을 수 없는 이메일 주소입니다");
         }
 
         Optional<PendingSignup> found = pendings.findByEmail(email);
@@ -179,7 +179,7 @@ public class AuthService {
         // 그래서 최초 가입 직후 한 번만 막히고 그 뒤로는 무제한이었다.
         LocalDateTime lastSentAt = pending.getExpiresAt().minus(properties.auth().verificationTtl());
         if (lastSentAt.isAfter(LocalDateTime.now().minus(RESEND_COOLDOWN))) {
-            throw new IllegalArgumentException(
+            throw new ValidationException("RESEND_COOLDOWN",
                     "인증 메일을 방금 보냈습니다. " + RESEND_COOLDOWN.toSeconds() + "초 뒤에 다시 시도해 주세요");
         }
 
@@ -202,19 +202,19 @@ public class AuthService {
         PendingSignup pending = pendings.findByToken(token)
                 // 이미 인증을 마쳤거나(대기 건 삭제됨) 만료돼 정리된 경우도 여기로 온다.
                 // 어느 쪽인지 구분할 근거가 남아 있지 않으므로 한 문장으로 안내한다.
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ValidationException("VERIFY_TOKEN_INVALID",
                         "인증 링크가 만료되었거나 이미 처리되었습니다"));
 
         if (pending.isExpired(LocalDateTime.now())) {
-            throw new IllegalArgumentException("인증 링크가 만료되었습니다. 회원가입을 다시 진행해 주세요");
+            throw new ValidationException("VERIFY_TOKEN_EXPIRED", "인증 링크가 만료되었습니다");
         }
 
         // 대기하는 동안 다른 사람이 같은 이메일·이름으로 먼저 가입을 마쳤을 수 있다.
         if (users.existsByEmail(pending.getEmail())) {
-            throw new ConflictException("이미 가입된 이메일입니다");
+            throw new ConflictException("EMAIL_TAKEN", "이미 가입된 이메일입니다");
         }
         if (users.existsByDisplayName(pending.getDisplayName())) {
-            throw new ConflictException("이미 쓰이고 있는 이름입니다. 회원가입을 다시 진행해 주세요");
+            throw new ConflictException("NAME_TAKEN", "이미 쓰이고 있는 이름입니다");
         }
 
         User created = users.save(pending.toUser());
@@ -248,12 +248,12 @@ public class AuthService {
 
         if (found.isEmpty()) {
             passwordEncoder.matches(rawPassword, DUMMY_HASH);
-            throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다");
+            throw new UnauthorizedException("LOGIN_FAILED", "이메일 또는 비밀번호가 올바르지 않습니다");
         }
 
         User user = found.get();
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-            throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다");
+            throw new UnauthorizedException("LOGIN_FAILED", "이메일 또는 비밀번호가 올바르지 않습니다");
         }
 
         return new LoginResult(jwtProvider.issue(user), jwtProvider.ttlSeconds(), user);
@@ -315,13 +315,13 @@ public class AuthService {
     @Transactional
     public void resetPassword(String token, String newPassword, String newPasswordConfirm) {
         PasswordResetToken reset = resetTokens.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("재설정 링크가 올바르지 않습니다"));
+                .orElseThrow(() -> new ValidationException("RESET_TOKEN_INVALID", "재설정 링크가 올바르지 않습니다"));
 
         if (!reset.isUsable(LocalDateTime.now())) {
-            throw new IllegalArgumentException("재설정 링크가 만료되었거나 이미 사용되었습니다. 다시 요청해 주세요");
+            throw new ValidationException("RESET_TOKEN_EXPIRED", "재설정 링크가 만료되었거나 이미 사용되었습니다");
         }
         if (!newPassword.equals(newPasswordConfirm)) {
-            throw new IllegalArgumentException("새 비밀번호가 서로 다릅니다");
+            throw new ValidationException("PASSWORD_MISMATCH", "새 비밀번호가 서로 다릅니다");
         }
         PasswordPolicy.require(newPassword);
 

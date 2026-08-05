@@ -11,11 +11,10 @@ public class ConflictException extends RuntimeException {
 
     private final String errorCode;
 
-    public ConflictException(String message) {
-        this(null, message);
-    }
-
-    /** errorCode 는 프론트가 문자열 비교 없이 분기할 수 있는 고정값. 없으면 null. */
+    /**
+     * errorCode 는 필수다 — 응답에 나가는 것은 이 코드뿐이고, 문구는 화면이
+     * 채운다. message 는 서버 로그와 스택트레이스에서 읽으려고 남긴다.
+     */
     public ConflictException(String errorCode, String message) {
         super(message);
         this.errorCode = errorCode;

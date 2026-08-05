@@ -26,43 +26,48 @@ public class ApiExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     /**
-     * errorCode 가 있으면 message 는 응답에서 뺀다 — 문구는 프론트가 errorCode 로
-     * 직접 채운다. errorCode 가 없는 예외(로그인, 비밀번호 재설정 등 아직 코드를
-     * 안 붙인 곳)는 지금처럼 message 를 그대로 내려준다.
+     * 응답에는 errorCode 만 담는다. 사용자에게 보여줄 문구는 화면이 그 코드를
+     * 보고 채운다 — 문구를 서버가 정하면 어투 하나 고칠 때마다 화면의 분기가
+     * 조용히 깨진다.
+     *
+     * 예외의 message 는 응답에 싣지 않고 서버 로그와 스택트레이스에만 남긴다.
      */
-    private static ResponseEntity<Map<String, Object>> body(
-            HttpStatus status, String errorCode, String message) {
+    private static ResponseEntity<Map<String, Object>> body(HttpStatus status, String errorCode) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("error", status.getReasonPhrase());
-        if (errorCode != null) {
-            payload.put("errorCode", errorCode);
-        } else {
-            payload.put("message", message);
-        }
+        payload.put("errorCode", errorCode);
         return ResponseEntity.status(status).body(payload);
     }
 
     @ExceptionHandler({ IllegalArgumentException.class, ConstraintViolationException.class })
     public ResponseEntity<Map<String, Object>> badRequest(Exception e) {
-        String errorCode = e instanceof ValidationException ve ? ve.getErrorCode() : null;
-        return body(HttpStatus.BAD_REQUEST, errorCode, e.getMessage());
+        if (e instanceof ValidationException ve) {
+            return body(HttpStatus.BAD_REQUEST, ve.getErrorCode());
+        }
+        // 코드를 붙이지 않은 곳에서 올라온 경우. 화면은 일반 안내로 처리한다.
+        log.warn("errorCode 없는 400", e);
+        return body(HttpStatus.BAD_REQUEST, "INVALID_REQUEST");
     }
 
-    /** @Valid 가 걸린 요청 본문의 첫 위반 사유를 그대로 보여준다. */
+    /**
+     * @Valid 위반. 어느 필드가 왜 틀렸는지는 응답에 담지 않고 로그로만 남긴다 —
+     * 이 경로는 화면이 이미 같은 규칙으로 걸러 낸 뒤라 정상 사용자는 닿지 않는다.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> invalidBody(MethodArgumentNotValidException e) {
-        String message = e.getFieldErrors().stream()
+        String reason = e.getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .filter(m -> m != null && !m.isBlank())
                 .findFirst()
                 .orElse("입력값이 올바르지 않습니다");
-        return body(HttpStatus.BAD_REQUEST, null, message);
+        log.warn("요청 본문 검증 실패: {}", reason);
+        return body(HttpStatus.BAD_REQUEST, "INVALID_REQUEST");
     }
 
     /** 이미 쓰이고 있는 이메일·닉네임. 형식 오류와 달리 다른 값을 쓰라고 안내해야 한다. */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, Object>> conflict(ConflictException e) {
-        return body(HttpStatus.CONFLICT, e.getErrorCode(), e.getMessage());
+        return body(HttpStatus.CONFLICT, e.getErrorCode());
     }
 
     /**
@@ -79,12 +84,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> constraintViolation(DataIntegrityViolationException e) {
         log.warn("DB 제약 위반 (동시 요청 경합으로 추정)", e);
-        return body(HttpStatus.CONFLICT, null, "이미 사용 중인 정보입니다. 다시 시도해 주세요.");
+        return body(HttpStatus.CONFLICT, "ALREADY_IN_USE");
     }
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> unauthorized(UnauthorizedException e) {
-        return body(HttpStatus.UNAUTHORIZED, null, e.getMessage());
+        return body(HttpStatus.UNAUTHORIZED, e.getErrorCode());
     }
 
     /**

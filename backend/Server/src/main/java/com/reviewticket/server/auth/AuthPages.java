@@ -57,6 +57,14 @@ final class AuthPages {
                 <button id="btn" onclick="finish()">회원가입 완료하기</button>
                 <div id="msg"></div>
                 <script>
+                  // 서버는 errorCode 만 보낸다. 문구는 여기서 채운다.
+                  var ERROR_TEXT = {
+                    VERIFY_TOKEN_INVALID: '인증 링크가 만료되었거나 이미 처리되었습니다.',
+                    VERIFY_TOKEN_EXPIRED: '인증 링크가 만료되었습니다. 회원가입을 다시 진행해 주세요.',
+                    EMAIL_TAKEN: '이미 가입된 이메일입니다.',
+                    NAME_TAKEN: '이미 쓰이고 있는 이름입니다. 회원가입을 다시 진행해 주세요.',
+                    TOO_MANY_REQUESTS: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.'
+                  };
                   async function finish() {
                     var btn = document.getElementById('btn');
                     var msg = document.getElementById('msg');
@@ -75,7 +83,7 @@ final class AuthPages {
                         msg.textContent = '회원가입이 완료되었습니다. 이 창을 닫고 로그인해 주세요.';
                       } else {
                         msg.className = 'msg bad';
-                        msg.textContent = data.message || '처리에 실패했습니다.';
+                        msg.textContent = ERROR_TEXT[data.errorCode] || '처리에 실패했습니다.';
                         btn.disabled = false;
                       }
                     } catch (e) {
@@ -145,7 +153,10 @@ final class AuthPages {
                     PASSWORD_MISSING_UPPER: '대문자를 포함해주세요.',
                     PASSWORD_MISSING_LOWER: '소문자를 포함해주세요.',
                     PASSWORD_MISSING_DIGIT: '숫자를 포함해주세요.',
-                    PASSWORD_MISSING_SPECIAL: '특수문자를 포함해주세요.'
+                    PASSWORD_MISSING_SPECIAL: '특수문자를 포함해주세요.',
+                    PASSWORD_MISMATCH: '새 비밀번호가 서로 다릅니다.',
+                    RESET_TOKEN_INVALID: '재설정 링크가 올바르지 않습니다. 다시 요청해 주세요.',
+                    RESET_TOKEN_EXPIRED: '재설정 링크가 만료되었거나 이미 사용되었습니다. 다시 요청해 주세요.'
                   };
 
                   // 요청량 제한(429)에 걸린 동안 두 버튼을 잠그고 남은 시간을 센다.
@@ -242,7 +253,7 @@ final class AuthPages {
                       } else if (res.status === 429) {
                         startBlock(data.retryAfterSeconds);
                       } else {
-                        show('bad', ERROR_TEXT[data.errorCode] || data.message || '변경에 실패했습니다.');
+                        show('bad', ERROR_TEXT[data.errorCode] || '변경에 실패했습니다.');
                         btn.disabled = false;
                       }
                     } catch (e) {
