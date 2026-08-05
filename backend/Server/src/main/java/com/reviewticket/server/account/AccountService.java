@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.reviewticket.server.auth.ConflictException;
 import com.reviewticket.server.auth.UnauthorizedException;
+import com.reviewticket.server.auth.ValidationException;
 import com.reviewticket.server.domain.Role;
 import com.reviewticket.server.domain.User;
 import com.reviewticket.server.repository.PendingSignupRepository;
@@ -33,11 +34,11 @@ public class AccountService {
         User user = load(userId);
 
         if (name.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new ValidationException("NAME_REQUIRED",
                     user.getRole() == Role.OWNER ? "가게 이름을 입력해 주세요" : "닉네임을 입력해 주세요");
         }
         if (name.length() > 32) {
-            throw new IllegalArgumentException("이름은 32자 이하여야 합니다");
+            throw new ValidationException("NAME_TOO_LONG", "이름은 32자 이하여야 합니다");
         }
         // 지금 쓰는 이름을 그대로 다시 넣은 경우. 중복이라고 막으면 이상하다.
         if (name.equals(user.getDisplayName())) {
@@ -48,7 +49,7 @@ public class AccountService {
         // 대기자의 이름을 가로챌 수 있고, 그러면 그 사람이 인증 링크를 눌렀을 때
         // verify() 에서 충돌이 나 가입 자체가 무산된다.
         if (users.existsByDisplayName(name) || pendings.existsByDisplayName(name)) {
-            throw new ConflictException(
+            throw new ConflictException("NAME_TAKEN",
                     user.getRole() == Role.OWNER ? "이미 쓰이고 있는 가게 이름입니다" : "이미 쓰이고 있는 닉네임입니다");
         }
 
@@ -58,6 +59,6 @@ public class AccountService {
 
     private User load(long userId) {
         return users.findById(userId)
-                .orElseThrow(() -> new UnauthorizedException("로그인이 필요합니다"));
+                .orElseThrow(() -> new UnauthorizedException("UNAUTHORIZED", "로그인이 필요합니다"));
     }
 }
