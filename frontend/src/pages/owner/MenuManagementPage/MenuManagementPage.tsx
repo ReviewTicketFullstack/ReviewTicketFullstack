@@ -6,8 +6,10 @@ import { menuItems as initialMenuItems, type MenuListItem as MenuListItemType } 
 
 export function MenuManagementPage() {
   const [menuItems, setMenuItems] = useState(initialMenuItems);
+  // 클릭한 메뉴 — 있으면 수정 모달이 열림
   const [selectedMenu, setSelectedMenu] = useState<MenuListItemType | null>(null);
 
+  // 모달의 "적용" 클릭 시: 선택된 메뉴의 리뷰이벤트 여부만 갱신하고 모달 닫기
   const handleApply = (hasReviewEvent: boolean) => {
     if (!selectedMenu) return;
     setMenuItems((items) =>
@@ -23,6 +25,7 @@ export function MenuManagementPage() {
           <h1 className="text-xl font-bold text-ink-900">메뉴관리</h1>
         </div>
         <div className="flex justify-end">
+          {/* 메뉴 추가 기능 아직 미구현 — 자리만 잡아둔 비활성 버튼 */}
           <button
             type="button"
             disabled
@@ -41,6 +44,7 @@ export function MenuManagementPage() {
         </div>
       </Card>
 
+      {/* 메뉴 클릭 시에만 수정 모달 표시 */}
       {selectedMenu && (
         <MenuEditModal
           menu={selectedMenu}
