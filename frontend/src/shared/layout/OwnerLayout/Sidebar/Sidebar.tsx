@@ -6,7 +6,7 @@ const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
 
 export function Sidebar() {
   const { user } = useAuth();
-
+// FE-2.1: 사이드바에 사장님 이름 표시, 가게관리/메뉴관리/리뷰관리 메뉴
   return (
     <aside className="flex w-65 flex-col border-r border-neutral-200 bg-neutral-50 p-4">
       <div className="mb-4 flex items-center justify-center gap-2">
@@ -19,9 +19,13 @@ export function Sidebar() {
         </div>
         <span className="flex-1 truncate font-semibold pl-2">{user?.displayName}</span>
       </div>
+      {/* 사이드바 네비게이션 메뉴 */}
       <nav className="flex flex-col gap-5 pl-4">
+        {/* /stores - 가게 목록 및 정보 관리 */}
         <NavLink to="/stores" className={navLinkClassName}>가게관리</NavLink>
+        {/* /menu - 메뉴 추가/수정/삭제 */}
         <NavLink to="/menu" className={navLinkClassName}>메뉴관리</NavLink>
+        {/* /reviews - 리뷰 확인 및 답글 관리 */}
         <NavLink to="/reviews" className={navLinkClassName}>리뷰관리</NavLink>
       </nav>
     </aside>

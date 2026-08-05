@@ -7,7 +7,9 @@ interface ReviewTabsProps {
 
 export function ReviewTabs({ active, onChange }: ReviewTabsProps) {
   return (
+    // {/* 리뷰 탭 네비게이션 */} 
     <div className="flex gap-4 border-b border-neutral-200">
+      {/* 리뷰완료 탭 */} 
       <button
         type="button"
         onClick={() => onChange('completed')}
@@ -19,6 +21,7 @@ export function ReviewTabs({ active, onChange }: ReviewTabsProps) {
       >
         리뷰완료
       </button>
+      {/* 리뷰미작성 탭 */}
       <button
         type="button"
         onClick={() => onChange('pending')}
