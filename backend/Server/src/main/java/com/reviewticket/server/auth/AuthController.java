@@ -51,8 +51,12 @@ public class AuthController {
     /**
      * 회원 번호를 돌려주지 않는다 — 이 시점에는 회원이 아직 만들어지지 않았다.
      * 인증 링크를 눌러야 생성된다.
+     *
+     * 안내 문구도 담지 않는다. 성공했다는 사실은 상태 코드 200 으로 충분하고,
+     * "인증 메일을 보냈습니다" 같은 문장은 화면이 채운다. email 만 돌려주는 것은
+     * 서버가 정규화한 값(소문자·공백 제거)을 프론트가 그대로 쓰기 위해서다.
      */
-    public record SignUpResponse(String email, String message) {
+    public record SignUpResponse(String email) {
     }
 
     public record LoginRequest(
@@ -86,9 +90,6 @@ public class AuthController {
             @NotBlank(message = "토큰이 없습니다") String token,
             @NotBlank(message = "새 비밀번호를 입력해 주세요") String newPassword,
             @NotBlank(message = "새 비밀번호 확인을 입력해 주세요") String newPasswordConfirm) {
-    }
-
-    public record MessageResponse(String message) {
     }
 
     /** password-reset/request 성공 응답. code 값은 항상 "YES_EXISTING_EMAIL". */
@@ -127,8 +128,7 @@ public class AuthController {
             authService.requestSignUp(request.email(), request.password(),
                     request.role(), request.displayName());
             attemptLogger.record(AuthAction.SIGNUP, request.email(), request.displayName(), ip, true);
-            return new SignUpResponse(request.email().trim().toLowerCase(),
-                    "인증 메일을 보냈습니다. 메일의 링크를 눌러야 회원가입이 완료됩니다.");
+            return new SignUpResponse(request.email().trim().toLowerCase());
         } catch (RuntimeException e) {
             attemptLogger.record(AuthAction.SIGNUP, request.email(), request.displayName(), ip, false);
             throw e;
@@ -192,15 +192,18 @@ public class AuthController {
         return new ResetTokenResponse(authService.isResetTokenUsable(token));
     }
 
-    /** 페이지의 변경 버튼이 부른다. 여기서 실제 비밀번호가 바뀐다. */
+    /**
+     * 페이지의 변경 버튼이 부른다. 여기서 실제 비밀번호가 바뀐다.
+     *
+     * 성공하면 200 만 돌려준다 — 안내 문구는 화면이 채운다.
+     */
     @PostMapping(value = "/password-reset", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public MessageResponse resetPassword(@Valid @RequestBody ResetConfirm request, HttpServletRequest httpRequest) {
+    public void resetPassword(@Valid @RequestBody ResetConfirm request, HttpServletRequest httpRequest) {
         String ip = httpRequest.getRemoteAddr();
         String email = authService.resolveResetTokenEmail(request.token()).orElse(null);
         try {
             authService.resetPassword(request.token(), request.newPassword(), request.newPasswordConfirm());
             attemptLogger.record(AuthAction.PASSWORD_CHANGE, email, null, ip, true);
-            return new MessageResponse("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.");
         } catch (RuntimeException e) {
             attemptLogger.record(AuthAction.PASSWORD_CHANGE, email, null, ip, false);
             throw e;

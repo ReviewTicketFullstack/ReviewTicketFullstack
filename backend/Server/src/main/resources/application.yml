@@ -12,7 +12,7 @@ spring:
     active: local
 
   datasource:
-    url: jdbc:mysql://localhost:3306/reviewticket
+    url: jdbc:mysql://localhost:21096/reviewticket
     username: reviewticket
     # password 는 application-local.yml 에 있다
 
@@ -27,6 +27,15 @@ spring:
         format_sql: true
     # dialect 는 일부러 적지 않는다 — Boot 4/Hibernate 7 에서 MySQL8Dialect 같은
     # 버전별 이름이 제거됐다. 안 적으면 드라이버가 알아서 감지한다.
+
+  # 시각 형식은 따로 설정하지 않는다.
+  #
+  # Boot 4 는 Jackson 3(tools.jackson)을 쓰는데, 거기서는 날짜를 ISO 8601
+  # 문자열로 내보내는 것이 기본이다. Jackson 2 에서 쓰던
+  # spring.jackson.serialization.write-dates-as-timestamps 는 그 자리에
+  # 더 이상 없어서, 적어 두면 기동 자체가 실패한다.
+  #
+  # 주문 API 의 시각은 Instant 로 내보내므로 "2026-08-04T09:30:00Z" 형태가 된다.
 
 server:
   port: 60921
@@ -58,6 +67,11 @@ reviewticket:
     # 발신 주소. 비우면 메일을 보내지 않고 인증 링크를 로그에 남긴다.
     # 실제 발송하려면 여기와 application-local.yml 의 spring.mail 을 채운다.
     from: ""
+  order:
+    # 주문 후 리뷰를 쓸 수 있는 기간. 지금은 개발 중이라 짧게 잡아 두었고,
+    # 마감 동작을 바로 확인할 수 있다. 실제 정책이 정해지면 이 줄만 고친다
+    # (프론트는 서버가 계산해 내려준 마감 시각을 그대로 표시한다).
+    review-ttl: 1m
   cors:
     # 쿠키를 쓰지 않고 Authorization 헤더로만 인증하므로(allowCredentials 꺼짐)
     # 출처를 전부 열어도 쿠키 기반 CSRF 같은 위험이 생기지 않는다.
