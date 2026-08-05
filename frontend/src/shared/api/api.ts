@@ -104,11 +104,11 @@ async function toApiError(response: Response): Promise<ApiError> {
 }
 
 function fallbackMessage(status: number) {
-  if (status === 401) return "로그인이 필요합니다. 다시 로그인해 주세요.";
-  if (status === 403) return "권한이 없습니다.";
-  if (status === 404) return "요청한 정보를 찾을 수 없습니다.";
+  if (status === 401) return "아이디 또는 비밀번호가 맞지 않습니다.";
+  if (status === 403) return "접근권한이 없습니다.";
+  if (status === 404) return "주소를 찾을 수 없습니다.";
   if (status === 429)
-    return "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.";
+    return "요청 횟수를 초과하였습니다. 잠시 후 다시 시도해 주세요.";
   return "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 }
 

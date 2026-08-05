@@ -3,6 +3,7 @@ import { Input, Button } from "@/shared/ui";
 import { validatePassword, validateEmail } from "@/shared/lib/validation";
 import type { UserRole } from "@/entities/user";
 import { checkEmail, checkName } from "@/shared/api/api";
+import { ApiError } from "@/shared/api";
 
 export interface SignUpFormProps {
   authType: UserRole;
@@ -20,16 +21,19 @@ export interface SignUpFormData {
 export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   const [email, setEmail] = useState("");
   const [emailDuplicated, setEmailDuplicated] = useState<boolean | null>(null);
+  const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [nickname, setNickname] = useState("");
   const [nicknameDuplicated, setNicknameDuplicated] = useState<boolean | null>(
     null,
   );
+  const [nicknameError, setNicknameError] = useState("");
   const [storeName, setStoreName] = useState("");
   const [storeNameDuplicated, setStoreNameDuplicated] = useState<
     boolean | null
   >(null);
+  const [storeNameError, setStoreNameError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const isPasswordValid = validatePassword(password);
@@ -100,6 +104,8 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
   const handleDuplicateCheck = async () => {
     if (!isEmailValid) return;
 
+    setEmailError("");
+
     try {
       const data = await checkEmail(email);
 
@@ -112,12 +118,27 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
 
       setEmailDuplicated(!data.available);
     } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.errorCode === "EMAIL_TAKEN") {
+          setEmailError("이미 가입된 이메일입니다");
+        } else if (error.errorCode === "EMAIL_TOO_LONG") {
+          setEmailError("이메일이 너무 깁니다");
+        } else if (error.errorCode === "EMAIL_DOMAIN_INVALID") {
+          setEmailError("유효하지 않은 이메일 주소입니다");
+        } else {
+          setEmailError("이메일 확인 중 오류가 발생했습니다");
+        }
+      } else {
+        setEmailError("이메일 확인 중 오류가 발생했습니다");
+      }
       setEmailDuplicated(null);
     }
   };
 
   const handleNicknameCheck = async () => {
     if (!nickname) return;
+
+    setNicknameError("");
 
     try {
       const data = await checkName(nickname);
@@ -131,12 +152,27 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
 
       setNicknameDuplicated(!data.available);
     } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.errorCode === "NAME_TAKEN") {
+          setNicknameError("이미 쓰이고 있는 닉네임입니다");
+        } else if (error.errorCode === "NAME_TOO_LONG") {
+          setNicknameError("이름은 14자 이하여야 합니다");
+        } else if (error.errorCode === "NAME_REQUIRED") {
+          setNicknameError("닉네임을 입력해 주세요");
+        } else {
+          setNicknameError("닉네임 확인 중 오류가 발생했습니다");
+        }
+      } else {
+        setNicknameError("닉네임 확인 중 오류가 발생했습니다");
+      }
       setNicknameDuplicated(null);
     }
   };
 
   const handleStoreNameCheck = async () => {
     if (!storeName) return;
+
+    setStoreNameError("");
 
     try {
       const data = await checkName(storeName);
@@ -150,6 +186,19 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
 
       setStoreNameDuplicated(!data.available);
     } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.errorCode === "NAME_TAKEN") {
+          setStoreNameError("이미 쓰이고 있는 가게 이름입니다");
+        } else if (error.errorCode === "NAME_TOO_LONG") {
+          setStoreNameError("이름은 14자 이하여야 합니다");
+        } else if (error.errorCode === "NAME_REQUIRED") {
+          setStoreNameError("가게 이름을 입력해 주세요");
+        } else {
+          setStoreNameError("가게 이름 확인 중 오류가 발생했습니다");
+        }
+      } else {
+        setStoreNameError("가게 이름 확인 중 오류가 발생했습니다");
+      }
       setStoreNameDuplicated(null);
     }
   };
@@ -194,6 +243,7 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
               onChange={(e) => {
                 setEmail(e.target.value);
                 setEmailDuplicated(null);
+                setEmailError("");
               }}
               autoComplete="email"
             />
@@ -209,11 +259,13 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
           </button>
         </div>
 
-        {emailDuplicated === false && (
+        {emailError && <p className="text-xs text-red-700">{emailError}</p>}
+
+        {!emailError && emailDuplicated === false && (
           <p className="text-xs text-green-700">이용 가능한 이메일입니다.</p>
         )}
 
-        {emailDuplicated === true && (
+        {!emailError && emailDuplicated === true && (
           <p className="text-xs text-red-700">이미 가입된 이메일입니다.</p>
         )}
 
@@ -251,6 +303,7 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
                   onChange={(e) => {
                     setNickname(e.target.value);
                     setNicknameDuplicated(null);
+                    setNicknameError("");
                   }}
                   autoComplete="nickname"
                 />
@@ -266,11 +319,15 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
               </button>
             </div>
 
-            {nicknameDuplicated === false && (
+            {nicknameError && (
+              <p className="text-xs text-red-700">{nicknameError}</p>
+            )}
+
+            {!nicknameError && nicknameDuplicated === false && (
               <p className="text-xs text-green-700">이용 가능한 이름입니다.</p>
             )}
 
-            {nicknameDuplicated === true && (
+            {!nicknameError && nicknameDuplicated === true && (
               <p className="text-xs text-red-700">이미 사용 중인 이름입니다.</p>
             )}
           </>
@@ -284,6 +341,7 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
                   onChange={(e) => {
                     setStoreName(e.target.value);
                     setStoreNameDuplicated(null);
+                    setStoreNameError("");
                   }}
                 />
               </div>
@@ -298,11 +356,15 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
               </button>
             </div>
 
-            {storeNameDuplicated === false && (
+            {storeNameError && (
+              <p className="text-xs text-red-700">{storeNameError}</p>
+            )}
+
+            {!storeNameError && storeNameDuplicated === false && (
               <p className="text-xs text-green-700">이용 가능한 이름입니다.</p>
             )}
 
-            {storeNameDuplicated === true && (
+            {!storeNameError && storeNameDuplicated === true && (
               <p className="text-xs text-red-700">이미 사용 중인 이름입니다.</p>
             )}
           </>
