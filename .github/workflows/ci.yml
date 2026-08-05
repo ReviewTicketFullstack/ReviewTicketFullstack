@@ -30,6 +30,7 @@ on:
     branches:
       - main
       - dev
+      - front-customer
 
 jobs:
   frontend-build:
