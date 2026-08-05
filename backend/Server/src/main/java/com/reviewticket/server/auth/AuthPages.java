@@ -148,6 +148,36 @@ final class AuthPages {
                     PASSWORD_MISSING_SPECIAL: '특수문자를 포함해주세요.'
                   };
 
+                  // 요청량 제한(429)에 걸린 동안 두 버튼을 잠그고 남은 시간을 센다.
+                  // 이 페이지가 보내는 요청은 세 번뿐이라 스스로 걸릴 일은 거의 없지만,
+                  // 같은 IP 의 다른 요청이 물통을 비우면 여기도 함께 막힌다.
+                  var blockTimer = null;
+                  function startBlock(seconds) {
+                    var until = Date.now() + (seconds || 0) * 1000;
+                    var verifyBtn = document.getElementById('verifyBtn');
+                    var changeBtn = document.getElementById('changeBtn');
+                    if (blockTimer) { clearInterval(blockTimer); }
+
+                    function tick() {
+                      var left = Math.ceil((until - Date.now()) / 1000);
+                      if (left <= 0) {
+                        clearInterval(blockTimer); blockTimer = null;
+                        verifyBtn.disabled = false; changeBtn.disabled = false;
+                        show('', '');
+                        return;
+                      }
+                      var m = Math.floor(left / 60);
+                      var s = left %% 60;
+                      show('bad', '요청이 너무 많습니다. ' + m + ':' + (s < 10 ? '0' + s : s)
+                        + ' 후 다시 시도해주세요.');
+                    }
+
+                    verifyBtn.disabled = true;
+                    changeBtn.disabled = true;
+                    tick();
+                    blockTimer = setInterval(tick, 1000);
+                  }
+
                   // 가입 화면(SignUpForm 의 getPasswordError)과 같은 순서·문구를 쓴다.
                   // 이 페이지는 React 앱과 분리돼 있어 그 함수를 가져다 쓸 수 없다.
                   function passwordError(pw) {
@@ -178,7 +208,9 @@ final class AuthPages {
                     try {
                       var res = await fetch('/api/auth/password-reset/check?token=' + encodeURIComponent(token));
                       var data = await res.json().catch(function(){ return {}; });
-                      if (res.ok && data.valid) {
+                      if (res.status === 429) {
+                        startBlock(data.retryAfterSeconds);
+                      } else if (res.ok && data.valid) {
                         document.getElementById('step1').classList.add('hidden');
                         document.getElementById('step2').classList.remove('hidden');
                         document.getElementById('msg').textContent = '';
@@ -207,6 +239,8 @@ final class AuthPages {
                       if (res.ok) {
                         document.getElementById('step2').classList.add('hidden');
                         showHtml('ok', '비밀번호가 변경되었습니다.<br>이 창을 닫고 새 비밀번호로 로그인해 주세요.');
+                      } else if (res.status === 429) {
+                        startBlock(data.retryAfterSeconds);
                       } else {
                         show('bad', ERROR_TEXT[data.errorCode] || data.message || '변경에 실패했습니다.');
                         btn.disabled = false;
