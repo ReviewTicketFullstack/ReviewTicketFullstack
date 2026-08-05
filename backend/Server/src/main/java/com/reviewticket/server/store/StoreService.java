@@ -32,7 +32,26 @@ public class StoreService {
     }
 
     /**
-     * 사장 회원가입이 확정될 때 가게를 함께 만든다.
+     * 프로토타입용 기본 메뉴.
+     *
+     * 사장이 메뉴를 등록하는 API 가 아직 없어서, 가게를 만들 때 이 다섯 개를
+     * 함께 넣는다. 그러지 않으면 가게는 있는데 메뉴가 비어 있어 고객 화면의
+     * 주문 흐름을 확인할 수 없다.
+     *
+     * 메뉴관리 API 가 붙으면 이 상수와 아래 생성 코드를 지운다.
+     */
+    private record SeedMenu(String name, int price, boolean reviewEvent) {
+    }
+
+    private static final List<SeedMenu> SEED_MENUS = List.of(
+            new SeedMenu("피자", 18000, true),
+            new SeedMenu("햄버거", 9000, true),
+            new SeedMenu("치킨윙", 15000, false),
+            new SeedMenu("파스타", 13000, true),
+            new SeedMenu("샐러드", 8000, false));
+
+    /**
+     * 사장 회원가입이 확정될 때 가게와 기본 메뉴를 함께 만든다.
      *
      * 이미 가게가 있으면 아무것도 하지 않는다 — 가입 확정은 한 번뿐이지만,
      * 이 메서드가 다른 경로에서 다시 불려도 가게가 둘로 늘지 않아야 한다.
@@ -42,7 +61,10 @@ public class StoreService {
         if (stores.existsByOwner(owner)) {
             return;
         }
-        stores.save(new Store(owner, owner.getDisplayName()));
+        Store store = stores.save(new Store(owner, owner.getDisplayName()));
+        menus.saveAll(SEED_MENUS.stream()
+                .map(seed -> new Menu(store, seed.name(), seed.price(), seed.reviewEvent()))
+                .toList());
     }
 
     /** 홈 목록. 최신 가게가 먼저 온다. */
