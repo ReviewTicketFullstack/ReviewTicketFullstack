@@ -31,7 +31,7 @@ public class ApiExceptionHandler {
      * 안 붙인 곳)는 지금처럼 message 를 그대로 내려준다.
      */
     private static ResponseEntity<Map<String, Object>> body(
-            HttpStatus status, String errorCode, String message, boolean retryable) {
+            HttpStatus status, String errorCode, String message) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("error", status.getReasonPhrase());
         if (errorCode != null) {
@@ -39,14 +39,13 @@ public class ApiExceptionHandler {
         } else {
             payload.put("message", message);
         }
-        payload.put("retryable", retryable);
         return ResponseEntity.status(status).body(payload);
     }
 
     @ExceptionHandler({ IllegalArgumentException.class, ConstraintViolationException.class })
     public ResponseEntity<Map<String, Object>> badRequest(Exception e) {
         String errorCode = e instanceof ValidationException ve ? ve.getErrorCode() : null;
-        return body(HttpStatus.BAD_REQUEST, errorCode, e.getMessage(), false);
+        return body(HttpStatus.BAD_REQUEST, errorCode, e.getMessage());
     }
 
     /** @Valid 가 걸린 요청 본문의 첫 위반 사유를 그대로 보여준다. */
@@ -57,13 +56,13 @@ public class ApiExceptionHandler {
                 .filter(m -> m != null && !m.isBlank())
                 .findFirst()
                 .orElse("입력값이 올바르지 않습니다");
-        return body(HttpStatus.BAD_REQUEST, null, message, false);
+        return body(HttpStatus.BAD_REQUEST, null, message);
     }
 
     /** 이미 쓰이고 있는 이메일·닉네임. 형식 오류와 달리 다른 값을 쓰라고 안내해야 한다. */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, Object>> conflict(ConflictException e) {
-        return body(HttpStatus.CONFLICT, e.getErrorCode(), e.getMessage(), false);
+        return body(HttpStatus.CONFLICT, e.getErrorCode(), e.getMessage());
     }
 
     /**
@@ -80,18 +79,29 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> constraintViolation(DataIntegrityViolationException e) {
         log.warn("DB 제약 위반 (동시 요청 경합으로 추정)", e);
-        return body(HttpStatus.CONFLICT, null,
-                "이미 사용 중인 정보입니다. 다시 시도해 주세요.", true);
+        return body(HttpStatus.CONFLICT, null, "이미 사용 중인 정보입니다. 다시 시도해 주세요.");
     }
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> unauthorized(UnauthorizedException e) {
-        return body(HttpStatus.UNAUTHORIZED, null, e.getMessage(), false);
+        return body(HttpStatus.UNAUTHORIZED, null, e.getMessage());
     }
 
+    /**
+     * 남은 차단 시간을 함께 보낸다. 화면이 그 시간을 세어 보여주고, 그동안
+     * 로그인·가입 버튼을 막는다. Retry-After 헤더로도 같은 값을 보내지만
+     * 본문에 넣는 이유는 — 프론트가 다른 출처에서 뜨는 경우 헤더를 읽으려면
+     * CORS 노출 설정이 따로 필요한데, 본문은 그런 제약이 없다.
+     */
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<Map<String, Object>> tooManyRequests(TooManyRequestsException e) {
-        return body(HttpStatus.TOO_MANY_REQUESTS, null, e.getMessage(), true);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("error", HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase());
+        payload.put("errorCode", "TOO_MANY_REQUESTS");
+        payload.put("retryAfterSeconds", e.getRetryAfterSeconds());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(e.getRetryAfterSeconds()))
+                .body(payload);
     }
 
 }
