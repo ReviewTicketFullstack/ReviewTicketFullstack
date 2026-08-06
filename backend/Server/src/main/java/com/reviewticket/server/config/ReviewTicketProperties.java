@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** application.yml 의 reviewticket.* 를 그대로 받는다. */
 @ConfigurationProperties(prefix = "reviewticket")
-public record ReviewTicketProperties(String demoDir, Auth auth, Mail mail, Cors cors) {
+public record ReviewTicketProperties(String demoDir, Auth auth, Mail mail, Cors cors, Order order) {
 
     /**
      * @param jwtSecret       서명 키. 32바이트 이상. application-local.yml 에 둔다
@@ -21,6 +21,14 @@ public record ReviewTicketProperties(String demoDir, Auth auth, Mail mail, Cors 
 
     /** @param from 발신 주소. 비어 있으면 메일을 보내지 않고 링크를 로그에 남긴다 */
     public record Mail(String from) {
+    }
+
+    /**
+     * @param reviewTtl 주문 후 리뷰를 쓸 수 있는 기간. 주문 시각에 이 값을 더해
+     *                  review_deadline 을 정한다. 정책이 바뀌면 이 줄만 고치면 되고,
+     *                  프론트는 서버가 내려준 마감 시각을 그대로 표시한다
+     */
+    public record Order(Duration reviewTtl) {
     }
 
     /**

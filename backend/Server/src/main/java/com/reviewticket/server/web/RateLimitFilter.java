@@ -42,14 +42,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         // 프록시를 두게 되면 그때 그 프록시가 붙인 값만 받도록 바꾼다.
         long retryAfter = ipLimiter.retryAfterSeconds(request.getRemoteAddr());
         if (retryAfter > 0) {
-            reject(response, HttpStatus.TOO_MANY_REQUESTS, retryAfter,
-                    "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.");
+            reject(response, HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_REQUESTS", retryAfter);
             return;
         }
 
         if (!concurrentLimiter.tryAcquire()) {
-            reject(response, HttpStatus.SERVICE_UNAVAILABLE, 1,
-                    "서버가 혼잡합니다. 잠시 후 다시 시도해 주세요.");
+            reject(response, HttpStatus.SERVICE_UNAVAILABLE, "SERVER_BUSY", 1);
             return;
         }
 
@@ -61,9 +59,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
-    /** 응답 형식을 ApiExceptionHandler 와 같게 맞춘다. 프론트가 message 만 보면 된다. */
-    private void reject(HttpServletResponse response, HttpStatus status, long retryAfterSeconds,
-            String message) throws IOException {
+    /**
+     * 응답 형식을 ApiExceptionHandler 와 같게 맞춘다. 문구는 담지 않는다 —
+     * errorCode 로 프론트가 채우고, retryAfterSeconds 로 남은 시간을 세어 보여준다.
+     *
+     * 이 필터는 보안 필터보다 앞이라 예외를 던져도 ApiExceptionHandler 가
+     * 잡지 못한다. 그래서 여기서 직접 JSON 을 쓴다.
+     */
+    private void reject(HttpServletResponse response, HttpStatus status, String errorCode,
+            long retryAfterSeconds) throws IOException {
 
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -71,7 +75,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));
 
         response.getWriter().write("""
-                {"error":"%s","message":"%s","retryable":true}"""
-                .formatted(status.getReasonPhrase(), message));
+                {"error":"%s","errorCode":"%s","retryAfterSeconds":%d}"""
+                .formatted(status.getReasonPhrase(), errorCode, retryAfterSeconds));
     }
 }

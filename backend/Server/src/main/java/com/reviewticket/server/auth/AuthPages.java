@@ -34,6 +34,7 @@ final class AuthPages {
               input { width: 100%; box-sizing: border-box; padding: 0.6rem; margin-top: 0.4rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 1rem; }
               label { display: block; margin-top: 1rem; font-size: 0.9rem; font-weight: 600; }
               .hint { font-size: 0.85rem; color: #64748b; }
+              .field-error { margin-top: 0.4rem; font-size: 0.8rem; color: #b91c1c; }
               .msg { margin-top: 1rem; padding: 0.8rem; border-radius: 0.5rem; }
               .ok { background: #dcfce7; color: #166534; }
               .bad { background: #fee2e2; color: #991b1b; }
@@ -56,6 +57,14 @@ final class AuthPages {
                 <button id="btn" onclick="finish()">회원가입 완료하기</button>
                 <div id="msg"></div>
                 <script>
+                  // 서버는 errorCode 만 보낸다. 문구는 여기서 채운다.
+                  var ERROR_TEXT = {
+                    VERIFY_TOKEN_INVALID: '인증 링크가 만료되었거나 이미 처리되었습니다.',
+                    VERIFY_TOKEN_EXPIRED: '인증 링크가 만료되었습니다. 회원가입을 다시 진행해 주세요.',
+                    EMAIL_TAKEN: '이미 가입된 이메일입니다.',
+                    NAME_TAKEN: '이미 쓰이고 있는 이름입니다. 회원가입을 다시 진행해 주세요.',
+                    TOO_MANY_REQUESTS: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.'
+                  };
                   async function finish() {
                     var btn = document.getElementById('btn');
                     var msg = document.getElementById('msg');
@@ -74,7 +83,7 @@ final class AuthPages {
                         msg.textContent = '회원가입이 완료되었습니다. 이 창을 닫고 로그인해 주세요.';
                       } else {
                         msg.className = 'msg bad';
-                        msg.textContent = data.message || '처리에 실패했습니다.';
+                        msg.textContent = ERROR_TEXT[data.errorCode] || '처리에 실패했습니다.';
                         btn.disabled = false;
                       }
                     } catch (e) {
@@ -107,13 +116,15 @@ final class AuthPages {
                 </div>
 
                 <form id="step2" class="hidden" onsubmit="submitReset(event)">
-                  <p class="hint">새 비밀번호를 입력해 주세요. 대문자, 소문자, 숫자, 특수문자를 모두 포함해 8자 이상.</p>
+                  <p class="hint">새 비밀번호를 입력해 주세요.<br>비밀번호는 대문자, 소문자, 숫자, 특수문자를 모두 포함해 6자~14자 사이로 만들어 주세요.</p>
                   <label>새 비밀번호
-                    <input type="password" id="pw" autocomplete="new-password" required>
+                    <input type="password" id="pw" autocomplete="new-password" oninput="onPasswordInput()" required>
                   </label>
+                  <div id="pwError" class="field-error"></div>
                   <label>새 비밀번호 확인
-                    <input type="password" id="pw2" autocomplete="new-password" required>
+                    <input type="password" id="pw2" autocomplete="new-password" oninput="onConfirmInput()" required>
                   </label>
+                  <div id="pw2Error" class="field-error"></div>
                   <button type="submit" id="changeBtn">비밀번호 변경</button>
                 </form>
 
@@ -124,13 +135,93 @@ final class AuthPages {
                     var m = document.getElementById('msg');
                     m.className = 'msg ' + cls; m.textContent = text;
                   }
+                  // 줄바꿈이 필요한 곳에만 쓴다. 코드에 직접 적은 문구만 넘길 것 —
+                  // 서버가 보낸 값은 show() 로 넣어야 한다(그쪽은 textContent 라 안전하다).
+                  function showHtml(cls, html) {
+                    var m = document.getElementById('msg');
+                    m.className = 'msg ' + cls; m.innerHTML = html;
+                  }
+
+                  // 서버가 errorCode 만 보내므로(message 는 빠진다) 문구는 여기서 채운다.
+                  // 문구는 아래 passwordError() 가 돌려주는 것과 같게 맞춘다 — 서버와
+                  // 판정 순서가 같아 같은 조건에서 두 문구가 함께 뜰 수 있는데,
+                  // 그때 표현까지 다르면 서로 다른 지적을 받은 것처럼 보인다.
+                  var ERROR_TEXT = {
+                    PASSWORD_TOO_SHORT: '6~14자리로 입력해주세요.',
+                    PASSWORD_TOO_LONG: '6~14자리로 입력해주세요.',
+                    PASSWORD_INVALID_CHAR: '사용할 수 없는 문자가 있습니다.',
+                    PASSWORD_MISSING_UPPER: '대문자를 포함해주세요.',
+                    PASSWORD_MISSING_LOWER: '소문자를 포함해주세요.',
+                    PASSWORD_MISSING_DIGIT: '숫자를 포함해주세요.',
+                    PASSWORD_MISSING_SPECIAL: '특수문자를 포함해주세요.',
+                    PASSWORD_MISMATCH: '새 비밀번호가 서로 다릅니다.',
+                    RESET_TOKEN_INVALID: '재설정 링크가 올바르지 않습니다. 다시 요청해 주세요.',
+                    RESET_TOKEN_EXPIRED: '재설정 링크가 만료되었거나 이미 사용되었습니다. 다시 요청해 주세요.'
+                  };
+
+                  // 요청량 제한(429)에 걸린 동안 두 버튼을 잠그고 남은 시간을 센다.
+                  // 이 페이지가 보내는 요청은 세 번뿐이라 스스로 걸릴 일은 거의 없지만,
+                  // 같은 IP 의 다른 요청이 물통을 비우면 여기도 함께 막힌다.
+                  var blockTimer = null;
+                  function startBlock(seconds) {
+                    var until = Date.now() + (seconds || 0) * 1000;
+                    var verifyBtn = document.getElementById('verifyBtn');
+                    var changeBtn = document.getElementById('changeBtn');
+                    if (blockTimer) { clearInterval(blockTimer); }
+
+                    function tick() {
+                      var left = Math.ceil((until - Date.now()) / 1000);
+                      if (left <= 0) {
+                        clearInterval(blockTimer); blockTimer = null;
+                        verifyBtn.disabled = false; changeBtn.disabled = false;
+                        show('', '');
+                        return;
+                      }
+                      var m = Math.floor(left / 60);
+                      var s = left %% 60;
+                      show('bad', '요청이 너무 많습니다. ' + m + ':' + (s < 10 ? '0' + s : s)
+                        + ' 후 다시 시도해주세요.');
+                    }
+
+                    verifyBtn.disabled = true;
+                    changeBtn.disabled = true;
+                    tick();
+                    blockTimer = setInterval(tick, 1000);
+                  }
+
+                  // 가입 화면(SignUpForm 의 getPasswordError)과 같은 순서·문구를 쓴다.
+                  // 이 페이지는 React 앱과 분리돼 있어 그 함수를 가져다 쓸 수 없다.
+                  function passwordError(pw) {
+                    if (!pw) return '';
+                    if (!/[A-Z]/.test(pw)) return '대문자를 포함해주세요.';
+                    if (!/[a-z]/.test(pw)) return '소문자를 포함해주세요.';
+                    if (!/[0-9]/.test(pw)) return '숫자를 포함해주세요.';
+                    if (!/[!@#$%%^&*]/.test(pw)) return '특수문자를 포함해주세요.';
+                    if (/[^A-Za-z0-9!@#$%%^&*]/.test(pw)) return '사용할 수 없는 문자가 있습니다.';
+                    if (pw.length < 6 || pw.length > 14) return '6~14자리로 입력해주세요.';
+                    return '';
+                  }
+                  function onPasswordInput() {
+                    document.getElementById('pwError').textContent =
+                      passwordError(document.getElementById('pw').value);
+                    onConfirmInput();
+                  }
+                  function onConfirmInput() {
+                    var pw = document.getElementById('pw').value;
+                    var pw2 = document.getElementById('pw2').value;
+                    document.getElementById('pw2Error').textContent =
+                      (pw2 && pw !== pw2) ? '비밀번호가 서로 다릅니다.' : '';
+                  }
+
                   async function verify() {
                     var btn = document.getElementById('verifyBtn');
                     btn.disabled = true; show('', '확인 중…');
                     try {
                       var res = await fetch('/api/auth/password-reset/check?token=' + encodeURIComponent(token));
                       var data = await res.json().catch(function(){ return {}; });
-                      if (res.ok && data.valid) {
+                      if (res.status === 429) {
+                        startBlock(data.retryAfterSeconds);
+                      } else if (res.ok && data.valid) {
                         document.getElementById('step1').classList.add('hidden');
                         document.getElementById('step2').classList.remove('hidden');
                         document.getElementById('msg').textContent = '';
@@ -158,9 +249,11 @@ final class AuthPages {
                       var data = await res.json().catch(function(){ return {}; });
                       if (res.ok) {
                         document.getElementById('step2').classList.add('hidden');
-                        show('ok', '비밀번호가 변경되었습니다. 이 창을 닫고 새 비밀번호로 로그인해 주세요.');
+                        showHtml('ok', '비밀번호가 변경되었습니다.<br>이 창을 닫고 새 비밀번호로 로그인해 주세요.');
+                      } else if (res.status === 429) {
+                        startBlock(data.retryAfterSeconds);
                       } else {
-                        show('bad', data.message || '변경에 실패했습니다.');
+                        show('bad', ERROR_TEXT[data.errorCode] || '변경에 실패했습니다.');
                         btn.disabled = false;
                       }
                     } catch (e) {
