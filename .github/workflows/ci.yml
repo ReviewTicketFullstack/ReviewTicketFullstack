@@ -24,6 +24,7 @@ on:
     branches:
       - main
       - dev
+      - front-customer
 
   pull_request:
     # main, dev 브랜치로 들어가는 PR만 검사
