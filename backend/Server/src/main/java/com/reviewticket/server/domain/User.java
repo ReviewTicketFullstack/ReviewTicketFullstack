@@ -59,6 +59,11 @@ public class User {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "tickets", insertable = false, updatable = false)
+    private int tickets;
+
+    
+
     protected User() {
     }
 
@@ -112,6 +117,10 @@ public class User {
 
     public boolean isEmailVerified() {
         return emailVerified;
+    }
+    
+    public int getTickets() {
+        return tickets;
     }
 
     public int getTokenVersion() {

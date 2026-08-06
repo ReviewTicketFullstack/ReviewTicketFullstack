@@ -7,6 +7,7 @@ export interface MeResponse {
   email: string;
   displayName: string;
   role: UserRole;
+  tickets: number;
 }
 
 export interface ChangeNameResponse {
