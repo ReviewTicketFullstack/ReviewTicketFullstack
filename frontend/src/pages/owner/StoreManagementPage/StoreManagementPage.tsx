@@ -16,16 +16,12 @@ export function StoreManagementPage() {
     setIsEditing(true);
   };
 
-  // 우측 상단 "정보 수정" 토글 — 편집 중이면 취소, 아니면 편집 시작
-  const handleToggleEdit = () => {
-    if (isEditing) {
-      setIsEditing(false);
-    } else {
-      handleStartEdit();
-    }
+  // 취소: 편집모드만 종료, 이름 변경은 버림 (로고는 이미 반영된 채로 유지)
+  const handleCancel = () => {
+    setIsEditing(false);
   };
 
-  // 이름만 확정 (로고는 이미지등록 클릭 즉시 별도로 반영됨)
+  // 저장: 이름 확정 (로고는 이미지등록 클릭 즉시 별도로 반영됨)
   const handleSave = () => {
     updateDisplayName(name);
     setIsEditing(false);
@@ -45,9 +41,20 @@ export function StoreManagementPage() {
     <div className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-ink-900">가게관리</h1>
-        <Button variant="secondary" size="small" onClick={handleToggleEdit}>
-          정보 수정
-        </Button>
+        {isEditing ? (
+          <div className="flex gap-2">
+            <Button variant="secondary" size="small" onClick={handleSave}>
+              수정
+            </Button>
+            <Button variant="secondary" size="small" onClick={handleCancel}>
+              취소
+            </Button>
+          </div>
+        ) : (
+          <Button variant="secondary" size="small" onClick={handleStartEdit}>
+            정보 수정
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 rounded-lg bg-neutral-100 p-6">
@@ -94,8 +101,9 @@ export function StoreManagementPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
-              <Button variant="secondary" size="small" onClick={handleSave}>
-                수정
+              {/* 중복확인용 자리 — stores.name 중복체크 API 나오면 연결 */}
+              <Button variant="secondary" size="small" disabled>
+                확인
               </Button>
             </div>
           ) : (
