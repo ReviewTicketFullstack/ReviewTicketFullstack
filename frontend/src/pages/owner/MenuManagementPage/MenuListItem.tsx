@@ -1,7 +1,7 @@
-import type { MenuListItem as MenuListItemType } from './mockData';
+import type { MenuItem } from '@/api/storeApi';
 
 interface MenuListItemProps {
-  menu: MenuListItemType;
+  menu: MenuItem;
   onClick?: () => void;
 }
 
@@ -23,7 +23,7 @@ export function MenuListItem({ menu, onClick }: MenuListItemProps) {
         <div className="flex items-center gap-2">
           <span className="text-base font-bold">{menu.name}</span>
           {/* 리뷰 이벤트 설정된 메뉴만 배지 표시 */}
-          {menu.hasReviewEvent && (
+          {menu.reviewEvent && (
             <span className="inline-block rounded bg-red-700 px-2 py-0.5 text-xs font-semibold text-white">
               리뷰
             </span>

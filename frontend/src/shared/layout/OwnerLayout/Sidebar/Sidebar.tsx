@@ -1,11 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/app/providers';
+import { useStoreLogo } from '../StoreLogoContext';
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'font-bold text-brand-800' : 'text-neutral-700';
 
 export function Sidebar() {
   const { user } = useAuth();
+  const { logo } = useStoreLogo();
 // FE-2.1: 사이드바에 사장님 이름 표시, 가게관리/메뉴관리/리뷰관리 메뉴
   return (
     <aside className="flex w-65 flex-col border-r border-neutral-200 bg-neutral-50 p-4">
@@ -14,8 +16,12 @@ export function Sidebar() {
         <span className="text-xl font-semibold text-ink-900">사장님</span>
       </div>
       <div className="mb-6 flex items-center gap-2 rounded-lg bg-neutral-200 p-3">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-neutral-300">
-          <span className="text-[10px] text-neutral-500">Image</span>
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-300">
+          {logo ? (
+            <img src={logo} alt="가게 로고" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-[10px] text-neutral-500">Image</span>
+          )}
         </div>
         <span className="flex-1 truncate font-semibold pl-2">{user?.displayName}</span>
       </div>
