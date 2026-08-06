@@ -1,5 +1,6 @@
 import { Card } from '@/shared/ui';
 import type { CompletedReview } from './mockData';
+import { OrderItemBox } from './OrderItemBox';
 
 interface CompletedReviewItemProps {
   review: CompletedReview;
@@ -13,8 +14,12 @@ export function CompletedReviewItem({ review }: CompletedReviewItemProps) {
     <Card bordered className="flex flex-col gap-2 p-4">
       <div className="flex items-center gap-3 text-sm">
         <span className="font-semibold text-ink-900">{review.reviewerId}</span>
-        {/* 별점 숫자를 ★ 문자 반복으로 표시 */}
-        <span className="text-star">{'★'.repeat(review.rating)}</span>
+        {/* 별점 숫자만큼 별 아이콘 반복 표시 */}
+        <span className="flex items-center gap-0.5">
+          {Array.from({ length: review.rating }).map((_, i) => (
+            <img key={i} src="/star.svg" alt="" className="size-3.5" />
+          ))}
+        </span>
         <span className="text-ink-500">{date}</span>
       </div>
       <p className="text-sm text-ink-700">{review.comment}</p>
@@ -24,6 +29,12 @@ export function CompletedReviewItem({ review }: CompletedReviewItemProps) {
           <span className="text-xs text-gray-400">Image</span>
         </div>
       )}
+      {/* 리뷰 작성한 주문의 메뉴/가격 */}
+      <OrderItemBox
+        menuName={review.menuName}
+        price={review.price}
+        hasReviewEvent={review.hasReviewEvent}
+      />
     </Card>
   );
 }
