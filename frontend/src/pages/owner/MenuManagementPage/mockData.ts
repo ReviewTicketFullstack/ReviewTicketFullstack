@@ -12,9 +12,9 @@ export interface MenuListItem {
 }
 
 export const menuItems: MenuListItem[] = [
-  { id: 'menu-pizza', name: '피자', price: 18000, hasReviewEvent: true },
-  { id: 'menu-burger', name: '햄버거', price: 9000, hasReviewEvent: true },
-  { id: 'menu-chicken-wing', name: '치킨윙', price: 15000, hasReviewEvent: false },
-  { id: 'menu-bibimbap', name: '비빔밥', price: 10000, hasReviewEvent: false },
-  { id: 'menu-ramen', name: '라멘', price: 11000, hasReviewEvent: false },
+  { id: 'menu-pizza', name: 'sample피자', price: 18000, hasReviewEvent: true },
+  { id: 'menu-burger', name: 'sample햄버거', price: 9000, hasReviewEvent: true },
+  { id: 'menu-chicken-wing', name: 'sample치킨윙', price: 15000, hasReviewEvent: false },
+  { id: 'menu-bibimbap', name: 'sample비빔밥', price: 10000, hasReviewEvent: false },
+  { id: 'menu-ramen', name: 'sample라멘', price: 11000, hasReviewEvent: false },
 ];
