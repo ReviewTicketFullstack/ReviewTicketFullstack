@@ -1,6 +1,7 @@
 import { Card } from '@/shared/ui';
 import type { CompletedReview } from './mockData';
 import { OrderItemBox } from './OrderItemBox';
+import { menuItems } from '../MenuManagementPage/mockData';
 
 interface CompletedReviewItemProps {
   review: CompletedReview;
@@ -9,6 +10,8 @@ interface CompletedReviewItemProps {
 export function CompletedReviewItem({ review }: CompletedReviewItemProps) {
   // 서버 날짜 문자열을 한국어 표기(YYYY. M. D.)로 변환
   const date = new Date(review.createdAt).toLocaleDateString('ko-KR');
+  // 메뉴관리에서 설정한 리뷰이벤트 여부를 menuId로 찾아 실시간 반영
+  const menu = menuItems.find((item) => item.id === review.menuId);
 
   return (
     <Card bordered className="flex flex-col gap-2 p-4">
@@ -30,7 +33,11 @@ export function CompletedReviewItem({ review }: CompletedReviewItemProps) {
         </div>
       )}
       {/* 리뷰 작성한 주문의 메뉴/가격 */}
-      <OrderItemBox menuName={review.menuName} price={review.price} />
+      <OrderItemBox
+        menuName={review.menuName}
+        price={review.price}
+        hasReviewEvent={menu?.hasReviewEvent ?? false}
+      />
     </Card>
   );
 }
