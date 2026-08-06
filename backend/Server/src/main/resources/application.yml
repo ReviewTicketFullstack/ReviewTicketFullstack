@@ -28,6 +28,13 @@ spring:
     # dialect 는 일부러 적지 않는다 — Boot 4/Hibernate 7 에서 MySQL8Dialect 같은
     # 버전별 이름이 제거됐다. 안 적으면 드라이버가 알아서 감지한다.
 
+  servlet:
+    multipart:
+      # 리뷰 사진의 상한(15MB)에 맞춘다. 이보다 작으면 정상 사진도 튕겨 나가고,
+      # 기본값(1MB)을 그대로 두면 휴대폰 사진 대부분이 이 값보다 커서 막힌다.
+      max-file-size: 15MB
+      max-request-size: 16MB
+
   # 시각 형식은 따로 설정하지 않는다.
   #
   # Boot 4 는 Jackson 3(tools.jackson)을 쓰는데, 거기서는 날짜를 ISO 8601
@@ -72,6 +79,23 @@ reviewticket:
     # 마감 동작을 바로 확인할 수 있다. 실제 정책이 정해지면 이 줄만 고친다
     # (프론트는 서버가 계산해 내려준 마감 시각을 그대로 표시한다).
     review-ttl: 1m
+  ai:
+    # AI 서버 주소. 로컬 개발 기본값만 두고, 다른 PC 에서 띄운 경우는
+    # application-local.yml 에서 덮어쓴다(auth.base-url 과 같은 이유).
+    server-url: http://localhost:8000/similarity
+    # 500장 실측 기준 최대 응답 시간이 3.5초였다. 넉넉히 여유를 둔다.
+    timeout: 10s
+    match-threshold: 0.80
+  upload:
+    dir: ./uploads
+    base-url: /uploads
+    target-long-edge: 1920
+  review:
+    content-min-length: 10
+    content-max-length: 50
+    # upload.target-long-edge 와 같은 값이어야 한다 — 하한과 목표치가 같아야
+    # 리사이즈가 항상 줄이기만 하고 늘리는 일이 없다.
+    min-image-long-edge: 1920
   cors:
     # 쿠키를 쓰지 않고 Authorization 헤더로만 인증하므로(allowCredentials 꺼짐)
     # 출처를 전부 열어도 쿠키 기반 CSRF 같은 위험이 생기지 않는다.

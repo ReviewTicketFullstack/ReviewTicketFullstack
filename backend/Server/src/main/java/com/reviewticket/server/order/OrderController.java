@@ -34,18 +34,19 @@ public class OrderController {
      */
     public record CreateOrderRequest(
             @NotNull(message = "가게를 선택해 주세요") Long storeId,
-            @NotNull(message = "메뉴를 선택해 주세요") Long menuId) {
+            @NotNull(message = "메뉴를 선택해 주세요") Long menuId,
+            boolean reviewEventApply) {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public OrderResponse create(@AuthenticationPrincipal User user,
+    public OrderCreateResponse create(@AuthenticationPrincipal User user,
             @Valid @RequestBody CreateOrderRequest request) {
-        return orderService.create(user, request.storeId(), request.menuId());
+        return orderService.create(user.getId(), request.storeId(), request.menuId(), request.reviewEventApply());
     }
 
     /** 로그인한 본인 주문만, 최신순. */
     @GetMapping
     public List<OrderResponse> myOrders(@AuthenticationPrincipal User user) {
-        return orderService.findMine(user);
+        return orderService.findMine(user.getId());
     }
 }

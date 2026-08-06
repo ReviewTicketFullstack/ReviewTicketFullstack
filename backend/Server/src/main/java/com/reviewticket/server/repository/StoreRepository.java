@@ -1,6 +1,7 @@
 package com.reviewticket.server.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,5 +15,6 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 
     boolean existsByOwner(User owner);
 
-    boolean existsByName(String name);
+    /** GET/PATCH /api/stores/me. 사장 본인 가게를 찾는다. */
+    Optional<Store> findByOwner(User owner);
 }

@@ -52,6 +52,14 @@ public class User {
     @Column(name = "token_version", nullable = false)
     private int tokenVersion;
 
+    /**
+     * 남은 리뷰 티켓. 고객은 가입할 때 {@value #CUSTOMER_INITIAL_TICKETS} 장을 받는다.
+     * 사장은 티켓 개념이 없어 {@value #OWNER_TICKETS} 로 둔다 — 프론트는 이 값을
+     * 보고 티켓 영역을 감춘다.
+     */
+    @Column(nullable = false)
+    private int tickets;
+
     /** DB 의 DEFAULT / ON UPDATE 가 채운다. */
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -62,6 +70,12 @@ public class User {
     protected User() {
     }
 
+    /** 사장은 티켓을 쓰지 않는다는 표시. 0 장 남은 것과 구분해야 한다. */
+    public static final int OWNER_TICKETS = -1;
+
+    /** 고객이 가입할 때 받는 티켓 수. */
+    public static final int CUSTOMER_INITIAL_TICKETS = 3;
+
     public User(String email, String passwordHash, Role role, String displayName) {
         this.email = email;
         this.passwordHash = passwordHash;
@@ -69,6 +83,7 @@ public class User {
         this.displayName = displayName;
         this.emailVerified = false;
         this.tokenVersion = 0;
+        this.tickets = (role == Role.OWNER) ? OWNER_TICKETS : CUSTOMER_INITIAL_TICKETS;
     }
 
     /** 이메일 인증 링크를 눌렀을 때. 이미 인증된 계정에 다시 불려도 무해하다. */
@@ -88,6 +103,20 @@ public class User {
     public void changePassword(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
         this.tokenVersion++;
+    }
+
+    /** 리뷰이벤트 참여를 신청한 주문이 만들어질 때 하나 잠근다. */
+    public void lockTicket() {
+        this.tickets--;
+    }
+
+    /**
+     * 리뷰가 검증을 통과해 저장될 때 하나 돌려준다. 기한이 지나도록 리뷰가
+     * 없으면 이 메서드를 부르지 않는다 — 잠글 때 이미 줄여 두었으므로 돌려주지
+     * 않는 것 자체가 소멸이고, 별도의 소멸 처리(스케줄러 등)가 필요 없다.
+     */
+    public void refundTicket() {
+        this.tickets++;
     }
 
     public Long getId() {
@@ -116,6 +145,10 @@ public class User {
 
     public int getTokenVersion() {
         return tokenVersion;
+    }
+
+    public int getTickets() {
+        return tickets;
     }
 
     public LocalDateTime getCreatedAt() {
