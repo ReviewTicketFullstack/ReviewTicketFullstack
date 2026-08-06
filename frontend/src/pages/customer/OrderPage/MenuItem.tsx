@@ -4,6 +4,7 @@ export interface MenuItemData {
   /** 원 단위 정수. 표시 형식은 이 컴포넌트가 맡는다 */
   price: number;
   reviewEvent: boolean;
+  imageUrl?: string;
 }
 
 export interface MenuItemProps {
@@ -20,9 +21,17 @@ export function MenuItem({ menu, onClick }: MenuItemProps) {
     >
       {/* Image Section */}
       <div className="flex-shrink-0">
-        <div className="w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center">
-          <span className="text-gray-400 text-xs">Image</span>
-        </div>
+        {menu.imageUrl ? (
+          <img
+            src={menu.imageUrl}
+            alt={menu.name}
+            className="w-20 h-20 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-400 text-xs">No Image</span>
+          </div>
+        )}
       </div>
 
       {/* Info Section */}
