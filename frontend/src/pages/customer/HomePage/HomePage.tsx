@@ -1,9 +1,66 @@
+import { useEffect, useState } from "react";
 import { Card } from "@/shared/ui";
 import { StoreCard } from "./StoreCard";
 import { useAuth } from "@/app/providers";
+import { getStores } from "@/api/storeApi";
+import type { Store } from "@/entities/store";
+
+const CACHE_KEY = "stores_cache";
+
+function getCachedStores(): Store[] | null {
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (!cached) return null;
+
+  try {
+    const { stores, timestamp } = JSON.parse(cached);
+    const nextMidnight = new Date();
+    nextMidnight.setHours(24, 0, 0, 0);
+
+    if (timestamp < nextMidnight.getTime()) {
+      return stores;
+    }
+  } catch {
+    localStorage.removeItem(CACHE_KEY);
+  }
+
+  return null;
+}
+
+function setCachedStores(stores: Store[]) {
+  const nextMidnight = new Date();
+  nextMidnight.setHours(24, 0, 0, 0);
+
+  localStorage.setItem(
+    CACHE_KEY,
+    JSON.stringify({
+      stores,
+      timestamp: Date.now(),
+      expiresAt: nextMidnight.getTime(),
+    })
+  );
+}
 
 export function HomePage() {
   const { user } = useAuth();
+  const [stores, setStores] = useState<Store[]>([]);
+
+  useEffect(() => {
+    const cached = getCachedStores();
+
+    if (cached) {
+      setStores(cached);
+      return;
+    }
+
+    getStores()
+      .then((data) => {
+        setStores(data);
+        setCachedStores(data);
+      })
+      .catch(() => {
+        // 서버 요청 실패, 캐시도 없으므로 빈 상태 유지
+      });
+  }, []);
 
   return (
     <div className="space-y-6 px-5 py-6">
@@ -13,7 +70,7 @@ export function HomePage() {
           <div className="text-center">
             <p className="text-3xl font-bold leading-14 text-left">
               안녕하세요!
-            </p>    
+            </p>
             <p className="text-6xl font-bold leading-14 text-left">
                {user?.displayName} 님!
             </p>
@@ -23,12 +80,16 @@ export function HomePage() {
 
       {/* Store List Section */}
       <div className="space-y-4">
-        <StoreCard
-          storeId="dominu-pizza"
-          storeName="도미너피자"
-          rating={4.7}
-          reviewCount="100+"
-        />
+        {stores.map((store) => (
+          <StoreCard
+            key={store.id}
+            storeId={store.id}
+            storeName={store.name}
+            rating={store.rating}
+            reviewCount={store.reviewCount.toString()}
+            imageUrl={store.imageUrl}
+          />
+        ))}
       </div>
     </div>
   );
