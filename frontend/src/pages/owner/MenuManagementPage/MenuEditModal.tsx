@@ -29,7 +29,7 @@ export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
         className="flex w-full max-w-2xl flex-col gap-8 rounded-2xl bg-white p-10 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {hasReviewEvent && <SamplePhotoStrip />}
+        <SamplePhotoStrip />
         {/* 로그인한 사용자 이름(가게명) 표시 */}
         <div className="w-fit rounded-lg bg-neutral-200 px-4 py-2 text-sm font-semibold">
           {user?.displayName}
