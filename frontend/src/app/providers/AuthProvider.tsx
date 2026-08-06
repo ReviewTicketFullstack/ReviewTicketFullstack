@@ -16,8 +16,6 @@ import { clearToken, getToken, saveToken } from "@/shared/lib/token";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const data = await getMe();
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
@@ -52,12 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, []);
 
-  const signin = (result: LoginResponse, email: string) => {
+  const signin = async (result: LoginResponse) => {
     saveToken(result.token, result.expiresInSeconds);
+
+    const data = await getMe();
 
     setUser({
       id: data.userId,
-      email,
+      email: data.email,
       displayName: data.displayName,
       role: data.role,
       tickets: data.tickets,
