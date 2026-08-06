@@ -29,9 +29,11 @@ export function StatsBar({
           미이행 0
         </span>
       </div>
-      {/*우측 상단 총리뷰수, 전체별점 표시 */}
-      <span>
-        총리뷰수 {totalCount}, 전체별점 {averageRating.toFixed(1)}
+      {/*우측 상단 총리뷰수, 전체별점(별 아이콘+평균) 표시 */}
+      <span className="flex items-center gap-1">
+        총리뷰수 {totalCount}, 전체별점
+        <img src="/star.svg" alt="" className="size-3.5" />
+        {averageRating.toFixed(1)}
       </span>
     </div>
   );
