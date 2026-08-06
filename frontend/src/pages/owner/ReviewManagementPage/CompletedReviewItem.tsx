@@ -1,5 +1,6 @@
 import { Card } from '@/shared/ui';
 import type { CompletedReview } from './mockData';
+import { OrderItemBox } from './OrderItemBox';
 
 interface CompletedReviewItemProps {
   review: CompletedReview;
@@ -28,6 +29,8 @@ export function CompletedReviewItem({ review }: CompletedReviewItemProps) {
           <span className="text-xs text-gray-400">Image</span>
         </div>
       )}
+      {/* 리뷰 작성한 주문의 메뉴/가격 */}
+      <OrderItemBox menuName={review.menuName} price={review.price} />
     </Card>
   );
 }
