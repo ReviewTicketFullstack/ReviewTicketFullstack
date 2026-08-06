@@ -36,7 +36,7 @@ function setCachedStores(stores: Store[]) {
       stores,
       timestamp: Date.now(),
       expiresAt: nextMidnight.getTime(),
-    })
+    }),
   );
 }
 
@@ -72,7 +72,7 @@ export function HomePage() {
               안녕하세요!
             </p>
             <p className="text-6xl font-bold leading-14 text-left">
-               {user?.displayName} 님!
+              {user?.displayName} 님!
             </p>
           </div>
         </Card>

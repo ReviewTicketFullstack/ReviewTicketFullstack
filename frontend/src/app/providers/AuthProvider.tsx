@@ -1,9 +1,22 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { User, UserRole, LoginResponse, AuthContextType } from "@/entities/user";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import type {
+  User,
+  UserRole,
+  LoginResponse,
+  AuthContextType,
+} from "@/entities/user";
 import { getMe } from "@/api/accountApi";
 import { clearToken, getToken, saveToken } from "@/shared/lib/token";
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+const data = await getMe();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -23,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: me.email,
           displayName: me.displayName,
           role: me.role,
+          tickets: me.tickets,
         });
       })
       .catch(() => {
@@ -40,11 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signin = (result: LoginResponse, email: string) => {
     saveToken(result.token, result.expiresInSeconds);
+
     setUser({
-      id: result.userId,
+      id: data.userId,
       email,
-      displayName: result.displayName,
-      role: result.role,
+      displayName: data.displayName,
+      role: data.role,
+      tickets: data.tickets,
     });
     setSelectedRole(null); // 선택 상태 초기화 (계속 기억하려면 user.role)
   };
