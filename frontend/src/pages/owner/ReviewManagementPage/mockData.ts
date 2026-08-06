@@ -20,7 +20,7 @@ export interface PendingOrder {
   menuName: string;
   price: number;
   /** ISO date string */
-  orderedAt: string;
+  createdAt: string;
 }
 
 export const completedReviews: CompletedReview[] = [
@@ -55,13 +55,13 @@ export const pendingOrders: PendingOrder[] = [
     ordererId: 'user_yujin',
     menuName: '치즈버거',
     price: 10000,
-    orderedAt: '2026-08-02T11:20:00.000Z',
+    createdAt: '2026-08-02T11:20:00.000Z',
   },
   {
     id: 'od-2',
     ordererId: 'user_giwon',
     menuName: '토마토 베이컨 버거',
     price: 10000,
-    orderedAt: '2026-08-01T18:30:00.000Z',
+    createdAt: '2026-08-01T18:30:00.000Z',
   },
 ];
