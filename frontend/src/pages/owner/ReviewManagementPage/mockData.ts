@@ -14,8 +14,7 @@ export interface CompletedReview {
   createdAt: string;
   menuName: string;
   price: number;
-  /** 메뉴관리(MenuManagementPage)의 menuItems id 참조 — 리뷰이벤트 여부는 여기서 실시간으로 찾아옴 */
-  menuId: string;
+  hasReviewEvent: boolean;
 }
 
 export interface PendingOrder {
@@ -23,8 +22,7 @@ export interface PendingOrder {
   ordererId: string;
   menuName: string;
   price: number;
-  /** 메뉴관리(MenuManagementPage)의 menuItems id 참조 */
-  menuId: string;
+  hasReviewEvent: boolean;
   /** ISO date string */
   createdAt: string;
 }
@@ -39,7 +37,7 @@ export const completedReviews: CompletedReview[] = [
     createdAt: '2026-08-01T10:12:00.000Z',
     menuName: 'sample피자',
     price: 18000,
-    menuId: 'menu-pizza',
+    hasReviewEvent: true,
   },
   {
     id: 'rv-2',
@@ -50,7 +48,7 @@ export const completedReviews: CompletedReview[] = [
     createdAt: '2026-07-30T14:40:00.000Z',
     menuName: 'sample햄버거',
     price: 9000,
-    menuId: 'menu-burger',
+    hasReviewEvent: true,
   },
   {
     id: 'rv-3',
@@ -60,7 +58,7 @@ export const completedReviews: CompletedReview[] = [
     createdAt: '2026-07-28T09:05:00.000Z',
     menuName: 'sample라멘',
     price: 11000,
-    menuId: 'menu-ramen',
+    hasReviewEvent: false,
   },
 ];
 
@@ -70,7 +68,7 @@ export const pendingOrders: PendingOrder[] = [
     ordererId: 'user_sample4',
     menuName: 'sample치킨윙',
     price: 15000,
-    menuId: 'menu-chicken-wing',
+    hasReviewEvent: false,
     createdAt: '2026-08-02T11:20:00.000Z',
   },
   {
@@ -78,7 +76,7 @@ export const pendingOrders: PendingOrder[] = [
     ordererId: 'user_sample5',
     menuName: 'sample비빔밥',
     price: 10000,
-    menuId: 'menu-bibimbap',
+    hasReviewEvent: false,
     createdAt: '2026-08-01T18:30:00.000Z',
   },
 ];

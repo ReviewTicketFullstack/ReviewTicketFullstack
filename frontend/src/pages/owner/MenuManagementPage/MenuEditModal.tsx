@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Button } from '@/shared/ui';
 import { useAuth } from '@/app/providers';
 import { SamplePhotoStrip } from './SamplePhotoStrip';
-import type { MenuListItem as MenuListItemType } from './mockData';
+import type { MenuItem } from '@/api/storeApi';
 
 // FE-2.3: 메뉴 프로필 설정 / 리뷰 설정
 interface MenuEditModalProps {
-  menu: MenuListItemType;
+  menu: MenuItem;
   onClose: () => void;
-  onApply: (hasReviewEvent: boolean) => void;
+  onApply: (reviewEvent: boolean) => void;
 }
 // FE-2.6: 이 모달에선 이미지/가격 수정 불가가 스펙 — 버튼처럼 보여도 클릭 안 되는 게 맞음
 const lockedFieldClassName =
@@ -16,7 +16,7 @@ const lockedFieldClassName =
 
 export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
   const { user } = useAuth();
-  const [hasReviewEvent, setHasReviewEvent] = useState(menu.hasReviewEvent);
+  const [hasReviewEvent, setHasReviewEvent] = useState(menu.reviewEvent);
 
   return (
     // 모달 오버레이 — 클릭 시 닫힘 

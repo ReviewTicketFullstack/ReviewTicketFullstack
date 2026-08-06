@@ -2,29 +2,44 @@ import { useRef, useState } from 'react';
 import { Button } from '@/shared/ui';
 import { useAuth } from '@/app/providers';
 import { useStoreLogo } from '@/shared/layout/OwnerLayout/StoreLogoContext';
+import { changeDisplayName } from '@/api/accountApi';
+import { ApiError } from '@/shared/api';
 
 export function StoreManagementPage() {
   const { user, updateDisplayName } = useAuth();
   const { logo, setLogo } = useStoreLogo();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.displayName ?? '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 편집모드 진입: 현재 이름으로 입력 초기화
   const handleStartEdit = () => {
     setName(user?.displayName ?? '');
+    setErrorMessage(null);
     setIsEditing(true);
   };
 
   // 취소: 편집모드만 종료, 이름 변경은 버림 (로고는 이미 반영된 채로 유지)
   const handleCancel = () => {
+    setErrorMessage(null);
     setIsEditing(false);
   };
 
-  // 저장: 이름 확정 (로고는 이미지등록 클릭 즉시 별도로 반영됨)
-  const handleSave = () => {
-    updateDisplayName(name);
-    setIsEditing(false);
+  // 저장: PATCH /api/me/name 실제 호출 — 서버가 중복/빈 이름 등을 검사해서 거부할 수 있음
+  const handleSave = async () => {
+    setIsSaving(true);
+    setErrorMessage(null);
+    try {
+      await changeDisplayName(name);
+      updateDisplayName(name);
+      setIsEditing(false);
+    } catch (err) {
+      setErrorMessage(err instanceof ApiError ? err.message : '저장에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 파일 선택 즉시 로고 반영 — 별도 저장 버튼 없음
@@ -43,10 +58,10 @@ export function StoreManagementPage() {
         <h1 className="text-xl font-bold text-ink-900">가게관리</h1>
         {isEditing ? (
           <div className="flex gap-2">
-            <Button variant="secondary" size="small" onClick={handleSave}>
+            <Button variant="secondary" size="small" onClick={handleSave} disabled={isSaving}>
               수정
             </Button>
-            <Button variant="secondary" size="small" onClick={handleCancel}>
+            <Button variant="secondary" size="small" onClick={handleCancel} disabled={isSaving}>
               취소
             </Button>
           </div>
@@ -95,16 +110,19 @@ export function StoreManagementPage() {
           </div>
 
           {isEditing ? (
-            <div className="flex flex-1 items-center gap-2 self-center">
-              <input
-                className="flex-1 rounded border border-neutral-300 px-2 py-1 text-lg font-bold text-ink-900"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              {/* 중복확인용 자리 — stores.name 중복체크 API 나오면 연결 */}
-              <Button variant="secondary" size="small" disabled>
-                확인
-              </Button>
+            <div className="flex flex-1 flex-col gap-1 self-center">
+              <div className="flex items-center gap-2">
+                <input
+                  className="flex-1 rounded border border-neutral-300 px-2 py-1 text-lg font-bold text-ink-900"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                {/* 별도 사전 중복확인 엔드포인트는 없음 — 중복 검사는 우측 상단 "수정" 저장 시 서버가 함께 처리 */}
+                <Button variant="secondary" size="small" disabled>
+                  확인
+                </Button>
+              </div>
+              {errorMessage && <span className="text-xs text-brand-900">{errorMessage}</span>}
             </div>
           ) : (
             <span className="flex-1 self-center text-lg font-bold text-ink-900">{user?.displayName}</span>

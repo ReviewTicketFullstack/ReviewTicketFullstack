@@ -1,23 +1,50 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card } from '@/shared/ui';
+import { useAuth } from '@/app/providers';
 import { MenuListItem } from './MenuListItem';
 import { MenuEditModal } from './MenuEditModal';
-import { menuItems as sharedMenuItems, type MenuListItem as MenuListItemType } from './mockData';
+import { getStores, getStoreDetail, type MenuItem } from '@/api/storeApi';
 
 export function MenuManagementPage() {
-  const [menuItems, setMenuItems] = useState(sharedMenuItems);
+  const { user } = useAuth();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   // 클릭한 메뉴 — 있으면 수정 모달이 열림
-  const [selectedMenu, setSelectedMenu] = useState<MenuListItemType | null>(null);
+  const [selectedMenu, setSelectedMenu] = useState<MenuItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 모달의 "적용" 클릭 시: 선택된 메뉴의 리뷰이벤트 여부만 갱신하고 모달 닫기
-  const handleApply = (hasReviewEvent: boolean) => {
+  // 내 가게 메뉴 조회 — /api/stores/me가 아직 없어서, 목록에서 가게명으로 내 가게를 찾는 임시 방식
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function load() {
+      try {
+        const stores = await getStores(controller.signal);
+        const myStore = stores.find((store) => store.name === user?.displayName);
+        if (!myStore) {
+          setError('가게 정보를 찾을 수 없습니다.');
+          return;
+        }
+        const detail = await getStoreDetail(myStore.id, controller.signal);
+        setMenuItems(detail.menus);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setError('메뉴를 불러오지 못했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    load();
+    return () => controller.abort();
+  }, [user?.displayName]);
+
+  // 모달의 "적용" 클릭 시: 로컬 state만 갱신 — 메뉴 수정 저장 API는 아직 없음
+  const handleApply = (reviewEvent: boolean) => {
     if (!selectedMenu) return;
-    const updated = menuItems.map((item) =>
-      item.id === selectedMenu.id ? { ...item, hasReviewEvent } : item
+    setMenuItems((items) =>
+      items.map((item) => (item.id === selectedMenu.id ? { ...item, reviewEvent } : item))
     );
-    setMenuItems(updated);
-    // mockData 원본 배열도 갱신 — 다른 페이지 갔다 와도(재mount) 유지되게
-    sharedMenuItems.splice(0, sharedMenuItems.length, ...updated);
     setSelectedMenu(null);
   };
 
@@ -39,13 +66,18 @@ export function MenuManagementPage() {
         </div>
       </div>
 
-      <Card className="overflow-hidden p-0">
-        <div className="divide-y divide-gray-200">
-          {menuItems.map((menu) => (
-            <MenuListItem key={menu.id} menu={menu} onClick={() => setSelectedMenu(menu)} />
-          ))}
-        </div>
-      </Card>
+      {isLoading && <p className="text-sm text-neutral-500">불러오는 중...</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {!isLoading && !error && (
+        <Card className="overflow-hidden p-0">
+          <div className="divide-y divide-gray-200">
+            {menuItems.map((menu) => (
+              <MenuListItem key={menu.id} menu={menu} onClick={() => setSelectedMenu(menu)} />
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* 메뉴 클릭 시에만 수정 모달 표시 */}
       {selectedMenu && (
