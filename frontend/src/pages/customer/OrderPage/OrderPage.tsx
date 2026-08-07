@@ -32,7 +32,9 @@ export function OrderPage() {
       })
       .catch((error) => {
         setLoadError(
-          error instanceof ApiError ? error.message : "가게 정보를 불러오지 못했습니다.",
+          error instanceof ApiError
+            ? error.message
+            : "가게 정보를 불러오지 못했습니다.",
         );
       })
       .finally(() => {
@@ -79,7 +81,9 @@ export function OrderPage() {
   if (!storeDetail || loadError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-red-600">{loadError || "가게를 찾을 수 없습니다."}</p>
+        <p className="text-red-600">
+          {loadError || "가게를 찾을 수 없습니다."}
+        </p>
         <Button variant="secondary" onClick={() => navigate("/")}>
           돌아가기
         </Button>
@@ -119,7 +123,9 @@ export function OrderPage() {
       >
         <div className="bg-gradient-to-t from-white via-white/90 to-transparent p-5">
           {orderError && (
-            <p className="mb-2 text-center text-sm text-red-600">{orderError}</p>
+            <p className="mb-2 text-center text-sm text-red-600">
+              {orderError}
+            </p>
           )}
           <Button
             variant="primary"

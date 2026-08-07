@@ -51,7 +51,7 @@ export function StoreCard({
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-bold">{storeName}</h3>
           <div className="bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold">
-            리뷰
+            sample리뷰
           </div>
         </div>
 
