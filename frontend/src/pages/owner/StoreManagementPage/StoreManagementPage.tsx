@@ -1,22 +1,23 @@
-import { useRef, useState } from 'react';
-import { Button } from '@/shared/ui';
-import { useAuth } from '@/app/providers';
-import { useStoreLogo } from '@/shared/layout/OwnerLayout/StoreLogoContext';
-import { changeDisplayName } from '@/api/accountApi';
-import { ApiError } from '@/shared/api';
+import { useRef, useState } from "react";
+import { Button } from "@/shared/ui";
+import { useAuth } from "@/app/providers";
+import { useStoreLogo } from "@/shared/layout/OwnerLayout/StoreLogoContext";
+import { changeDisplayName } from "@/api/accountApi";
+import { ApiError } from "@/shared/api";
 
 export function StoreManagementPage() {
   const { user, updateDisplayName } = useAuth();
   const { logo, setLogo } = useStoreLogo();
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(user?.displayName ?? '');
+  const [name, setName] = useState(user?.displayName ?? "");
+  console.log("isEditing:", isEditing);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 편집모드 진입: 현재 이름으로 입력 초기화
   const handleStartEdit = () => {
-    setName(user?.displayName ?? '');
+    setName(user?.displayName ?? "");
     setErrorMessage(null);
     setIsEditing(true);
   };
@@ -36,7 +37,9 @@ export function StoreManagementPage() {
       updateDisplayName(name);
       setIsEditing(false);
     } catch (err) {
-      setErrorMessage(err instanceof ApiError ? err.message : '저장에 실패했습니다.');
+      setErrorMessage(
+        err instanceof ApiError ? err.message : "저장에 실패했습니다.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -45,11 +48,11 @@ export function StoreManagementPage() {
   // 파일 선택 즉시 로고 반영 — 별도 저장 버튼 없음
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file || !file.type.startsWith("image/")) return;
     const reader = new FileReader();
     reader.onload = (event) => setLogo(event.target?.result as string);
     reader.readAsDataURL(file);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -58,10 +61,20 @@ export function StoreManagementPage() {
         <h1 className="text-xl font-bold text-ink-900">가게관리</h1>
         {isEditing ? (
           <div className="flex gap-2">
-            <Button variant="secondary" size="small" onClick={handleSave} disabled={isSaving}>
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
               수정
             </Button>
-            <Button variant="secondary" size="small" onClick={handleCancel} disabled={isSaving}>
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={handleCancel}
+              disabled={isSaving}
+            >
               취소
             </Button>
           </div>
@@ -73,7 +86,9 @@ export function StoreManagementPage() {
       </div>
 
       <div className="flex flex-col gap-4 rounded-lg bg-neutral-100 p-6">
-        <span className="text-sm font-semibold text-neutral-600">가게 정보</span>
+        <span className="text-sm font-semibold text-neutral-600">
+          가게 정보
+        </span>
 
         <div className="flex items-start gap-4">
           <div className="flex flex-col gap-1">
@@ -122,14 +137,20 @@ export function StoreManagementPage() {
                   확인
                 </Button>
               </div>
-              {errorMessage && <span className="text-xs text-brand-900">{errorMessage}</span>}
+              {errorMessage && (
+                <span className="text-xs text-brand-900">{errorMessage}</span>
+              )}
             </div>
           ) : (
-            <span className="flex-1 self-center text-lg font-bold text-ink-900">{user?.displayName}</span>
+            <span className="flex-1 self-center text-lg font-bold text-ink-900">
+              {user?.displayName}
+            </span>
           )}
         </div>
 
-        <span className="text-sm font-semibold text-neutral-600">배경 사진</span>
+        <span className="text-sm font-semibold text-neutral-600">
+          배경 사진
+        </span>
         {/* 배경 사진 — 편집 기능 미구현, 그대로 placeholder */}
         <div className="flex h-24 w-20 items-center justify-center rounded-lg bg-gray-200">
           <span className="text-xs text-gray-400">Image</span>
