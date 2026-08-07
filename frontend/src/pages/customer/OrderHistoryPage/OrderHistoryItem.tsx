@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Card } from "@/shared/ui";
 import { ReviewButton } from "./ReviewButton";
 import { ReviewModal } from "./ReviewModal";
-import { updateOrderReviewStatus } from "@/entities/order/orderStorage";
-import type { Order } from "@/entities/order/model";
+import { formatOrderDate } from "@/entities/order/reviewTime";
+import type { Order } from "@/entities/order";
 
 export interface OrderHistoryItemProps {
   order: Order;
@@ -38,7 +38,9 @@ export function OrderHistoryItem({ order: initialOrder }: OrderHistoryItemProps)
 
           {/* Date */}
           <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-            <span className="text-xs text-gray-500">{order.createdAt}</span>
+            <span className="text-xs text-gray-500">
+              {formatOrderDate(order.createdAt)}
+            </span>
           </div>
 
           {/* Review Button */}
@@ -59,9 +61,9 @@ export function OrderHistoryItem({ order: initialOrder }: OrderHistoryItemProps)
         storeName={order.storeName}
         menuName={order.menuName}
         onSubmitSuccess={() => {
-          const updatedOrder = { ...order, reviewStatus: 'pending' as const };
-          setOrder(updatedOrder);
-          updateOrderReviewStatus(order.id, 'pending');
+          // [TODO] 리뷰 등록 API 가 없어 화면 상태로만 표시한다.
+          //        새로고침하면 서버가 모르는 상태라 다시 '작성 가능' 으로 돌아온다.
+          setOrder({ ...order, reviewStatus: 'pending' });
         }}
       />
     </>

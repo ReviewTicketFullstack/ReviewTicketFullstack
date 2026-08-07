@@ -1,58 +1,116 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui";
 import { DetailStoreCard } from "./DetailStoreCard";
 import { MenuListCard, type MenuItemData } from "./MenuListCard";
 import { useParams } from "react-router-dom";
-import { saveOrder } from "@/entities/order/orderStorage";
 import { useNavigate } from "react-router-dom";
-
-const MENU_DATA: MenuItemData[] = [
-  { name: "피자", price: "18,000원", reviewBadge: true },
-  { name: "햄버거", price: "9,000원", reviewBadge: true },
-  { name: "치킨윙", price: "15,000원", reviewBadge: false },
-  { name: "비빔밥", price: "10,000원", reviewBadge: false },
-  { name: "라멘", price: "11,000원", reviewBadge: false },
-];
-
-const parsePrice = (priceStr: string): number => {
-  return parseInt(priceStr.replace(/[^0-9]/g, ""), 10);
-};
+import { createOrder } from "@/api/orderApi";
+import { getStoreDetail, type StoreDetail } from "@/api/storeApi";
+import { saveOrder } from "@/entities/order/orderStorage";
+import { ApiError } from "@/shared/api";
 
 export function OrderPage() {
   const { storeId } = useParams();
   const navigate = useNavigate();
 
+  const [storeDetail, setStoreDetail] = useState<StoreDetail | null>(null);
+  const [isLoadingStore, setIsLoadingStore] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [selectedMenu, setSelectedMenu] = useState<MenuItemData | null>(null);
+  const [isOrdering, setIsOrdering] = useState(false);
+  const [orderError, setOrderError] = useState("");
+
+  useEffect(() => {
+    if (!storeId) return;
+
+    setIsLoadingStore(true);
+    setLoadError("");
+
+    getStoreDetail(Number(storeId))
+      .then((data) => {
+        setStoreDetail(data);
+      })
+      .catch((error) => {
+        setLoadError(
+          error instanceof ApiError
+            ? error.message
+            : "가게 정보를 불러오지 못했습니다.",
+        );
+      })
+      .finally(() => {
+        setIsLoadingStore(false);
+      });
+  }, [storeId]);
 
   const handleMenuClick = (menu: MenuItemData) => {
     setSelectedMenu(menu);
+    setOrderError("");
   };
 
-  const handleOrderClick = () => {
+  const handleOrderClick = async () => {
     if (!selectedMenu || !storeId) return;
 
-    saveOrder({
-      storeId,
-      storeName: "도미너피자",
-      menuName: selectedMenu.name,
-      price: parsePrice(selectedMenu.price),
-      hasReviewBadge: selectedMenu.reviewBadge,
-    });
+    setIsOrdering(true);
+    setOrderError("");
 
-    setSelectedMenu(null);
-
-    navigate("/order-history", {
-      replace: true,
-    });
+    try {
+      // 가격은 보내지 않는다. 서버가 menuId 로 조회해 담는다.
+      const order = await createOrder(Number(storeId), selectedMenu.id);
+      // 서버가 준 주문을 그대로 사본에 남긴다. 서버에 닿지 못할 때 쓴다.
+      saveOrder(order);
+      setSelectedMenu(null);
+      // replace 로 이동해 뒤로가기가 주문 화면으로 돌아오지 않게 한다.
+      navigate("/order-history", { replace: true });
+    } catch (error) {
+      setOrderError(
+        error instanceof ApiError ? error.message : "주문하지 못했습니다.",
+      );
+    } finally {
+      setIsOrdering(false);
+    }
   };
+
+  if (isLoadingStore) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-600">가게 정보를 불러오는 중...</p>
+      </div>
+    );
+  }
+
+  if (!storeDetail || loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-red-600">
+          {loadError || "가게를 찾을 수 없습니다."}
+        </p>
+        <Button variant="secondary" onClick={() => navigate("/")}>
+          돌아가기
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-32">
       {/* Store Promotion Card Section */}
-      <DetailStoreCard storeName="도미너피자" rating={4.7} reviewCount="150" />
+      <DetailStoreCard
+        storeName={storeDetail.name}
+        rating={storeDetail.rating}
+        reviewCount={String(storeDetail.reviewCount)}
+      />
 
       {/* Menu List Section */}
-      <MenuListCard menus={MENU_DATA} onMenuClick={handleMenuClick} />
+      <MenuListCard
+        menus={storeDetail.menus.map((menu) => ({
+          id: menu.id,
+          name: menu.name,
+          price: menu.price,
+          reviewEvent: menu.reviewEvent,
+          imageUrl: menu.imageUrl,
+        }))}
+        onMenuClick={handleMenuClick}
+      />
 
       {/* Order Button Section */}
       <div
@@ -64,16 +122,23 @@ export function OrderPage() {
                   -translate-x-1/2"
       >
         <div className="bg-gradient-to-t from-white via-white/90 to-transparent p-5">
+          {orderError && (
+            <p className="mb-2 text-center text-sm text-red-600">
+              {orderError}
+            </p>
+          )}
           <Button
             variant="primary"
             size="xlarge"
             fullWidth
-            disabled={!selectedMenu}
+            disabled={!selectedMenu || isOrdering}
             onClick={handleOrderClick}
           >
-            {selectedMenu
-              ? `${selectedMenu.price} 주문하기`
-              : "메뉴를 선택해주세요"}
+            {isOrdering
+              ? "주문 중..."
+              : selectedMenu
+                ? `${selectedMenu.price.toLocaleString("ko-KR")}원 주문하기`
+                : "메뉴를 선택해주세요"}
           </Button>
         </div>
       </div>
