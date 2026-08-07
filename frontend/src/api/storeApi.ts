@@ -16,7 +16,7 @@ export interface MenuItem {
   id: number;
   name: string;
   price: number;
-  imageUrl: string | null;
+  imageUrl: string;
   reviewEvent: boolean;
 }
 
