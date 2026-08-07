@@ -2,62 +2,114 @@ import { useState } from 'react';
 import { Button } from '@/shared/ui';
 import { Modal } from '@/shared/ui/Modal/Modal';
 import { useCameraCapture } from '@/shared/hooks';
+import { createReview } from '@/api/reviewApi';
+import { ApiError } from '@/shared/api';
+import type { ID } from '@/entities/order';
 
 export interface ReviewModalProps {
   open: boolean;
   onClose: () => void;
+  orderId: ID;
   storeName: string;
   menuName: string;
   onSubmitSuccess?: () => void;
 }
 
-export interface ReviewData {
-  rating: number;
-  reviewText: string;
-  photo: string | null; // Base64 encoded image
+/** 후기 길이 제한. 서버도 같은 값으로 검사한다. */
+const CONTENT_MIN_LENGTH = 10;
+const CONTENT_MAX_LENGTH = 50;
+
+/**
+ * 제출 실패 사유를 화면 문구로 옮긴다.
+ *
+ * 서버는 errorCode 만 보내고 문구는 화면이 채운다. 사진이 메뉴와 다른 경우
+ * (IMAGE_NOT_MATCHED)는 오류가 아니라 정상적으로 자주 일어나는 결과라,
+ * 유사도를 함께 보여주고 다시 찍도록 안내한다.
+ */
+function toMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return '리뷰를 등록하지 못했습니다.';
+
+  switch (error.errorCode) {
+    case 'IMAGE_NOT_MATCHED': {
+      const similarity = error.detail?.imageSimilarity;
+      const percent =
+        similarity === undefined ? null : Math.round(similarity * 100);
+      return percent === null
+        ? '주문한 메뉴와 다른 사진으로 보입니다. 음식이 잘 보이게 다시 찍어 주세요.'
+        : `주문한 메뉴와 일치율이 ${percent}% 입니다. 음식이 잘 보이게 다시 찍어 주세요.`;
+    }
+    case 'REVIEW_PERIOD_EXPIRED':
+      return '리뷰 작성 시간이 지났습니다.';
+    case 'REVIEW_ALREADY_EXISTS':
+      return '이미 리뷰를 작성한 주문입니다.';
+    case 'REVIEW_EVENT_NOT_APPLIED':
+      return '리뷰이벤트에 참여하지 않은 주문입니다.';
+    case 'IMAGE_TOO_SMALL':
+      return '사진 화질이 너무 낮습니다. 카메라로 다시 찍어 주세요.';
+    case 'FILE_TOO_LARGE':
+      return '사진 용량이 너무 큽니다.';
+    case 'UNSUPPORTED_IMAGE_TYPE':
+      return '지원하지 않는 사진 형식입니다.';
+    case 'AI_SERVER_UNAVAILABLE':
+      return '사진 확인이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.';
+    default:
+      return error.message;
+  }
 }
 
 export function ReviewModal({
   open,
   onClose,
+  orderId,
   storeName,
   menuName,
   onSubmitSuccess,
 }: ReviewModalProps) {
   const [rating, setRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { photo, removePhoto, capturePhoto, handleFileSelected, fileInputRef, error: cameraError } = useCameraCapture();
+  const { photo, photoFile, removePhoto, capturePhoto, handleFileSelected, fileInputRef, error: cameraError } = useCameraCapture();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0) {
-      alert('평점을 선택해주세요.');
+      setSubmitError('평점을 선택해주세요.');
       return;
     }
 
-    if (!reviewText.trim()) {
-      alert('리뷰 내용을 작성해주세요.');
+    const content = reviewText.trim();
+    if (content.length < CONTENT_MIN_LENGTH || content.length > CONTENT_MAX_LENGTH) {
+      setSubmitError(
+        `리뷰는 ${CONTENT_MIN_LENGTH}자 이상 ${CONTENT_MAX_LENGTH}자 이하로 작성해 주세요.`,
+      );
       return;
     }
 
-    const reviewData: ReviewData = {
-      rating,
-      reviewText,
-      photo: photo?.photoData ?? null,
-    };
+    if (!photoFile) {
+      setSubmitError('사진을 촬영해 주세요.');
+      return;
+    }
 
-    console.log('리뷰 제출:', reviewData);
-    alert('리뷰가 작성되었습니다!');
+    setIsSubmitting(true);
+    setSubmitError(null);
 
-    // 상태 초기화
-    setRating(0);
-    setReviewText('');
-    removePhoto();
+    try {
+      await createReview(orderId, rating, content, photoFile);
 
-    // 제출 성공 콜백
-    onSubmitSuccess?.();
+      // 통과했을 때만 입력을 비운다. 실패하면 별점과 후기를 그대로 두어
+      // 사진만 다시 찍어 재시도할 수 있게 한다.
+      setRating(0);
+      setReviewText('');
+      removePhoto();
 
-    onClose();
+      onSubmitSuccess?.();
+      onClose();
+    } catch (error) {
+      setSubmitError(toMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -141,6 +193,11 @@ export function ReviewModal({
             </div>
           </div>
 
+          {/* 제출 실패 사유 — 별점과 후기는 그대로 두고 이 문구만 갱신한다 */}
+          {submitError && (
+            <p className="text-sm text-red-600">{submitError}</p>
+          )}
+
           {/* 버튼 */}
           <div className="flex gap-3">
             <Button
@@ -148,6 +205,7 @@ export function ReviewModal({
               size="large"
               fullWidth
               onClick={onClose}
+              disabled={isSubmitting}
             >
               취소
             </Button>
@@ -156,8 +214,9 @@ export function ReviewModal({
               size="large"
               fullWidth
               onClick={handleSubmit}
+              disabled={isSubmitting}
             >
-              제출
+              {isSubmitting ? '확인 중...' : '제출'}
             </Button>
           </div>
         </div>

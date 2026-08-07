@@ -81,11 +81,11 @@ public class OrderService {
         }
 
         Order saved = orders.save(new Order(customer, menu, reviewEventApply, reviewDeadlineSeconds, expireTime));
-        String reviewStatus = reviewEventApply ? "available" : "notApplied";
+        String reviewStatus = reviewEventApply ? "available" : "not_available";
 
         return new OrderCreateResponse(saved.getId(), saved.getStore().getId(), saved.getStore().getName(),
                 saved.getMenu().getId(), saved.getMenuName(), saved.getPrice(), saved.isReviewEventApply(),
-                saved.getReviewDeadline(), toUtc(saved.getOrderedAt()), toUtc(saved.getExpireTime()),
+                toUtc(saved.getExpireTime()), toUtc(saved.getOrderedAt()),
                 reviewStatus, customer.getTickets());
     }
 
@@ -111,7 +111,7 @@ public class OrderService {
     }
 
     /**
-     * notApplied: 애초에 이벤트에 참여하지 않은 주문.
+     * not_available: 애초에 이벤트에 참여하지 않은 주문.
      * done: 리뷰가 이미 있음.
      * expired: 마감이 지났고 리뷰도 없음.
      * available: 그 밖의 경우, 지금 리뷰를 쓸 수 있다.
@@ -121,7 +121,7 @@ public class OrderService {
      */
     private static String reviewStatus(Order order, Set<Long> reviewedOrderIds, LocalDateTime now) {
         if (!order.isReviewEventApply()) {
-            return "notApplied";
+            return "not_available";
         }
         if (reviewedOrderIds.contains(order.getId())) {
             return "done";
@@ -142,7 +142,7 @@ public class OrderService {
     private static OrderResponse toResponse(Order order, String reviewStatus) {
         return new OrderResponse(order.getId(), order.getStore().getId(), order.getStore().getName(),
                 order.getMenu().getId(), order.getMenuName(), order.getPrice(), order.isReviewEventApply(),
-                order.getReviewDeadline(), toUtc(order.getOrderedAt()), toUtc(order.getExpireTime()), reviewStatus);
+                toUtc(order.getExpireTime()), toUtc(order.getOrderedAt()), reviewStatus);
     }
 
     /**

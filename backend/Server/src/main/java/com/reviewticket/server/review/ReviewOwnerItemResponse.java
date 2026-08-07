@@ -8,6 +8,8 @@ public record ReviewOwnerItemResponse(
         Long orderId,
         Long menuId,
         String menuName,
+        /** 주문 시점의 가격. 리뷰관리 화면이 리뷰와 함께 주문 내역을 보여준다 */
+        int menuPrice,
         String displayName,
         int reviewRating,
         String reviewContent,

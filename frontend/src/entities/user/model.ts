@@ -21,7 +21,6 @@ export interface LoginResponse {
   userId: number;
   displayName: string;
   role: UserRole;
-  tickets: number;
 }
 
 export interface AuthContextType {

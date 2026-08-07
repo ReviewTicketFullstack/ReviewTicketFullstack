@@ -8,16 +8,15 @@ import java.time.Instant;
  * 티켓 잔여 수는 주문·리뷰로 값이 바뀌는 순간에만 필요하지 볼 때마다 필요한 게 아니라서다.
  */
 public record OrderCreateResponse(
-        Long orderId,
+        Long id,
         Long storeId,
         String storeName,
         Long menuId,
         String menuName,
-        int menuPrice,
-        boolean reviewEventApply,
-        Integer reviewDeadline,
-        Instant orderedAt,
-        Instant expireTime,
+        int price,
+        boolean hasReviewBadge,
+        Instant reviewDeadline,
+        Instant createdAt,
         String reviewStatus,
         int tickets) {
 }

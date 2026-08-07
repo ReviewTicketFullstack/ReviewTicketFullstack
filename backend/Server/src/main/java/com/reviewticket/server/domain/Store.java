@@ -73,6 +73,13 @@ public class Store {
         this.reviewNumber = 0;
         this.reviewValue = 0.0;
         this.reviewing = false;
+        // latest_update 는 DB NOT NULL 인데 컬럼이 insertable=false 라 INSERT 에는
+        // 안 실린다(DB DEFAULT CURRENT_TIMESTAMP 가 채운다). 문제는 그 뒤 —
+        // markReviewing() 처럼 이 엔티티의 다른 필드가 바뀌면 Hibernate 가 더티
+        // 체크로 latest_update 까지 포함한 UPDATE 를 보내는데, 이 필드가 계속
+        // null 로 남아 있으면 그 UPDATE 가 NOT NULL 위반으로 죽는다. 생성 시각을
+        // 미리 채워 둬야 그 나중 UPDATE 가 안전하다.
+        this.latestUpdate = LocalDateTime.now();
     }
 
     /** 가게 생성 시 시드 메뉴를 넣은 직후 한 번 부른다. */

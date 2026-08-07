@@ -143,8 +143,9 @@ public class ReviewService {
         Store store = storeService.requireOwnerStore(userId);
         List<ReviewOwnerItemResponse> items = reviews.findByStoreOrderByCreatedAtDesc(store).stream()
                 .map(r -> new ReviewOwnerItemResponse(r.getId(), r.getOrder().getId(), r.getMenu().getId(),
-                        r.getMenu().getName(), r.getUser().getDisplayName(), r.getRating(), r.getContent(),
-                        r.getImageUrl(), toUtc(r.getCreatedAt()), r.getImageSimilarity(), r.getCompareImageUrl()))
+                        r.getMenu().getName(), r.getOrder().getPrice(), r.getUser().getDisplayName(),
+                        r.getRating(), r.getContent(), r.getImageUrl(), toUtc(r.getCreatedAt()),
+                        r.getImageSimilarity(), r.getCompareImageUrl()))
                 .toList();
         return new ReviewOwnerListResponse(store.getReviewNumber(), store.getReviewValue(), items);
     }
