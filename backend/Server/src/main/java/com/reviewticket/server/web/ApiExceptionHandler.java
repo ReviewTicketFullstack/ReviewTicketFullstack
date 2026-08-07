@@ -12,8 +12,13 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.reviewticket.server.auth.ConflictException;
+import com.reviewticket.server.auth.ForbiddenException;
+import com.reviewticket.server.auth.ImageNotMatchedException;
+import com.reviewticket.server.auth.NotFoundException;
+import com.reviewticket.server.auth.ServiceUnavailableException;
 import com.reviewticket.server.auth.TooManyRequestsException;
 import com.reviewticket.server.auth.UnauthorizedException;
 import com.reviewticket.server.auth.ValidationException;
@@ -90,6 +95,48 @@ public class ApiExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> unauthorized(UnauthorizedException e) {
         return body(HttpStatus.UNAUTHORIZED, e.getErrorCode());
+    }
+
+    /** 로그인은 됐지만 그 역할로는 쓸 수 없는 기능. 사장/고객 전용 API 를 반대 역할이 부른 경우. */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> forbidden(ForbiddenException e) {
+        return body(HttpStatus.FORBIDDEN, e.getErrorCode());
+    }
+
+    /** 번호로 찾는 리소스가 없다. */
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> notFound(NotFoundException e) {
+        return body(HttpStatus.NOT_FOUND, e.getErrorCode());
+    }
+
+    /**
+     * 리뷰 사진이 AI 유사도 문턱값을 넘지 못했다. 유사도 값을 함께 실어 화면이
+     * 구체적인 수치로 안내할 수 있게 한다. 이 목록에서 유일하게 imageSimilarity 를
+     * 함께 싣는 실패 응답이다.
+     */
+    @ExceptionHandler(ImageNotMatchedException.class)
+    public ResponseEntity<Map<String, Object>> imageNotMatched(ImageNotMatchedException e) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("error", HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase());
+        payload.put("errorCode", "IMAGE_NOT_MATCHED");
+        payload.put("imageSimilarity", e.getImageSimilarity());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(payload);
+    }
+
+    /** AI 서버가 꺼져 있거나 응답 시간을 넘겼다. 사용자 잘못도 방어도 아닌 진짜 장애다. */
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> serviceUnavailable(ServiceUnavailableException e) {
+        log.warn("외부 서비스 장애: {}", e.getErrorCode(), e);
+        return body(HttpStatus.SERVICE_UNAVAILABLE, e.getErrorCode());
+    }
+
+    /**
+     * 업로드 용량 상한 초과. Spring 이 컨트롤러에 닿기도 전에 던지는 예외라
+     * 우리 예외 클래스로 감싸지 않고 여기서 바로 받는다.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> fileTooLarge(MaxUploadSizeExceededException e) {
+        return body(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_TOO_LARGE");
     }
 
     /**

@@ -1,44 +1,51 @@
 package com.reviewticket.server.store;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.reviewticket.server.auth.ConflictException;
+import com.reviewticket.server.auth.ForbiddenException;
+import com.reviewticket.server.auth.NotFoundException;
+import com.reviewticket.server.auth.UnauthorizedException;
 import com.reviewticket.server.auth.ValidationException;
 import com.reviewticket.server.domain.Menu;
+import com.reviewticket.server.domain.Role;
 import com.reviewticket.server.domain.Store;
 import com.reviewticket.server.domain.User;
 import com.reviewticket.server.repository.MenuRepository;
+import com.reviewticket.server.repository.PendingSignupRepository;
 import com.reviewticket.server.repository.StoreRepository;
+import com.reviewticket.server.repository.UserRepository;
 
 /**
- * 가게 조회와 생성.
- *
- * rating 과 reviewCount 는 리뷰 표가 아직 없어 0 으로 내려간다. 화면은 이
- * 값으로도 정상 동작하고, 리뷰 기능이 붙으면 이 서비스에서 계산해 채운다.
+ * 가게, 메뉴 조회와 생성.
  */
 @Service
 public class StoreService {
 
     private final StoreRepository stores;
     private final MenuRepository menus;
+    private final UserRepository users;
+    private final PendingSignupRepository pendings;
 
-    public StoreService(StoreRepository stores, MenuRepository menus) {
+    public StoreService(StoreRepository stores, MenuRepository menus,
+            UserRepository users, PendingSignupRepository pendings) {
         this.stores = stores;
         this.menus = menus;
+        this.users = users;
+        this.pendings = pendings;
     }
 
     /**
-     * 프로토타입용 기본 메뉴.
+     * 프로토타입용 기본 메뉴. 프론트(OrderPage, MenuManagementPage)가 이미 이
+     * 5종을 화면에 고정해 두고 있어 이름과 리뷰이벤트 여부를 거기 맞춘다.
      *
-     * 사장이 메뉴를 등록하는 API 가 아직 없어서, 가게를 만들 때 이 다섯 개를
-     * 함께 넣는다. 그러지 않으면 가게는 있는데 메뉴가 비어 있어 고객 화면의
-     * 주문 흐름을 확인할 수 없다.
-     *
-     * 메뉴관리 API 가 붙으면 이 상수와 아래 생성 코드를 지운다.
+     * 메뉴관리 API가 붙으면 이 상수와 아래 생성 코드를 지운다.
      */
     private record SeedMenu(String name, int price, boolean reviewEvent) {
     }
@@ -47,8 +54,8 @@ public class StoreService {
             new SeedMenu("피자", 18000, true),
             new SeedMenu("햄버거", 9000, true),
             new SeedMenu("치킨윙", 15000, false),
-            new SeedMenu("파스타", 13000, true),
-            new SeedMenu("샐러드", 8000, false));
+            new SeedMenu("비빔밥", 10000, false),
+            new SeedMenu("라멘", 11000, false));
 
     /**
      * 사장 회원가입이 확정될 때 가게와 기본 메뉴를 함께 만든다.
@@ -63,59 +70,134 @@ public class StoreService {
         }
         Store store = stores.save(new Store(owner, owner.getDisplayName()));
         menus.saveAll(SEED_MENUS.stream()
-                .map(seed -> new Menu(store, seed.name(), seed.price(), seed.reviewEvent()))
+                .map(seed -> new Menu(store, seed.name(), seed.price(), null, seed.reviewEvent()))
                 .toList());
+
+        // review_event 대상 메뉴가 하나라도 있는지 여기서 한 번만 계산해 둔다.
+        // 메뉴 수정 API가 없어 이후로는 바뀔 일이 없다.
+        boolean reviewing = menus.existsByStoreIdAndReviewEventTrue(store.getId());
+        store.markReviewing(reviewing);
     }
 
     /** 홈 목록. 최신 가게가 먼저 온다. */
     @Transactional(readOnly = true)
     public List<StoreSummaryResponse> findAll() {
-        List<Store> found = stores.findAllByOrderByIdDesc();
-        if (found.isEmpty()) {
-            return List.of();
-        }
-
-        // 가게마다 메뉴를 따로 조회하면 목록 길이만큼 쿼리가 늘어난다(N+1).
-        // 배지가 붙는 가게 id 만 한 번에 받아 두고 메모리에서 맞춘다.
-        List<Long> ids = found.stream().map(Store::getId).toList();
-        Set<Long> withEvent = new HashSet<>(menus.findStoreIdsWithReviewEvent(ids));
-
-        return found.stream()
-                .map(store -> new StoreSummaryResponse(
-                        store.getId(),
-                        store.getName(),
-                        store.getImageUrl(),
-                        0.0,
-                        0,
-                        withEvent.contains(store.getId())))
+        return stores.findAllByOrderByIdDesc().stream()
+                .map(StoreService::toSummary)
                 .toList();
     }
 
     /** 주문 화면용 상세. 가게 정보에 그 가게 메뉴를 붙여 돌려준다. */
     @Transactional(readOnly = true)
     public StoreDetailResponse findById(Long storeId) {
-        Store store = stores.findById(storeId)
-                .orElseThrow(() -> new ValidationException("STORE_NOT_FOUND", "가게를 찾을 수 없습니다"));
-
+        Store store = loadStore(storeId);
         List<MenuResponse> menuList = menus.findByStoreIdOrderByIdAsc(storeId).stream()
                 .map(StoreService::toMenuResponse)
                 .toList();
 
-        return new StoreDetailResponse(
-                store.getId(),
-                store.getName(),
-                store.getImageUrl(),
-                0.0,
-                0,
-                menuList);
+        return new StoreDetailResponse(store.getId(), store.getName(), store.getLogoUrl(),
+                store.getReviewNumber(), store.getReviewValue(), store.isReviewing(), menuList);
+    }
+
+    /** GET /api/stores/me. */
+    @Transactional(readOnly = true)
+    public StoreMeResponse findMine(long userId) {
+        Store store = storeOf(requireOwner(userId));
+        return toMeResponse(store);
+    }
+
+    /** GET /api/stores/me/menus. */
+    @Transactional(readOnly = true)
+    public List<MenuOwnerResponse> findMyMenus(long userId) {
+        Store store = storeOf(requireOwner(userId));
+        return menus.findByStoreIdOrderByIdAsc(store.getId()).stream()
+                .map(StoreService::toMenuOwnerResponse)
+                .toList();
+    }
+
+    /**
+     * PATCH /api/stores/me. 이름과 로고를 통째로 덮어쓴다.
+     *
+     * 가게 이름이 바뀌면 users.display_name 도 같은 값으로 함께 바꾼다 — 둘은
+     * 하나의 이름을 store_table 과 users 두 표에 나눠 적어 둔 것일 뿐이다.
+     * 반대 방향(계정 API 로 이름 변경)은 AccountService 가 사장 계정을 거절해
+     * 이쪽으로만 실제로 바뀌게 되어 있다.
+     */
+    @Transactional
+    public StoreMeResponse updateMine(long userId, String rawName, String logoUrl) {
+        User owner = requireOwner(userId);
+        Store store = storeOf(owner);
+
+        String name = rawName == null ? "" : rawName.trim();
+        if (name.isEmpty()) {
+            throw new ValidationException("NAME_REQUIRED", "가게 이름을 입력해 주세요");
+        }
+        if (name.length() > 32) {
+            throw new ValidationException("NAME_TOO_LONG", "이름은 32자 이하여야 합니다");
+        }
+
+        if (!name.equals(store.getName())) {
+            // AccountService.changeDisplayName 과 같은 기준 — 가입 대기 중인 이름도
+            // 예약된 것으로 본다.
+            if (users.existsByDisplayName(name) || pendings.existsByDisplayName(name)) {
+                throw new ConflictException("NAME_TAKEN", "이미 쓰이고 있는 가게 이름입니다");
+            }
+            owner.changeDisplayName(name);
+        }
+        store.changeInfo(name, logoUrl);
+
+        return toMeResponse(store);
+    }
+
+    /** 사장 전용 기능을 지키는 공통 관문. 고객 계정이면 403, 못 찾으면 401. */
+    private User requireOwner(long userId) {
+        User user = users.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("UNAUTHORIZED", "로그인이 필요합니다"));
+        if (user.getRole() != Role.OWNER) {
+            throw new ForbiddenException("NOT_OWNER", "고객 계정으로 사장 전용 기능을 불렀습니다");
+        }
+        return user;
+    }
+
+    private Store storeOf(User owner) {
+        return stores.findByOwner(owner)
+                .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "가게 행이 없습니다"));
+    }
+
+    /** 번호로 가게를 찾는다. 없으면 404. */
+    public Store loadStore(Long storeId) {
+        return stores.findById(storeId)
+                .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "가게를 찾을 수 없습니다"));
+    }
+
+    /** ReviewService 등 다른 서비스가 "이 사람이 사장이고, 그 가게가 이거다"를 한 번에 확인할 때 쓴다. */
+    public Store requireOwnerStore(long userId) {
+        return storeOf(requireOwner(userId));
+    }
+
+    private static StoreSummaryResponse toSummary(Store store) {
+        return new StoreSummaryResponse(store.getId(), store.getName(), store.getLogoUrl(),
+                store.getReviewNumber(), store.getReviewValue(), store.isReviewing());
+    }
+
+    private static StoreMeResponse toMeResponse(Store store) {
+        return new StoreMeResponse(store.getId(), store.getOwner().getId(), store.getName(),
+                store.getLogoUrl(), store.getReviewNumber(), store.getReviewValue(), store.isReviewing(),
+                toUtc(store.getCreatedAt()), toUtc(store.getLatestUpdate()));
     }
 
     private static MenuResponse toMenuResponse(Menu menu) {
-        return new MenuResponse(
-                menu.getId(),
-                menu.getName(),
-                menu.getPrice(),
-                menu.getImageUrl(),
-                menu.isReviewEvent());
+        return new MenuResponse(menu.getId(), menu.getName(), menu.getPrice(),
+                menu.getImageUrl(), menu.isReviewEvent());
+    }
+
+    private static MenuOwnerResponse toMenuOwnerResponse(Menu menu) {
+        return new MenuOwnerResponse(menu.getStore().getId(), menu.getId(), menu.getName(), menu.getPrice(),
+                menu.getImageUrl(), menu.isReviewEvent(), toUtc(menu.getCreatedAt()), toUtc(menu.getLatestUpdate()));
+    }
+
+    /** 저장된 값은 서버 시간대(LocalDateTime)라, 기준이 분명한 UTC(끝에 Z)로 바꿔서 보낸다. */
+    static Instant toUtc(LocalDateTime serverTime) {
+        return serverTime == null ? null : serverTime.atZone(ZoneId.systemDefault()).toInstant();
     }
 }
