@@ -1,7 +1,10 @@
 export interface MenuItemData {
+  id: number;
   name: string;
-  price: string;
-  reviewBadge: boolean;
+  /** 원 단위 정수. 표시 형식은 이 컴포넌트가 맡는다 */
+  price: number;
+  reviewEvent: boolean;
+  imageUrl?: string;
 }
 
 export interface MenuItemProps {
@@ -18,9 +21,17 @@ export function MenuItem({ menu, onClick }: MenuItemProps) {
     >
       {/* Image Section */}
       <div className="flex-shrink-0">
-        <div className="w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center">
-          <span className="text-gray-400 text-xs">Image</span>
-        </div>
+        {menu.imageUrl ? (
+          <img
+            src={menu.imageUrl}
+            alt={menu.name}
+            className="w-20 h-20 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-400 text-xs">No Image</span>
+          </div>
+        )}
       </div>
 
       {/* Info Section */}
@@ -28,7 +39,7 @@ export function MenuItem({ menu, onClick }: MenuItemProps) {
         {/* Name + Review Badge */}
         <div className="flex items-center gap-2">
           <span className="font-bold text-base">{menu.name}</span>
-          {menu.reviewBadge && (
+          {menu.reviewEvent && (
             <span className="inline-block bg-red-700 text-white text-xs font-semibold px-2 py-0.5 rounded">
               리뷰
             </span>
@@ -36,7 +47,9 @@ export function MenuItem({ menu, onClick }: MenuItemProps) {
         </div>
 
         {/* Price */}
-        <span className="text-sm text-gray-600">{menu.price}</span>
+        <span className="text-sm text-gray-600">
+          {menu.price.toLocaleString("ko-KR")}원
+        </span>
       </div>
     </button>
   );

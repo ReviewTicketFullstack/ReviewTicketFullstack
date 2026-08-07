@@ -11,6 +11,7 @@ export interface User {
   role: UserRole;
   /** 서버가 아직 내려주지 않는 값이다. 있을 때만 쓴다. */
   createdAt?: string;
+  tickets?: number;
 }
 
 /** POST /api/auth/login 응답. 이메일은 들어 있지 않다 — 로그인 폼의 입력값을 그대로 쓴다. */
@@ -20,6 +21,7 @@ export interface LoginResponse {
   userId: number;
   displayName: string;
   role: UserRole;
+  tickets: number;
 }
 
 export interface AuthContextType {

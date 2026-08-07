@@ -12,9 +12,9 @@ export function MenuListCard({ menus, onMenuClick }: MenuListCardProps) {
   return (
     <Card className="p-0 overflow-hidden">
       <div className="divide-y divide-gray-200">
-        {menus.map((menu, index) => (
+        {menus.map((menu) => (
           <MenuItem
-            key={`${menu.name}-${index}`}
+            key={menu.id}
             menu={menu}
             onClick={onMenuClick}
           />

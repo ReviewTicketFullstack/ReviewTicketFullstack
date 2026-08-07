@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Ticket, Settings } from "lucide-react";
+import { useAuth } from "@/app/providers";
 import { MyInfoModal } from "@/pages/customer/MyInfoModal/MyInfoModal";
 
 export function Header() {
   const [isMyInfoModalOpen, setIsMyInfoModalOpen] = useState(false);
-  const remainingTickets = 2;
+  const { user } = useAuth();
 
   return (
     <>
@@ -21,7 +22,7 @@ export function Header() {
               <Ticket size={20} className="text-neutral-900" />
               <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-800">
                 <span className="text-xs font-semibold text-white">
-                  {remainingTickets}
+                  {user?.tickets}
                 </span>
               </div>
             </button>
