@@ -15,47 +15,50 @@ import jakarta.persistence.Table;
 /**
  * 가게의 메뉴 한 줄.
  *
- * 가격은 원 단위 정수다. "18,000원" 같은 문자열로 두면 계산에 쓸 수 없고,
- * 표시 형식은 화면마다 다를 수 있으므로 포맷은 프론트가 맡는다.
+ * 프로토타입 단계에서는 수정 API 가 없다 — 가게가 만들어질 때 5종이 함께
+ * 들어가고 그 뒤로 고정이다. 확장 때 바로 쓸 수 있도록 표는 미리 갖춰 둔다.
+ *
+ * imageUrl 은 화면 썸네일이자 AI 검증의 비교 기준 사진(compare image)이다.
  */
 @Entity
-@Table(name = "menus")
+@Table(name = "menu_table")
 public class Menu {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "menu_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "menu_name", nullable = false, length = 32)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "menu_price", nullable = false)
     private int price;
 
-    @Column(name = "image_url", length = 500)
+    @Column(name = "menu_image_url", length = 255)
     private String imageUrl;
 
-    /** 이 메뉴를 주문하면 리뷰를 쓸 수 있는지. */
     @Column(name = "review_event", nullable = false)
     private boolean reviewEvent;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @Column(name = "menu_created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", insertable = false, updatable = false)
-    private LocalDateTime updatedAt;
+    @Column(name = "menu_latest_update", insertable = false, updatable = false)
+    private LocalDateTime latestUpdate;
 
     protected Menu() {
     }
 
-    public Menu(Store store, String name, int price, boolean reviewEvent) {
+    public Menu(Store store, String name, int price, String imageUrl, boolean reviewEvent) {
         this.store = store;
         this.name = name;
         this.price = price;
+        this.imageUrl = imageUrl;
         this.reviewEvent = reviewEvent;
     }
 
@@ -87,7 +90,7 @@ public class Menu {
         return createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public LocalDateTime getLatestUpdate() {
+        return latestUpdate;
     }
 }

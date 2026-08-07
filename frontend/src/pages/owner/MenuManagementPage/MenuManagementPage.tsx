@@ -3,7 +3,7 @@ import { Card } from '@/shared/ui';
 import { useAuth } from '@/app/providers';
 import { MenuListItem } from './MenuListItem';
 import { MenuEditModal } from './MenuEditModal';
-import { getStores, getStoreDetail, type MenuItem } from '@/api/storeApi';
+import { getMyMenus, type MenuItem } from '@/api/storeApi';
 
 export function MenuManagementPage() {
   const { user } = useAuth();
@@ -13,20 +13,24 @@ export function MenuManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 내 가게 메뉴 조회 — /api/stores/me가 아직 없어서, 목록에서 가게명으로 내 가게를 찾는 임시 방식
+  // 내 가게 메뉴 조회. 가게 번호를 보내지 않는다 — 토큰의 주체가 곧 그 가게의 사장이다.
   useEffect(() => {
     const controller = new AbortController();
 
     async function load() {
       try {
-        const stores = await getStores(controller.signal);
-        const myStore = stores.find((store) => store.name === user?.displayName);
-        if (!myStore) {
-          setError('가게 정보를 찾을 수 없습니다.');
-          return;
-        }
-        const detail = await getStoreDetail(myStore.id, controller.signal);
-        setMenuItems(detail.menus);
+        const menus = await getMyMenus(controller.signal);
+        // 사장용 응답은 필드명 앞에 menu 가 붙고 시각까지 실려 온다.
+        // 목록 컴포넌트가 쓰는 형태로 옮겨 담는다.
+        setMenuItems(
+          menus.map((menu) => ({
+            id: menu.menuId,
+            name: menu.menuName,
+            price: menu.menuPrice,
+            imageUrl: menu.menuImageUrl,
+            reviewEvent: menu.reviewEvent,
+          })),
+        );
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
         setError('메뉴를 불러오지 못했습니다.');

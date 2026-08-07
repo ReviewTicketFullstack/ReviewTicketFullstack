@@ -35,6 +35,7 @@ public class AccountController {
         this.attemptLogger = attemptLogger;
     }
 
+    /** @param tickets 남은 리뷰 티켓. 사장은 -1 로 나간다(티켓 개념이 없다는 표시). */
     public record MeResponse(long userId, String email, String displayName, Role role, int tickets) {
     }
 

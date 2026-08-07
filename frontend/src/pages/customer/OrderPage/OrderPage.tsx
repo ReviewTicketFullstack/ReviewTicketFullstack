@@ -55,7 +55,14 @@ export function OrderPage() {
 
     try {
       // 가격은 보내지 않는다. 서버가 menuId 로 조회해 담는다.
-      const order = await createOrder(Number(storeId), selectedMenu.id);
+      // 리뷰이벤트 대상 메뉴면 참여 신청까지 함께 보낸다 — 이 값이 true 여야
+      // 서버가 티켓을 잠그고 마감 시각을 만든다. 참여 여부를 따로 고르는
+      // 화면이 생기면 그때 그 선택값으로 바꾼다.
+      const order = await createOrder(
+        Number(storeId),
+        selectedMenu.id,
+        selectedMenu.reviewEvent,
+      );
       // 서버가 준 주문을 그대로 사본에 남긴다. 서버에 닿지 못할 때 쓴다.
       saveOrder(order);
       setSelectedMenu(null);
@@ -98,6 +105,7 @@ export function OrderPage() {
         storeName={storeDetail.name}
         rating={storeDetail.rating}
         reviewCount={String(storeDetail.reviewCount)}
+        hasReviewEvent={storeDetail.hasReviewEvent}
       />
 
       {/* Menu List Section */}

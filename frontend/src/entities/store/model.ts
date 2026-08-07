@@ -6,7 +6,8 @@
 export interface Store {
   id: number;
   name: string;
-  imageUrl?: string;
+  /** 로고를 등록하지 않은 가게는 null 이다 */
+  imageUrl: string | null;
   /** 평균 별점 */
   rating: number;
   reviewCount: number;

@@ -13,6 +13,10 @@ function getCachedStores(): Store[] | null {
 
   try {
     const { stores, timestamp } = JSON.parse(cached);
+    // 빈 배열은 캐시하지 않는다 — "아직 가게가 없다"는 결과를 자정까지 그대로
+    // 믿으면, 그사이 새로 생긴 가게가 당일 내내 홈 화면에 안 뜬다.
+    if (stores.length === 0) return null;
+
     const nextMidnight = new Date();
     nextMidnight.setHours(24, 0, 0, 0);
 
@@ -55,7 +59,7 @@ export function HomePage() {
     getStores()
       .then((data) => {
         setStores(data);
-        setCachedStores(data);
+        if (data.length > 0) setCachedStores(data);
       })
       .catch(() => {
         // 서버 요청 실패, 캐시도 없으므로 빈 상태 유지

@@ -4,12 +4,16 @@ export type ID = number;
 export type ISODateTime = string;
 
 /**
- * 리뷰 작성 상태.
+ * 리뷰 작성 상태. 서버가 조회 시점에 계산해서 내려준다.
  *
- * 서버는 "available" / "not_available" 두 가지만 보낸다.
- * "pending"(작성 후 검토중)은 리뷰 등록 API 가 생기기 전까지 화면에서만 쓴다.
+ * - not_available: 리뷰이벤트에 참여하지 않은 주문
+ * - available: 지금 리뷰를 쓸 수 있다
+ * - expired: 마감이 지났고 리뷰도 없다
+ * - done: 리뷰를 이미 썼다
+ *
+ * "검토중" 상태는 없다 — AI 검증이 제출과 동시에 끝나 승인을 기다리는 구간이 생기지 않는다.
  */
-export type ReviewStatus = "available" | "pending" | "not_available";
+export type ReviewStatus = "available" | "not_available" | "expired" | "done";
 
 /** 주문내역 카드 한 장. 백엔드 OrderResponse 와 1:1. */
 export interface Order {
@@ -24,7 +28,7 @@ export interface Order {
   /** 리뷰 버튼을 띄울지 (주문 시점의 리뷰이벤트 여부) */
   hasReviewBadge: boolean;
   reviewStatus: ReviewStatus;
-  /** 리뷰 마감 시각. 남은 시간 카운트다운에 쓴다 */
-  reviewDeadline: ISODateTime;
+  /** 리뷰 마감 시각. 남은 시간 카운트다운에 쓴다. 이벤트 미참여 주문은 null */
+  reviewDeadline: ISODateTime | null;
   createdAt: ISODateTime;
 }

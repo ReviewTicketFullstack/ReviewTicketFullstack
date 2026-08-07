@@ -4,7 +4,7 @@ export interface MenuItemData {
   /** 원 단위 정수. 표시 형식은 이 컴포넌트가 맡는다 */
   price: number;
   reviewEvent: boolean;
-  imageUrl?: string;
+  imageUrl: string | null;
 }
 
 export interface MenuItemProps {

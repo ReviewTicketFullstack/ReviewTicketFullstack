@@ -1,19 +1,49 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StatsBar } from './StatsBar';
 import { ReviewTabs, type ReviewTab } from './ReviewTabs';
 import { CompletedReviewItem } from './CompletedReviewItem';
 import { PendingReviewItem } from './PendingReviewItem';
-import { completedReviews, pendingOrders } from './mockData';
+import {
+  getMyPendingOrders,
+  getMyStoreReviews,
+  type OwnerReview,
+  type PendingOrder,
+} from '@/api/reviewApi';
 
 export function ReviewManagementPage() {
   const [activeTab, setActiveTab] = useState<ReviewTab>('completed');
+  const [completedReviews, setCompletedReviews] = useState<OwnerReview[]>([]);
+  const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
+  // 총 리뷰 수와 평균 별점은 서버가 가게 표에서 그대로 준다. 화면이 배열을
+  // 훑어 직접 세면 목록에 페이지 나누기가 붙는 순간 보이는 몇 건만으로 계산해 틀어진다.
+  const [totalCount, setTotalCount] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const totalCount = completedReviews.length;
-  // 평균 별점 — 리뷰 0개일 때 0으로 나누는 걸 막기 위해 totalCount 체크 먼저
-  const averageRating =
-    totalCount === 0
-      ? 0
-      : completedReviews.reduce((sum, review) => sum + review.rating, 0) / totalCount;
+  useEffect(() => {
+    const controller = new AbortController();
+
+    Promise.all([
+      getMyStoreReviews(controller.signal),
+      getMyPendingOrders(controller.signal),
+    ])
+      .then(([reviewList, pending]) => {
+        setCompletedReviews(reviewList.reviews);
+        setTotalCount(reviewList.reviewNumber);
+        setAverageRating(reviewList.reviewValue);
+        setPendingOrders(pending);
+      })
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setError('리뷰를 불러오지 못했습니다.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, []);
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -28,14 +58,17 @@ export function ReviewManagementPage() {
 
       <ReviewTabs active={activeTab} onChange={setActiveTab} />
 
+      {isLoading && <p className="text-sm text-neutral-500">불러오는 중...</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
       <div className="flex flex-col gap-3">
         {/* activeTab에 따라 리뷰완료/리뷰미작성 리스트를 다르게 렌더링 */}
         {activeTab === 'completed'
           ? completedReviews.map((review) => (
-              <CompletedReviewItem key={review.id} review={review} />
+              <CompletedReviewItem key={review.reviewId} review={review} />
             ))
           : pendingOrders.map((order) => (
-              <PendingReviewItem key={order.id} order={order} />
+              <PendingReviewItem key={order.orderId} order={order} />
             ))}
       </div>
     </div>

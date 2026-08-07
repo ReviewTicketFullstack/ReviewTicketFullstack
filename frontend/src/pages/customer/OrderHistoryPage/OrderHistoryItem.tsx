@@ -58,12 +58,12 @@ export function OrderHistoryItem({ order: initialOrder }: OrderHistoryItemProps)
       <ReviewModal
         open={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
+        orderId={order.id}
         storeName={order.storeName}
         menuName={order.menuName}
         onSubmitSuccess={() => {
-          // [TODO] 리뷰 등록 API 가 없어 화면 상태로만 표시한다.
-          //        새로고침하면 서버가 모르는 상태라 다시 '작성 가능' 으로 돌아온다.
-          setOrder({ ...order, reviewStatus: 'pending' });
+          // 서버에 저장이 끝난 뒤에만 불린다. 새로고침해도 같은 상태로 온다.
+          setOrder({ ...order, reviewStatus: 'done' });
         }}
       />
     </>

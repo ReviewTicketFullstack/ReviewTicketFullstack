@@ -5,21 +5,25 @@ export interface DetailStoreCardProps {
   storeName: string;
   rating: number;
   reviewCount: string;
+  hasReviewEvent: boolean;
 }
 
 export function DetailStoreCard({
   storeName,
   rating,
   reviewCount,
+  hasReviewEvent,
 }: DetailStoreCardProps) {
   return (
     <Card className="flex flex-col gap-4 p-5">
-      {/* Chip Row */}
-      <div>
-        <span className="inline-block bg-red-700 text-white text-xs font-semibold px-3 py-1 rounded">
-          sample리뷰 이벤트 적용 매장
-        </span>
-      </div>
+      {/* Chip Row — 리뷰이벤트 대상 메뉴가 하나라도 있는 가게만 표시 */}
+      {hasReviewEvent && (
+        <div>
+          <span className="inline-block bg-red-700 text-white text-xs font-semibold px-3 py-1 rounded">
+            리뷰 이벤트 적용 매장
+          </span>
+        </div>
+      )}
 
       {/* Store Name Row */}
       <div>

@@ -7,7 +7,7 @@ export interface StoreCardProps {
   storeName: string;
   rating: number;
   reviewCount: string;
-  imageUrl?: string;
+  imageUrl: string | null;
 }
 
 export function StoreCard({

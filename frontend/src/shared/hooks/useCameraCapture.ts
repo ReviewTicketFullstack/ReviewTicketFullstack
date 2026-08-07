@@ -10,8 +10,10 @@ export interface CameraCaptureResult {
 export interface UseCameraCaptureReturn {
   /** 카메라 캡처 요청. 기기에서 카메라 앱 열기 */
   capturePhoto: () => void;
-  /** 캡처된 사진 (Base64) */
+  /** 캡처된 사진 (Base64). 미리보기 표시용 */
   photo: CameraCaptureResult | null;
+  /** 캡처된 원본 파일. 서버로 올릴 때 쓴다 — Base64 는 원본보다 약 33% 커진다 */
+  photoFile: File | null;
   /** 사진 제거 */
   removePhoto: () => void;
   /** 파일 입력 핸들러 */
@@ -33,6 +35,7 @@ export interface UseCameraCaptureReturn {
 export function useCameraCapture(): UseCameraCaptureReturn {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<CameraCaptureResult | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // 기기가 HTML5 File API를 지원하는지 확인
@@ -70,6 +73,7 @@ export function useCameraCapture(): UseCameraCaptureReturn {
         photoData: data,
         photoType: file.type,
       });
+      setPhotoFile(file);
       setError(null);
     };
     reader.onerror = () => {
@@ -86,6 +90,7 @@ export function useCameraCapture(): UseCameraCaptureReturn {
 
   const removePhoto = () => {
     setPhoto(null);
+    setPhotoFile(null);
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -95,6 +100,7 @@ export function useCameraCapture(): UseCameraCaptureReturn {
   return {
     capturePhoto,
     photo,
+    photoFile,
     removePhoto,
     handleFileSelected,
     fileInputRef,
