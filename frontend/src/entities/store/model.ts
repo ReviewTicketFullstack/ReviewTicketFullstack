@@ -4,7 +4,7 @@
  * [TODO] 필드명은 백엔드 API 명세 확정 전 임시다. GET /api/stores 명세가 나오면 맞춘다.
  */
 export interface Store {
-  id: string;
+  id: number;
   name: string;
   imageUrl?: string;
   /** 평균 별점 */
