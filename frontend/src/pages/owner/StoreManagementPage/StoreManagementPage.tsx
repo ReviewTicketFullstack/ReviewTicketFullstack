@@ -10,7 +10,6 @@ export function StoreManagementPage() {
   const { logo, setLogo } = useStoreLogo();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.displayName ?? "");
-  console.log("isEditing:", isEditing);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
