@@ -52,6 +52,24 @@ function ProtectedRoute({
   return children;
 }
 
+function LoginRedirectRoute({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, isRestoring } = useAuth();
+
+  if (isRestoring) {
+    return <Loading />;
+  }
+
+  if (user) {
+    return <Navigate to={homePathOf(user.role)} replace />;
+  }
+
+  return children;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -59,7 +77,7 @@ export function AppRoutes() {
 
       <Route element={<AuthLayout />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<LoginRedirectRoute><LoginPage /></LoginRedirectRoute>} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/email-verification" element={<EmailVerificationPage />} />
         {/* <Route path="/signup/customer" element={<SignUpPage />} />
