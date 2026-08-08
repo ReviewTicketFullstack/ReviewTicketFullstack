@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Modal } from "@/shared/ui/Modal/Modal";
 import { Button } from "@/shared/ui";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
@@ -14,7 +15,8 @@ export interface MyInfoModalProps {
 }
 
 export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
-  const { user, updateDisplayName } = useAuth();
+  const navigate = useNavigate();
+  const { user, signout, updateDisplayName } = useAuth();
   const [nickname, setNickname] = useState(user?.displayName ?? "");
   const [nameChecked, setNameChecked] = useState<boolean | null>(null);
   const [nameMessage, setNameMessage] = useState("");
@@ -106,6 +108,11 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     } finally {
       setIsSendingReset(false);
     }
+  };
+
+  const handleLogout = () => {
+    signout();
+    navigate("/onboarding", { replace: true });
   };
 
   return (
@@ -204,15 +211,25 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
 
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-line-100">
-        <Button
-          variant="primary"
-          size="large"
-          fullWidth
-          onClick={handleSave}
-          disabled={!canSave || isSaving}
-        >
-          {isSaving ? "저장 중..." : "저장"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="primary"
+            size="large"
+            className="flex-1"
+            onClick={handleSave}
+            disabled={!canSave || isSaving}
+          >
+            {isSaving ? "저장 중..." : "저장"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="large"
+            className="flex-1"
+            onClick={handleLogout}
+          >
+            로그아웃하기
+          </Button>
+        </div>
       </div>
     </Modal>
   );
