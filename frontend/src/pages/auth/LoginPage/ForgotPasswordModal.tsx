@@ -13,11 +13,15 @@ export interface ForgotPasswordModalProps {
  * 재설정 메일만 요청한다. 실제 비밀번호 변경은 메일 링크가 여는
  * 서버 페이지(GET /api/auth/password-reset)에서 이뤄진다.
  */
-export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps) {
+export function ForgotPasswordModal({
+  open,
+  onClose,
+}: ForgotPasswordModalProps) {
   const [email, setEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [isResetSent, setIsResetSent] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,9 +39,12 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
 
       const response = await requestPasswordReset(email);
       setMessage(response.message);
+      setIsResetSent(true);
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : "재설정 메일을 보내지 못했습니다.",
+        err instanceof ApiError
+          ? err.message
+          : "재설정 메일을 보내지 못했습니다.",
       );
     } finally {
       setIsSending(false);
@@ -83,9 +90,13 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
             type="submit"
             fullWidth
             size="large"
-            disabled={!validateEmail(email) || isSending}
+            disabled={!validateEmail(email) || isSending || isResetSent}
           >
-            {isSending ? "보내는 중..." : "재설정 메일 받기"}
+            {isSending
+              ? "보내는 중..."
+              : isResetSent
+                ? "메일이 전송되었습니다."
+                : "재설정 메일 받기"}
           </Button>
         </form>
       )}

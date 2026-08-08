@@ -22,6 +22,7 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
   const [saveError, setSaveError] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const [isResetSent, setIsResetSent] = useState(false);
 
   // 모달을 다시 열면 서버가 알고 있는 이름에서 시작한다.
   useEffect(() => {
@@ -95,6 +96,7 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     try {
       const response = await requestPasswordReset(user.email);
       setPasswordMessage(response.message);
+      setIsResetSent(true);
     } catch (error) {
       setPasswordMessage(
         error instanceof ApiError
@@ -180,7 +182,11 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
             onClick={handlePasswordReset}
             disabled={isSendingReset || !user?.email}
           >
-            {isSendingReset ? "보내는 중..." : "비밀번호 재설정 메일 받기"}
+            {isSendingReset
+              ? "보내는 중..."
+              : isResetSent
+                ? "메일이 전송되었습니다."
+                : "재설정 메일 받기"}
           </Button>
           {passwordMessage && (
             <InputHelperText>{passwordMessage}</InputHelperText>
