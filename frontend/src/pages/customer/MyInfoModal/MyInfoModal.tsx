@@ -196,7 +196,9 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
         {/* Ticket Information */}
         <div className="bg-fill-100 rounded-lg px-4 py-3">
           <p className="text-xs text-ink-700 mb-1">남은 티켓</p>
-          <p className="text-base font-semibold text-ink-900">3개</p>
+          <p className="text-base font-semibold text-ink-900">
+            {user?.tickets ?? 0}개
+          </p>
         </div>
       </div>
 
