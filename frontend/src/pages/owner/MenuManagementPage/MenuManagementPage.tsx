@@ -10,6 +10,10 @@ export function MenuManagementPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   // 클릭한 메뉴 — 있으면 수정 모달이 열림
   const [selectedMenu, setSelectedMenu] = useState<MenuItem | null>(null);
+  // 메뉴 번호 -> 표본 사진 5칸. 저장 API 가 없어 화면에만 남는다.
+  const [sampleUrlsByMenu, setSampleUrlsByMenu] = useState<
+    Record<number, (string | null)[]>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,17 +50,26 @@ export function MenuManagementPage() {
   // 모달의 "적용" 클릭 시: 로컬 state만 갱신 — 메뉴 수정 저장 API는 아직 없음.
   // 서버 저장이 생기면 이 함수 안에서만 부르면 된다 — 저장 지점을 여기 하나로 모아 둔다.
   //
-  // 표본 5장 중 0번만 목록 썸네일에 쓴다. 서버가 아직 menu_image_url 한 칸뿐이라
-  // 나머지 4장은 표를 새로 만들기 전까지 화면에만 남는다.
-  const handleApply = (patch: { reviewEvent: boolean; imageUrls: (string | null)[] }) => {
+  // 목록에 쓰는 것은 대표 사진(imageUrl) 한 장이다. 표본 5장은 AI 대조용이라
+  // 목록에 뜨지 않지만, 모달을 닫았다 열어도 남아 있어야 해 메뉴 번호별로 여기 둔다.
+  // 담을 표가 생기면 이 state 대신 서버 값을 쓴다.
+  const handleApply = (patch: {
+    reviewEvent: boolean;
+    imageUrl: string | null;
+    sampleUrls: (string | null)[];
+  }) => {
     if (!selectedMenu) return;
     setMenuItems((items) =>
       items.map((item) =>
         item.id === selectedMenu.id
-          ? { ...item, reviewEvent: patch.reviewEvent, imageUrl: patch.imageUrls[0] }
+          ? { ...item, reviewEvent: patch.reviewEvent, imageUrl: patch.imageUrl }
           : item,
       ),
     );
+    setSampleUrlsByMenu((byMenu) => ({
+      ...byMenu,
+      [selectedMenu.id]: patch.sampleUrls,
+    }));
     setSelectedMenu(null);
   };
 
@@ -95,6 +108,7 @@ export function MenuManagementPage() {
       {selectedMenu && (
         <MenuEditModal
           menu={selectedMenu}
+          initialSampleUrls={sampleUrlsByMenu[selectedMenu.id]}
           onClose={() => setSelectedMenu(null)}
           onApply={handleApply}
         />

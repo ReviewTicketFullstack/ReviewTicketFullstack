@@ -7,27 +7,53 @@ import type { MenuItem } from '@/api/storeApi';
 // FE-2.3: 메뉴 프로필 설정 / 리뷰 설정
 interface MenuEditModalProps {
   menu: MenuItem;
+  /** 앞서 올려 둔 표본 사진. 저장 API 가 없어 페이지가 들고 있다가 넘겨준다 */
+  initialSampleUrls?: (string | null)[];
   onClose: () => void;
-  onApply: (patch: { reviewEvent: boolean; imageUrls: (string | null)[] }) => void;
+  onApply: (patch: {
+    reviewEvent: boolean;
+    /** 목록과 손님 화면에 보이는 대표 사진 한 장 */
+    imageUrl: string | null;
+    /** AI 대조용 표본 사진. 대표 사진과 별개다 */
+    sampleUrls: (string | null)[];
+  }) => void;
 }
 // FE-2.6: 가격은 이 모달에서 못 고친다 — 버튼처럼 보여도 클릭 안 되는 게 맞음
 const lockedFieldClassName =
   'w-full cursor-not-allowed rounded-lg border border-neutral-200 bg-neutral-100 px-3 py-2 text-sm text-neutral-400';
 
-export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
+export function MenuEditModal({
+  menu,
+  initialSampleUrls,
+  onClose,
+  onApply,
+}: MenuEditModalProps) {
   const { user } = useAuth();
   const [hasReviewEvent, setHasReviewEvent] = useState(menu.reviewEvent);
-  // 표본 사진 5칸. 서버가 아직 한 장(menu_image_url)만 들고 있어 0번에 넣고 시작한다.
-  const [imageUrls, setImageUrls] = useState<(string | null)[]>(() =>
-    Array.from({ length: SAMPLE_IMAGE_COUNT }, (_, i) =>
-      i === 0 ? menu.imageUrl : null,
+  // 대표 사진 — 목록과 손님 화면에 보이는 한 장. 서버의 menu_image_url 이다.
+  const [imageUrl, setImageUrl] = useState(menu.imageUrl);
+  // 표본 사진 5칸 — AI 대조 전용이라 대표 사진과 섞이지 않는다.
+  const [sampleUrls, setSampleUrls] = useState<(string | null)[]>(() =>
+    Array.from(
+      { length: SAMPLE_IMAGE_COUNT },
+      (_, i) => initialSampleUrls?.[i] ?? null,
     ),
   );
   const [error, setError] = useState<string | null>(null);
 
-  const handleImageChange = (index: number, url: string) => {
+  const handleSampleChange = (index: number, url: string) => {
     setError(null);
-    setImageUrls((urls) => urls.map((u, i) => (i === index ? url : u)));
+    setSampleUrls((urls) => urls.map((u, i) => (i === index ? url : u)));
+  };
+
+  // 표본 사진이 한 장도 없으면 손님이 리뷰를 올려도 대조할 기준이 없다.
+  // 리뷰이벤트를 끈 메뉴도 나중에 켤 수 있으므로 똑같이 요구한다.
+  const handleApply = () => {
+    if (sampleUrls.every((url) => url === null)) {
+      setError('표본 사진을 한 장 이상 올려 주세요. 리뷰 사진을 대조할 기준이 됩니다.');
+      return;
+    }
+    onApply({ reviewEvent: hasReviewEvent, imageUrl, sampleUrls });
   };
 
   return (
@@ -42,8 +68,8 @@ export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <MenuSampleImages
-          imageUrls={imageUrls}
-          onChange={handleImageChange}
+          imageUrls={sampleUrls}
+          onChange={handleSampleChange}
           onError={setError}
         />
         {/* 로그인한 사용자 이름(가게명) 표시 */}
@@ -52,22 +78,22 @@ export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
         </div>
         {/* 메뉴 썸네일 + 이름/가격 + 적용 버튼 */}
         <div className="flex items-center gap-4">
-          {/* 위 표본 1번 칸과 같은 사진을 비춘다 — 한쪽에서 올리면 둘 다 바뀐다 */}
+          {/* 대표 사진 — 위 표본 5칸과 별개다. 목록에 뜨는 것이 이 사진이다 */}
           <ImageUploadOverlay
-            src={imageUrls[0]}
+            src={imageUrl}
             alt={menu.name}
             className="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-200"
-            onUploaded={(uploaded) => handleImageChange(0, uploaded.url)}
+            onUploaded={(uploaded) => {
+              setError(null);
+              setImageUrl(uploaded.url);
+            }}
             onError={setError}
           />
           <div className="flex-1">
             <div className="text-lg font-bold">{menu.name}</div>
             <div className="text-sm text-gray-600">{menu.price.toLocaleString('ko-KR')}원</div>
           </div>
-          <Button
-            size="small"
-            onClick={() => onApply({ reviewEvent: hasReviewEvent, imageUrls })}
-          >
+          <Button size="small" onClick={handleApply}>
             적용
           </Button>
         </div>
@@ -77,8 +103,12 @@ export function MenuEditModal({ menu, onClose, onApply }: MenuEditModalProps) {
           
           <div className="flex flex-col gap-1">
             <span className="text-xs text-neutral-400">
-              메뉴 이미지 — 위 사진에 마우스를 올려 바꿔요. 손님이 올린 리뷰
-              사진을 이 사진들과 대조해 판정해요.
+              메뉴 이미지 — 메뉴 이름 옆 사진에 마우스를 올려 바꿔요. 메뉴판과
+              주문 화면에 이 사진이 뜹니다.
+            </span>
+            <span className="text-xs text-neutral-400">
+              표본 사진 — 맨 위 5칸. 손님이 올린 리뷰 사진을 이 사진들과 대조해
+              판정해요. 여러 각도로 올릴수록 정확해집니다.
             </span>
             {error && <span className="text-xs text-brand-900">{error}</span>}
           </div>
