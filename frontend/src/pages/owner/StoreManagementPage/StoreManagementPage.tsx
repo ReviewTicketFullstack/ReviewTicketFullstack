@@ -143,14 +143,6 @@ export function StoreManagementPage() {
             </span>
           )}
         </div>
-
-        <span className="text-sm font-semibold text-neutral-600">
-          배경 사진
-        </span>
-        {/* 배경 사진 — 편집 기능 미구현, 그대로 placeholder */}
-        <div className="flex h-24 w-20 items-center justify-center rounded-lg bg-gray-200">
-          <span className="text-xs text-gray-400">Image</span>
-        </div>
       </div>
     </div>
   );

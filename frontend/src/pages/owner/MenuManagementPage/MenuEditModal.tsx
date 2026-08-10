@@ -7,8 +7,12 @@ import type { MenuItem } from '@/api/storeApi';
 // FE-2.3: 메뉴 프로필 설정 / 리뷰 설정
 interface MenuEditModalProps {
   menu: MenuItem;
-  /** 앞서 올려 둔 표본 사진. 저장 API 가 없어 페이지가 들고 있다가 넘겨준다 */
+  /** 서버에 이미 저장돼 있던 표본 사진 */
   initialSampleUrls?: (string | null)[];
+  /** PATCH 요청 진행 중이면 적용 버튼을 잠근다 */
+  isApplying?: boolean;
+  /** 서버가 거절한 사유(errorCode 로 만든 문구). 클라이언트 쪽 검증 오류와 같은 자리에 띄운다 */
+  applyError?: string | null;
   onClose: () => void;
   onApply: (patch: {
     reviewEvent: boolean;
@@ -25,6 +29,8 @@ const lockedFieldClassName =
 export function MenuEditModal({
   menu,
   initialSampleUrls,
+  isApplying = false,
+  applyError = null,
   onClose,
   onApply,
 }: MenuEditModalProps) {
@@ -93,8 +99,8 @@ export function MenuEditModal({
             <div className="text-lg font-bold">{menu.name}</div>
             <div className="text-sm text-gray-600">{menu.price.toLocaleString('ko-KR')}원</div>
           </div>
-          <Button size="small" onClick={handleApply}>
-            적용
+          <Button size="small" onClick={handleApply} disabled={isApplying}>
+            {isApplying ? '저장 중...' : '적용'}
           </Button>
         </div>
         {/* 메뉴 설정 — 이미지/가격은 읽기 전용*/}         
@@ -110,7 +116,9 @@ export function MenuEditModal({
               표본 사진 — 맨 위 5칸. 손님이 올린 리뷰 사진을 이 사진들과 대조해
               판정해요. 여러 각도로 올릴수록 정확해집니다.
             </span>
-            {error && <span className="text-xs text-brand-900">{error}</span>}
+            {(error || applyError) && (
+              <span className="text-xs text-brand-900">{error ?? applyError}</span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -146,11 +154,6 @@ export function MenuEditModal({
             설정안함
           </button>
         </div>
-
-        {/* 메뉴 저장 API 가 붙으면 이 줄을 지운다 */}
-        <p className="text-xs text-neutral-400">
-          저장 기능을 연결하기 전이라, 새로고침하면 되돌아가요.
-        </p>
       </div>
     </div>
   );

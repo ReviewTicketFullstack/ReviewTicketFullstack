@@ -4,7 +4,15 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import jakarta.annotation.PreDestroy;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +54,14 @@ public class ReviewService {
     private final ImageSimilarityClient aiClient;
     private final ReviewTicketProperties properties;
 
+    /**
+     * 표본 사진 최대 5장을 동시에 대조하기 위한 전용 풀. 순차로 부르면 AI 서버
+     * 응답이 실측 최대 3.5초라 최악의 경우 5배(17초 이상)로 늘어난다 — 유저가
+     * 그만큼 로딩 화면을 더 본다. 동시에 쏘면 전체 소요 시간이 가장 느린 한
+     * 번의 호출 수준으로 유지된다.
+     */
+    private final ExecutorService aiExecutor = Executors.newFixedThreadPool(5);
+
     public ReviewService(ReviewRepository reviews, OrderRepository orders, StoreService storeService,
             ImageResizer resizer, ImageStorage storage, ImageSimilarityClient aiClient,
             ReviewTicketProperties properties) {
@@ -56,6 +72,15 @@ public class ReviewService {
         this.storage = storage;
         this.aiClient = aiClient;
         this.properties = properties;
+    }
+
+    @PreDestroy
+    void shutdownAiExecutor() {
+        aiExecutor.shutdown();
+    }
+
+    /** 표본 사진 한 장과의 대조 결과. AI 판정을 통과하면 url 이 그대로 compareImageUrl 로 남는다. */
+    private record SampleMatch(String url, double similarity) {
     }
 
     @Transactional
@@ -104,18 +129,45 @@ public class ReviewService {
         ImageResizer.Resized resized = resizer.resize(rawBytes, properties.upload().targetLongEdge());
 
         Menu menu = order.getMenu();
-        byte[] compareBytes = storage.read(menu.getImageUrl());
+        List<String> sampleUrls = menu.getSampleImageUrls().stream().filter(Objects::nonNull).toList();
+        if (sampleUrls.isEmpty()) {
+            throw new ValidationException("MENU_SAMPLE_MISSING", "이 메뉴에 등록된 표본 사진이 없습니다");
+        }
 
-        // ---- AI 판정. 여기서 처음으로 외부 서비스를 부른다.
-        double similarity = aiClient.measureSimilarity(resized.bytes(), compareBytes);
-        if (similarity < properties.ai().matchThreshold()) {
-            throw new ImageNotMatchedException(similarity);
+        // ---- AI 판정. 여기서 처음으로 외부 서비스를 부른다. 표본 사진 전부를
+        // 동시에 대조해 유사도가 가장 높은 것을 쓴다 — 다섯 칸은 동등하므로
+        // 어느 각도로 찍었든 하나만 맞으면 통과할 수 있어야 한다.
+        List<CompletableFuture<SampleMatch>> futures = sampleUrls.stream()
+                .map(url -> CompletableFuture.supplyAsync(() -> {
+                    byte[] compareBytes = storage.read(url);
+                    return new SampleMatch(url, aiClient.measureSimilarity(resized.bytes(), compareBytes));
+                }, aiExecutor))
+                .toList();
+
+        SampleMatch best;
+        try {
+            best = futures.stream()
+                    .map(CompletableFuture::join)
+                    .max(Comparator.comparingDouble(SampleMatch::similarity))
+                    .orElseThrow();
+        } catch (CompletionException e) {
+            // futures 안에서 던진 예외(AI_SERVER_UNAVAILABLE 등)는 CompletionException 으로
+            // 감싸여 나온다. ApiExceptionHandler 가 원래 예외를 알아보게 벗겨서 다시 던진다.
+            if (e.getCause() instanceof RuntimeException re) {
+                throw re;
+            }
+            throw e;
+        }
+
+        if (best.similarity() < properties.ai().matchThreshold()) {
+            throw new ImageNotMatchedException(best.similarity());
         }
 
         // ---- 통과. 이제야 사진을 저장하고, 리뷰 행 생성·티켓 반환·가게 통계
-        // 갱신을 한 트랜잭션으로 처리한다.
+        // 갱신을 한 트랜잭션으로 처리한다. compareImageUrl 은 대표 사진이 아니라
+        // 방금 가장 높은 유사도를 낸 그 표본 사진이다.
         String reviewImageUrl = storage.save(resized.bytes());
-        Review saved = reviews.save(new Review(order, rating, content, reviewImageUrl, similarity, menu.getImageUrl()));
+        Review saved = reviews.save(new Review(order, rating, content, reviewImageUrl, best.similarity(), best.url()));
 
         order.getCustomer().refundTicket();
         order.getStore().recordReview(rating);
@@ -125,6 +177,7 @@ public class ReviewService {
                 toUtc(saved.getCreatedAt()), saved.getImageSimilarity(), saved.getCompareImageUrl(),
                 order.getCustomer().getTickets());
     }
+
 
     /** 그 가게에 달린 리뷰 전부, 최신순. 누가 썼는지 가리지 않는다. */
     @Transactional(readOnly = true)
