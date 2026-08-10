@@ -43,11 +43,19 @@ export function MenuManagementPage() {
     return () => controller.abort();
   }, [user?.displayName]);
 
-  // 모달의 "적용" 클릭 시: 로컬 state만 갱신 — 메뉴 수정 저장 API는 아직 없음
-  const handleApply = (reviewEvent: boolean) => {
+  // 모달의 "적용" 클릭 시: 로컬 state만 갱신 — 메뉴 수정 저장 API는 아직 없음.
+  // 서버 저장이 생기면 이 함수 안에서만 부르면 된다 — 저장 지점을 여기 하나로 모아 둔다.
+  //
+  // 표본 5장 중 0번만 목록 썸네일에 쓴다. 서버가 아직 menu_image_url 한 칸뿐이라
+  // 나머지 4장은 표를 새로 만들기 전까지 화면에만 남는다.
+  const handleApply = (patch: { reviewEvent: boolean; imageUrls: (string | null)[] }) => {
     if (!selectedMenu) return;
     setMenuItems((items) =>
-      items.map((item) => (item.id === selectedMenu.id ? { ...item, reviewEvent } : item))
+      items.map((item) =>
+        item.id === selectedMenu.id
+          ? { ...item, reviewEvent: patch.reviewEvent, imageUrl: patch.imageUrls[0] }
+          : item,
+      ),
     );
     setSelectedMenu(null);
   };
