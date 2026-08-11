@@ -14,6 +14,22 @@ const ACCEPTED_TYPES: readonly string[] = ["image/jpeg", "image/png"];
 /** application.yml 의 spring.servlet.multipart.max-file-size 와 같은 값. */
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
+/** 서버는 errorCode 만 보낸다. 화면에 뜰 문구는 여기서 고른다. */
+function toUploadMessage(error: unknown, minLongEdge?: number): string {
+  if (!(error instanceof ApiError)) return "사진을 올리지 못했어요.";
+
+  switch (error.errorCode) {
+    case "IMAGE_TOO_SMALL":
+      return `사진이 너무 작아요. 긴 쪽이 ${minLongEdge}px 이상인 사진을 올려 주세요.`;
+    case "UNSUPPORTED_IMAGE_TYPE":
+      return "jpg, png 사진만 올릴 수 있어요.";
+    case "FILE_TOO_LARGE":
+      return "15MB 이하 사진만 올릴 수 있어요.";
+    default:
+      return "사진을 올리지 못했어요.";
+  }
+}
+
 export interface ImageUploadOverlayProps {
   src: string | null;
   /** 무엇의 사진인지. img alt 와 스크린리더 문구에 함께 쓴다 */
@@ -24,6 +40,12 @@ export interface ImageUploadOverlayProps {
   className?: string;
   /** 참이면 오버레이를 아예 그리지 않는다. 읽기 전용과 같다 */
   disabled?: boolean;
+  /**
+   * 긴 변의 하한(px). 메뉴 표본 사진처럼 화질이 AI 판정에 영향을 주는 자리에서만
+   * 넘긴다 — 기준 사진이 저화질이면 같은 음식을 찍은 리뷰도 유사도가 낮게 나와
+   * 거부된다. 로고나 목록 썸네일은 작아도 되므로 넘기지 않는다.
+   */
+  minLongEdge?: number;
   /** 업로드 성공. 받은 주소를 어디에 붙일지는 부른 쪽이 정한다 */
   onUploaded: (result: UploadResult) => void;
   /** 실패 문구. 화면의 에러 자리에 그대로 넣으면 된다 */
@@ -42,6 +64,7 @@ export function ImageUploadOverlay({
   label = "업로드",
   className = "",
   disabled = false,
+  minLongEdge,
   onUploaded,
   onError,
 }: ImageUploadOverlayProps) {
@@ -70,11 +93,9 @@ export function ImageUploadOverlay({
 
     setIsUploading(true);
     try {
-      onUploaded(await uploadImage(file));
+      onUploaded(await uploadImage(file, minLongEdge));
     } catch (error) {
-      onError?.(
-        error instanceof ApiError ? error.message : "사진을 올리지 못했어요.",
-      );
+      onError?.(toUploadMessage(error, minLongEdge));
     } finally {
       setIsUploading(false);
     }

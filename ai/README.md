@@ -27,17 +27,36 @@ DINOv2는 이미지 자체의 시각적 유사도 판별에 특화된 자기지�
 - 테스트 결과 리포트: https://claude.ai/code/artifact/2ef2d3bb-055c-4a4c-b045-48ee0bf7070e
 - 테스트 스크립트: `clip-test/eval_menu_match_v2.py` (로컬 전용, git 미포함 - 데이터셋 용량 커서 커밋 안 함)
 
-## 백엔드 연결 계획 (아직 미구현)
+## 백엔드 연결
 
-- 이 모델은 Python(`transformers`+`torch`)로 돌고, 백엔드는 Java/Spring Boot라
-  같은 프로세스에 넣지 않고 **별도 서비스로 분리**할 계획이다.
-- FastAPI 기반의 작은 내부 HTTP 서비스로 감싸서, 모델은 서비스 기동 시 한 번만
-  로드해두고(요청마다 재로드하지 않음) `POST /similarity` 같은 엔드포인트로
-  이미지 두 장(또는 경로)을 받아 유사도 점수를 돌려주는 구조를 생각하고 있다.
-- 백엔드(`/api/reviews`)는 리뷰 사진 저장 직후 이 서비스를 내부 REST로 호출해서
-  유사도를 받아오고, 0.80 기준으로 통과/거부를 판정한다.
-- 성능: 이번 테스트에서 CPU 기준 쌍당 평균 0.295초 - 동기 호출로도 충분히 감당 가능한
-  수준으로 봄(GPU 불필요, Smart App Control 문제도 회피됨).
+`server/main.py` 가 FastAPI로 감싼 실제 서비스다. 모델은 기동 시 한 번만 로드하고,
+`POST /similarity` 로 이미지 두 장(reviewImage, compareImage)을 받아 유사도를
+돌려준다. 통과/거부 판정(0.80 문턱값 비교)은 이 서버가 아니라 백엔드가 한다.
+
+기동:
+
+```
+C:\dev\ReviewTicketFullstack\ai\clip-test\.venv\Scripts\python.exe -m pip install -r server\requirements.txt
+C:\dev\ReviewTicketFullstack\ai\clip-test\.venv\Scripts\python.exe -m uvicorn main:app --port 8000 --app-dir server
+```
+
+별도 venv 를 새로 안 만들고 `clip-test/.venv`를 그대로 쓴다 — torch·transformers가
+이미 설치돼 있어서 fastapi/uvicorn/python-multipart 세 개만 추가로 깔면 된다.
+
+백엔드(`application.yml` 의 `reviewticket.ai.server-url`) 기본값이 이미
+`http://localhost:8000/similarity` 를 가리키고 있어 백엔드 쪽 설정은 안 건드려도 된다.
+
+- 요청/응답 형태(파트 이름 reviewImage/compareImage, 응답 키 similarity)는
+  `ImageSimilarityClient.java` 가 이미 가정하고 있던 것과 정확히 맞췄다.
+- **동시 요청 처리** — 백엔드가 메뉴 표본 사진 최대 5장을 동시에 이 서버로 보낸다
+  (병렬 대조, 유사도 최댓값 채택). `/similarity` 를 `async def` 가 아니라 일반
+  `def` 로 만들어 FastAPI가 요청마다 별도 스레드에서 돌리게 했고, 요청 하나당
+  torch 스레드 수는 1개로 제한했다(`torch.set_num_threads(1)`). torch의 실제
+  연산은 GIL을 놓아 주므로, 이 설정 조합으로 5개 요청이 코어를 나눠 쓰며 진짜
+  동시에 진행된다 — 전체 코어를 요청 하나가 다 쓰게 두면 다섯 요청이 서로
+  경쟁해 오히려 더 느려진다.
+- 성능: 쌍당 평균 0.295초(CPU 기준, 순차 기준) - 동기 호출로도 충분히 감당 가능한
+  수준(GPU 불필요, Smart App Control 문제도 회피됨).
 - 최적화 여지: confirmed 사진(사장님이 메뉴 등록/수정할 때만 바뀜)의 임베딩은 그때
   미리 계산해서 캐시해두면, 실제 리뷰 검증 시점에는 review 사진 임베딩만 새로 계산하면
   되어 더 빨라진다 - 아직 설계만, 구현은 안 함.

@@ -70,17 +70,17 @@ public class OrderService {
         }
 
         Integer reviewDeadlineSeconds = null;
-        LocalDateTime expireTime = null;
         if (reviewEventApply) {
             if (customer.getTickets() <= 0) {
                 throw new ValidationException("NO_TICKETS_LEFT", "잠글 티켓이 없습니다");
             }
             customer.lockTicket();
             reviewDeadlineSeconds = (int) properties.order().reviewTtl().toSeconds();
-            expireTime = LocalDateTime.now().plusSeconds(reviewDeadlineSeconds);
         }
 
-        Order saved = orders.save(new Order(customer, menu, reviewEventApply, reviewDeadlineSeconds, expireTime));
+        // 마감 시각은 Order 가 주문 시각으로부터 직접 계산한다 — 두 값이 서로 다른
+        // 시계에서 나오면 "60초 마감"이 실제로는 60초가 아니게 된다.
+        Order saved = orders.save(new Order(customer, menu, reviewEventApply, reviewDeadlineSeconds));
         String reviewStatus = reviewEventApply ? "available" : "not_available";
 
         return new OrderCreateResponse(saved.getId(), saved.getStore().getId(), saved.getStore().getName(),

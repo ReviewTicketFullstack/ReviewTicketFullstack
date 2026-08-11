@@ -62,7 +62,16 @@ public class Order {
     @Column(name = "review_deadline")
     private Integer reviewDeadline;
 
-    @Column(name = "ordered_at", insertable = false, updatable = false)
+    /**
+     * DB 에 DEFAULT CURRENT_TIMESTAMP 가 있지만 값은 애플리케이션이 직접 채운다.
+     *
+     * 이유가 둘이다. 하나는 expireTime 을 이 값 기준으로 계산해야 하기 때문이다 —
+     * DB 가 채우게 두면 주문 시각은 DB 시계, 마감 시각은 앱 시계가 되어 둘이
+     * 어긋난다(실측으로 59.992초짜리 "60초" 마감이 나왔다). 다른 하나는 INSERT
+     * 후 이 값을 다시 읽어오지 않으면 방금 만든 주문의 응답에서 null 로 나가고,
+     * 프론트가 그 사본을 저장했다가 new Date(null) 로 1970년을 표시하기 때문이다.
+     */
+    @Column(name = "ordered_at", updatable = false)
     private LocalDateTime orderedAt;
 
     /** ordered_at + reviewDeadline. apply=false 면 NULL. */
@@ -72,17 +81,22 @@ public class Order {
     protected Order() {
     }
 
-    /** 스냅샷 값은 넘겨받은 메뉴에서 그 자리에서 복사한다. */
-    public Order(User customer, Menu menu, boolean reviewEventApply,
-            Integer reviewDeadlineSeconds, LocalDateTime expireTime) {
+    /**
+     * 스냅샷 값은 넘겨받은 메뉴에서 그 자리에서 복사한다.
+     *
+     * 마감 시각은 밖에서 받지 않고 여기서 주문 시각으로부터 직접 계산한다 —
+     * 두 값이 반드시 같은 시계에서 나오도록 한곳에 묶어 둔다.
+     */
+    public Order(User customer, Menu menu, boolean reviewEventApply, Integer reviewDeadlineSeconds) {
         this.customer = customer;
         this.store = menu.getStore();
         this.menu = menu;
         this.menuName = menu.getName();
         this.price = menu.getPrice();
         this.reviewEventApply = reviewEventApply;
+        this.orderedAt = LocalDateTime.now();
         this.reviewDeadline = reviewEventApply ? reviewDeadlineSeconds : null;
-        this.expireTime = reviewEventApply ? expireTime : null;
+        this.expireTime = reviewEventApply ? this.orderedAt.plusSeconds(reviewDeadlineSeconds) : null;
     }
 
     public boolean isExpired(LocalDateTime now) {
