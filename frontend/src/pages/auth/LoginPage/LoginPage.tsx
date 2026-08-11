@@ -1,28 +1,31 @@
 import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/providers";
 import { login } from "@/api/authApi";
 import { ApiError } from "@/shared/api";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import type { FormEvent } from "react";
+import type { UserRole } from "@/entities/user";
 
-export function LoginPage() {
+export interface LoginFormProps {
+  expectedRole: UserRole;
+  onSuccess: () => void;
+}
+
+export function LoginForm({ expectedRole, onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
-  const navigate = useNavigate();
-
   const { signin } = useAuth();
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    console.log("[Login] Form submitted", { email });
+    console.log("[Login] Form submitted", { email, expectedRole });
     setError("");
     setIsLoading(true);
 
@@ -38,27 +41,28 @@ export function LoginPage() {
         expiresInSeconds: result.expiresInSeconds,
       });
 
-      // 로그인 응답에는 이메일이 없다. 방금 입력한 값을 그대로 쓴다.
+      if (result.role !== expectedRole) {
+        console.log("[Login] Role mismatch detected", {
+          expectedRole,
+          accountRole: result.role,
+        });
+        throw new Error(
+          `이 계정은 ${expectedRole === "CUSTOMER" ? "고객" : "사장"}용 로그인이 아닙니다.`
+        );
+      }
+
       console.log("[Login] Calling signin to restore session");
-      await signin(result, email);
+      await signin(result);
       console.log("[Login] signin completed successfully");
 
-      if (result.role === "CUSTOMER") {
-        console.log("[Login] Navigating to /home");
-        navigate("/home");
-      }
-
-      if (result.role === "OWNER") {
-        console.log("[Login] Navigating to /stores");
-        navigate("/stores");
-      }
+      console.log("[Login] Calling onSuccess callback");
+      onSuccess();
     } catch (err) {
       console.error("[Login] Login failed", {
         name: err instanceof ApiError ? err.name : "Unknown",
         message: err instanceof ApiError ? err.message : String(err),
         status: err instanceof ApiError ? err.status : undefined,
       });
-      // 잠금·차단 안내는 서버 문구가 그대로 보여야 한다 (401 과 429 가 다르다).
       setError(
         err instanceof ApiError ? err.message : "로그인 정보를 확인해주세요.",
       );
@@ -119,7 +123,7 @@ export function LoginPage() {
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={() => navigate("/signup")}
+          onClick={() => window.location.href = "/signup"}
           className="flex-1 text-center text-sm text-ink-700 hover:text-brand-800"
         >
           회원가입하기
