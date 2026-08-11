@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/ui/Button";
 import { useAuth } from "@/app/providers";
 import { login } from "@/api/authApi";
@@ -20,7 +21,15 @@ export function LoginForm({ expectedRole, onSuccess }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
-  const { signin } = useAuth();
+  const { signin, setSelectedRole } = useAuth();
+  const navigate = useNavigate();
+
+  // 가입 화면은 selectedRole 로 고객/사장을 구분한다. 여기서 넘겨주지 않으면
+  // SignUpPage 가 역할을 몰라 온보딩으로 되돌린다.
+  const handleGoToSignUp = () => {
+    setSelectedRole(expectedRole);
+    navigate("/signup");
+  };
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,7 +56,7 @@ export function LoginForm({ expectedRole, onSuccess }: LoginFormProps) {
           accountRole: result.role,
         });
         throw new Error(
-          `이 계정은 ${expectedRole === "CUSTOMER" ? "고객" : "사장"}용 로그인이 아닙니다.`
+          `이 계정은 ${expectedRole === "CUSTOMER" ? "고객님" : "사장님"} 계정이 아닙니다.`,
         );
       }
 
@@ -64,7 +73,7 @@ export function LoginForm({ expectedRole, onSuccess }: LoginFormProps) {
         status: err instanceof ApiError ? err.status : undefined,
       });
       setError(
-        err instanceof ApiError ? err.message : "로그인 정보를 확인해주세요.",
+        err instanceof Error ? err.message : "로그인 정보를 확인해주세요.",
       );
     } finally {
       setIsLoading(false);
@@ -123,7 +132,7 @@ export function LoginForm({ expectedRole, onSuccess }: LoginFormProps) {
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={() => window.location.href = "/signup"}
+          onClick={handleGoToSignUp}
           className="flex-1 text-center text-sm text-ink-700 hover:text-brand-800"
         >
           회원가입하기
@@ -141,6 +150,7 @@ export function LoginForm({ expectedRole, onSuccess }: LoginFormProps) {
       <ForgotPasswordModal
         open={isForgotPasswordOpen}
         onClose={() => setIsForgotPasswordOpen(false)}
+        expectedRole={expectedRole}
       />
     </div>
   );
