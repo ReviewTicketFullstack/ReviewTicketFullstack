@@ -53,11 +53,7 @@ function ProtectedRoute({
   return children;
 }
 
-function LoginRedirectRoute({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function LoginRedirectRoute({ children }: { children: React.ReactNode }) {
   const { user, isRestoring } = useAuth();
 
   if (isRestoring) {
@@ -77,9 +73,30 @@ export function AppRoutes() {
       <Route path="/" element={<Navigate to="/onboarding" replace />} />
 
       <Route element={<AuthLayout />}>
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/login/customer" element={<LoginRedirectRoute><CustomerLoginPage /></LoginRedirectRoute>} />
-        <Route path="/login/owner" element={<LoginRedirectRoute><OwnerLoginPage /></LoginRedirectRoute>} />
+        <Route
+          path="/onboarding"
+          element={
+            <LoginRedirectRoute>
+              <OnboardingPage />
+            </LoginRedirectRoute>
+          }
+        />
+        <Route
+          path="/login/customer"
+          element={
+            <LoginRedirectRoute>
+              <CustomerLoginPage />
+            </LoginRedirectRoute>
+          }
+        />
+        <Route
+          path="/login/owner"
+          element={
+            <LoginRedirectRoute>
+              <OwnerLoginPage />
+            </LoginRedirectRoute>
+          }
+        />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/email-verification" element={<EmailVerificationPage />} />
       </Route>
@@ -103,7 +120,6 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       >
-
         <Route path="stores" element={<StoreManagementPage />} />
         <Route path="menu" element={<MenuManagementPage />} />
         <Route path="reviews" element={<ReviewManagementPage />} />
