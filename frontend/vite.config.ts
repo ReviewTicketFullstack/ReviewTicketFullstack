@@ -25,6 +25,13 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
         },
+        // 업로드된 사진은 /api 가 아니라 /uploads 로 서빙된다(백엔드
+        // UploadStaticConfig). 이걸 넘기지 않으면 dev 서버가 index.html 을
+        // 200 으로 돌려줘서 <img> 가 깨진다.
+        "/uploads": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
       },
     },
   };

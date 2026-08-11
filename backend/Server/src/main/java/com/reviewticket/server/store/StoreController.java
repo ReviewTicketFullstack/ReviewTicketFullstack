@@ -16,6 +16,7 @@ import com.reviewticket.server.domain.User;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 가게, 메뉴 조회와 사장의 가게 관리.
@@ -37,6 +38,20 @@ public class StoreController {
 
     /** 4.4 응답. 4.3(GET, 사장 본인 조회)보다 작다 — 방금 바뀐 값과 갱신 시각만 돌려주면 충분하다. */
     public record UpdateStoreResponse(Long storeId, String storeName, String logoUrl, Instant latestUpdate) {
+    }
+
+    /**
+     * 메뉴 수정 요청. 세 값을 통째로 덮어쓴다 — 부분 수정은 없다.
+     *
+     * sampleImageUrls 는 최대 5개, 최소 1개는 값이 있어야 한다(비어 있으면
+     * AI 대조 기준이 없어진다). 검증은 StoreService 가 한다.
+     */
+    public record UpdateMenuRequest(String imageUrl, @NotNull List<String> sampleImageUrls, boolean reviewEvent) {
+    }
+
+    /** 방금 바뀐 값과 갱신 시각만 돌려준다 — UpdateStoreResponse 와 같은 이유다. */
+    public record UpdateMenuResponse(Long menuId, String menuImageUrl, List<String> sampleImageUrls,
+            boolean reviewEvent, Instant menuLatestUpdate) {
     }
 
     /** 홈 목록. 개수 제한과 페이지네이션은 두지 않았다. */
@@ -65,9 +80,19 @@ public class StoreController {
         return new UpdateStoreResponse(updated.storeId(), updated.storeName(), updated.logoUrl(), updated.latestUpdate());
     }
 
-    /** 사장이 자기 가게 메뉴를 조회한다. 프로토타입에서는 수정하지 않기로 했으므로 조회만 둔다. */
+    /** 사장이 자기 가게 메뉴를 조회한다. */
     @GetMapping("/me/menus")
     public List<MenuOwnerResponse> myMenus(@AuthenticationPrincipal User user) {
         return storeService.findMyMenus(user.getId());
+    }
+
+    /** 대표 사진·표본 사진(최대 5장)·리뷰이벤트 여부를 고친다. 메뉴 이름·가격은 여전히 고정이다. */
+    @PatchMapping(value = "/me/menus/{menuId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public UpdateMenuResponse updateMyMenu(@AuthenticationPrincipal User user, @PathVariable Long menuId,
+            @Valid @RequestBody UpdateMenuRequest request) {
+        MenuOwnerResponse updated = storeService.updateMyMenu(user.getId(), menuId,
+                request.imageUrl(), request.sampleImageUrls(), request.reviewEvent());
+        return new UpdateMenuResponse(updated.menuId(), updated.menuImageUrl(), updated.sampleImageUrls(),
+                updated.reviewEvent(), updated.menuLatestUpdate());
     }
 }
