@@ -1,11 +1,20 @@
+import { RotateCw } from 'lucide-react';
+
 export type ReviewTab = 'completed' | 'pending' | 'expired';
 
 interface ReviewTabsProps {
   active: ReviewTab;
   onChange: (tab: ReviewTab) => void;
+  onRefresh: () => void;
+  isRefreshing?: boolean;
 }
 
-export function ReviewTabs({ active, onChange }: ReviewTabsProps) {
+export function ReviewTabs({
+  active,
+  onChange,
+  onRefresh,
+  isRefreshing = false,
+}: ReviewTabsProps) {
   return (
     // {/* 리뷰 탭 네비게이션 */} 
     <div className="flex gap-4 border-b border-neutral-200">
@@ -44,6 +53,17 @@ export function ReviewTabs({ active, onChange }: ReviewTabsProps) {
         }
       >
         작성 대기
+      </button>
+      {/* 목록·개수를 다시 받아온다. 마감이 지나 미이행으로 넘어간 건은
+          재조회해야 탭이 옮겨간다 */}
+      <button
+        type="button"
+        onClick={onRefresh}
+        disabled={isRefreshing}
+        aria-label="새로고침"
+        className="ml-auto flex size-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 disabled:opacity-50"
+      >
+        <RotateCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
       </button>
     </div>
   );
