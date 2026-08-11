@@ -22,6 +22,7 @@ export interface SignUpResponse {
 
 export interface AvailabilityResponse {
   available: boolean;
+  role?: UserRole;
 }
 
 export interface VerifiedResponse {

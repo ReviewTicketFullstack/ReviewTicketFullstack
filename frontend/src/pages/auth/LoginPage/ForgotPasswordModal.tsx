@@ -3,19 +3,26 @@ import { Modal, Button, Input } from "@/shared/ui";
 import { checkEmail, requestPasswordReset } from "@/api/authApi";
 import { validateEmail } from "@/shared/lib";
 import { ApiError } from "@/shared/api";
+import type { UserRole } from "@/entities/user";
 
 export interface ForgotPasswordModalProps {
   open: boolean;
   onClose: () => void;
+  expectedRole: UserRole;
 }
 
 /**
  * 재설정 메일만 요청한다. 실제 비밀번호 변경은 메일 링크가 여는
  * 서버 페이지(GET /api/auth/password-reset)에서 이뤄진다.
+ * expectedRole과 일치하는 이메일만 재설정 허용.
+ *
+ * 주의: 이 역할 검사는 GET /api/auth/check-email 이 role 을 함께 내려줘야 동작한다.
+ * 현재 서버 AvailabilityResponse 는 available 만 담고 있어 검사가 통과만 한다.
  */
 export function ForgotPasswordModal({
   open,
   onClose,
+  expectedRole,
 }: ForgotPasswordModalProps) {
   const [email, setEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -34,6 +41,12 @@ export function ForgotPasswordModal({
       const availabilityResponse = await checkEmail(email);
       if (availabilityResponse.available) {
         setError("등록되지 않은 이메일입니다.");
+        return;
+      }
+
+      if (availabilityResponse.role && availabilityResponse.role !== expectedRole) {
+        const roleLabel = expectedRole === "CUSTOMER" ? "고객" : "사장";
+        setError(`이 이메일은 ${roleLabel}용 계정이 아닙니다.`);
         return;
       }
 
