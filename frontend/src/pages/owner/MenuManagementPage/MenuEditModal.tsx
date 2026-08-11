@@ -22,7 +22,7 @@ interface MenuEditModalProps {
     sampleUrls: (string | null)[];
   }) => void;
 }
-// FE-2.6: 가격은 이 모달에서 못 고친다 — 버튼처럼 보여도 클릭 안 되는 게 맞음
+// FE-2.6: 가격은 이 모달에서 못 고친다 — 입력창처럼 보여도 읽기 전용이 맞음
 const lockedFieldClassName =
   'w-full cursor-not-allowed rounded-lg border border-neutral-200 bg-neutral-100 px-3 py-2 text-sm text-neutral-400';
 
@@ -103,7 +103,7 @@ export function MenuEditModal({
             {isApplying ? '저장 중...' : '적용'}
           </Button>
         </div>
-        {/* 메뉴 설정 — 이미지/가격은 읽기 전용*/}         
+        {/* 메뉴 설정 — 이미지는 hover 업로드, 가격은 읽기 전용 */}
         <div className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-neutral-600">메뉴 설정</span>
           
