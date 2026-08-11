@@ -25,7 +25,7 @@ DINOv2는 이미지 자체의 시각적 유사도 판별에 특화된 자기지�
 테스트에서 간격이 0.404까지 벌어졌다. 상세 테스트 결과와 근거는 아래 참고.
 
 - 테스트 결과 리포트: https://claude.ai/code/artifact/2ef2d3bb-055c-4a4c-b045-48ee0bf7070e
-- 테스트 스크립트: `clip-test/eval_menu_match_v2.py` (로컬 전용, git 미포함 - 데이터셋 용량 커서 커밋 안 함)
+- 테스트 스크립트: `dinov2-test/eval_menu_match_v2.py` (로컬 전용, git 미포함 - 데이터셋 용량 커서 커밋 안 함)
 
 ## 백엔드 연결
 
@@ -36,11 +36,11 @@ DINOv2는 이미지 자체의 시각적 유사도 판별에 특화된 자기지�
 기동:
 
 ```
-C:\dev\ReviewTicketFullstack\ai\clip-test\.venv\Scripts\python.exe -m pip install -r server\requirements.txt
-C:\dev\ReviewTicketFullstack\ai\clip-test\.venv\Scripts\python.exe -m uvicorn main:app --port 8000 --app-dir server
+C:\dev\ReviewTicketFullstack\ai\dinov2-test\.venv\Scripts\python.exe -m pip install -r server\requirements.txt
+C:\dev\ReviewTicketFullstack\ai\dinov2-test\.venv\Scripts\python.exe -m uvicorn main:app --port 8000 --app-dir server
 ```
 
-별도 venv 를 새로 안 만들고 `clip-test/.venv`를 그대로 쓴다 — torch·transformers가
+별도 venv 를 새로 안 만들고 `dinov2-test/.venv`를 그대로 쓴다 — torch·transformers가
 이미 설치돼 있어서 fastapi/uvicorn/python-multipart 세 개만 추가로 깔면 된다.
 
 백엔드(`application.yml` 의 `reviewticket.ai.server-url`) 기본값이 이미
