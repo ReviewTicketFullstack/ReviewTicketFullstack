@@ -45,6 +45,11 @@ export function ReviewManagementPage() {
     return () => controller.abort();
   }, []);
 
+  // 서버는 둘을 한 목록에 담아 보낸다(GET /api/stores/me/orders/pending).
+  // 마감 전이면 작성 대기, 마감이 지났는데도 리뷰가 없으면 미이행.
+  const pendingList = pendingOrders.filter((o) => o.reviewStatus === 'pending');
+  const expiredList = pendingOrders.filter((o) => o.reviewStatus === 'expired');
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <h1 className="text-xl font-bold text-ink-900">리뷰관리</h1>
@@ -53,7 +58,8 @@ export function ReviewManagementPage() {
         totalCount={totalCount}
         averageRating={averageRating}
         completedCount={completedReviews.length}
-        pendingCount={pendingOrders.length}
+        pendingCount={pendingList.length}
+        expiredCount={expiredList.length}
       />
 
       <ReviewTabs active={activeTab} onChange={setActiveTab} />
@@ -62,12 +68,12 @@ export function ReviewManagementPage() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-col gap-3">
-        {/* activeTab에 따라 리뷰완료/리뷰미작성 리스트를 다르게 렌더링 */}
+        {/* activeTab에 따라 리뷰완료/작성 대기/미이행 리스트를 다르게 렌더링 */}
         {activeTab === 'completed'
           ? completedReviews.map((review) => (
               <CompletedReviewItem key={review.reviewId} review={review} />
             ))
-          : pendingOrders.map((order) => (
+          : (activeTab === 'pending' ? pendingList : expiredList).map((order) => (
               <PendingReviewItem key={order.orderId} order={order} />
             ))}
       </div>
