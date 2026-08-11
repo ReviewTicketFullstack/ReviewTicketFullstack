@@ -31,7 +31,7 @@ export interface AuthContextType {
   /** 저장된 토큰으로 세션을 되살리는 중. 이때 로그인 화면으로 보내면 안 된다. */
   isRestoring: boolean;
 
-  signin: (result: LoginResponse, email: string) => void;
+  signin: (result: LoginResponse, email: string) => Promise<void>;
   signout: () => void;
   setSelectedRole: (role: UserRole | null) => void;
   updateDisplayName: (displayName: string) => void;

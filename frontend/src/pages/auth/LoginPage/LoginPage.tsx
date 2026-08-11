@@ -22,26 +22,42 @@ export function LoginPage() {
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    console.log("[Login] Form submitted", { email });
     setError("");
     setIsLoading(true);
 
     try {
+      console.log("[Login] Calling login API");
       const result = await login({
         email,
         password,
       });
+      console.log("[Login] Login API succeeded", {
+        userId: result.userId,
+        role: result.role,
+        expiresInSeconds: result.expiresInSeconds,
+      });
 
       // 로그인 응답에는 이메일이 없다. 방금 입력한 값을 그대로 쓴다.
-      signin(result, email);
+      console.log("[Login] Calling signin to restore session");
+      await signin(result, email);
+      console.log("[Login] signin completed successfully");
 
       if (result.role === "CUSTOMER") {
+        console.log("[Login] Navigating to /home");
         navigate("/home");
       }
 
       if (result.role === "OWNER") {
+        console.log("[Login] Navigating to /stores");
         navigate("/stores");
       }
     } catch (err) {
+      console.error("[Login] Login failed", {
+        name: err instanceof ApiError ? err.name : "Unknown",
+        message: err instanceof ApiError ? err.message : String(err),
+        status: err instanceof ApiError ? err.status : undefined,
+      });
       // 잠금·차단 안내는 서버 문구가 그대로 보여야 한다 (401 과 429 가 다르다).
       setError(
         err instanceof ApiError ? err.message : "로그인 정보를 확인해주세요.",
