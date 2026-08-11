@@ -93,7 +93,7 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     setPasswordMessage("");
 
     try {
-      const response = await requestPasswordReset(user.email);
+      const response = await requestPasswordReset(user.email, user.role);
       setPasswordMessage(response.message);
     } catch (error) {
       setPasswordMessage(

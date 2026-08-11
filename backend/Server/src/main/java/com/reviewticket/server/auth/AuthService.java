@@ -277,32 +277,32 @@ public class AuthService {
      * 존재 여부를 이제 그대로 알려준다(제품 결정, 2026-08-04) — 열거 방지보다
      * "가입되지 않은 이메일입니다" 라는 UX 를 우선하기로 했다.
      *
-     * @return 그 이메일로 가입된 회원이 있었는지
+     * role 도 함께 확인한다. 이메일 자체가 없는 경우와, 이메일은 있지만 role
+     * 이 다른 계정인 경우를 구분해서 던진다 — 온보딩에서 역할 카드를 잘못
+     * 고른 본인에게 "이메일이 아예 없다"고 오인시키지 않기 위해서다.
      */
     @Transactional
-    public boolean requestPasswordReset(String rawEmail) {
-        Optional<User> found = users.findByEmail(normalizeEmail(rawEmail));
-        if (found.isEmpty()) {
-            return false;
+    public void requestPasswordReset(String rawEmail, Role role) {
+        User user = users.findByEmail(normalizeEmail(rawEmail))
+                .orElseThrow(() -> new ValidationException("NO_EXISTING_EMAIL", "가입되지 않은 이메일입니다"));
+        if (user.getRole() != role) {
+            throw new ValidationException("ROLE_MISMATCH", "계정의 역할에 맞지 않는 접근 시도입니다");
         }
-        User user = found.get();
 
-        // 재발송 간격 제한. 쿨다운이면 메일만 다시 안 보내고 조용히 끝낸다 —
-        // 계정은 실제로 존재하므로 존재 여부 응답(true)은 그대로 준다.
+        // 재발송 간격 제한. 쿨다운이면 메일만 다시 안 보내고 조용히 끝낸다.
         boolean recentlySent = resetTokens.findTopByUserOrderByIdDesc(user)
                 .map(PasswordResetToken::getCreatedAt)
                 .map(createdAt -> createdAt != null
                         && createdAt.isAfter(LocalDateTime.now().minus(RESEND_COOLDOWN)))
                 .orElse(false);
         if (recentlySent) {
-            return true;
+            return;
         }
 
         String token = newToken();
         resetTokens.save(new PasswordResetToken(
                 user, token, LocalDateTime.now().plus(properties.auth().verificationTtl())));
         events.publishEvent(new PasswordResetMailRequested(user.getEmail(), token));
-        return true;
     }
 
     /**
