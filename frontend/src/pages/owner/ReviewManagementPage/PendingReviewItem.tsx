@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/shared/ui';
 import type { PendingOrder } from '@/api/reviewApi';
 import { OrderItemBox } from './OrderItemBox';
@@ -9,9 +9,21 @@ import {
 
 interface PendingReviewItemProps {
   order: PendingOrder;
+  /**
+   * 마감을 막 넘긴 순간 한 번 불린다. 목록을 다시 받아야 이 주문이 미이행으로
+   * 옮겨간다 — reviewStatus 는 서버가 조회 시점에 판정한 값이라 화면에 머무는
+   * 동안에는 바뀌지 않는다.
+   *
+   * 참조가 고정된 함수를 넘겨야 한다. 매 렌더 새로 만든 함수를 넘기면 아래
+   * effect 가 다시 돌아 interval 이 계속 버려지고 만들어진다.
+   */
+  onExpire?: () => void;
 }
 
-export function PendingReviewItem({ order }: PendingReviewItemProps) {
+export function PendingReviewItem({
+  order,
+  onExpire,
+}: PendingReviewItemProps) {
   // 리뷰 미작성 주문 1건 카드
   // 주문일자를 한국어 표기로 변환 (CompletedReviewItem과 동일한 포맷)
   const date = new Date(order.orderedAt).toLocaleDateString('ko-KR');
@@ -22,14 +34,24 @@ export function PendingReviewItem({ order }: PendingReviewItemProps) {
     getRemainingReviewTime(order.expireTime),
   );
 
+  // 한 카드가 재조회를 여러 번 부르지 않게 막는다.
+  const hasFiredExpire = useRef(false);
+
   useEffect(() => {
     if (!isPending) return;
     // 손님쪽 ReviewButton 과 같은 주기다. 1초로 두면 초 표시가 가끔 건너뛴다.
     const interval = setInterval(() => {
-      setRemaining(getRemainingReviewTime(order.expireTime));
+      const left = getRemainingReviewTime(order.expireTime);
+      setRemaining(left);
+
+      if (left <= 0 && !hasFiredExpire.current) {
+        hasFiredExpire.current = true;
+        clearInterval(interval);
+        onExpire?.();
+      }
     }, 300);
     return () => clearInterval(interval);
-  }, [isPending, order.expireTime]);
+  }, [isPending, order.expireTime, onExpire]);
 
   return (
     <Card bordered className="flex flex-col gap-3 p-4">

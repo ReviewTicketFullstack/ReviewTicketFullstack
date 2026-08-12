@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StatsBar } from './StatsBar';
 import { ReviewTabs, type ReviewTab } from './ReviewTabs';
 import { CompletedReviewItem } from './CompletedReviewItem';
@@ -20,8 +20,12 @@ export function ReviewManagementPage() {
   const [averageRating, setAverageRating] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // 값이 바뀌면 아래 useEffect 가 다시 돈다. 새로고침 버튼이 이 값을 올린다.
+  // 값이 바뀌면 아래 useEffect 가 다시 돈다. 새로고침 버튼과 카드 만료가 올린다.
   const [reloadKey, setReloadKey] = useState(0);
+
+  // 카드에 넘기는 값이라 참조가 고정돼야 한다. 인라인 화살표로 넘기면 매 렌더마다
+  // 새 함수가 돼 카드의 카운트다운 interval 이 계속 버려지고 다시 만들어진다.
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -69,7 +73,7 @@ export function ReviewManagementPage() {
       <ReviewTabs
         active={activeTab}
         onChange={setActiveTab}
-        onRefresh={() => setReloadKey((k) => k + 1)}
+        onRefresh={reload}
         isRefreshing={isLoading}
       />
 
@@ -83,7 +87,11 @@ export function ReviewManagementPage() {
               <CompletedReviewItem key={review.reviewId} review={review} />
             ))
           : (activeTab === 'pending' ? pendingList : expiredList).map((order) => (
-              <PendingReviewItem key={order.orderId} order={order} />
+              <PendingReviewItem
+                key={order.orderId}
+                order={order}
+                onExpire={reload}
+              />
             ))}
       </div>
     </div>
