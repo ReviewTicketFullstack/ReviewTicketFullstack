@@ -15,8 +15,15 @@ export interface UploadResult {
  *
  * 리뷰 사진은 이 요청을 쓰지 않는다 — AI 검증을 통과한 사진만 남겨야 하는데,
  * 미리 올려 두면 판정에 실패한 사진이 주인 없는 파일로 디스크에 쌓인다.
+ *
+ * @param minLongEdge 긴 변의 하한(px). 메뉴 표본 사진처럼 화질이 AI 판정에
+ *                    영향을 주는 자리에서만 넘긴다. 로고나 목록 썸네일은
+ *                    작아도 되므로 넘기지 않는다.
  */
-export function uploadImage(file: File): Promise<UploadResult> {
+export function uploadImage(
+  file: File,
+  minLongEdge?: number,
+): Promise<UploadResult> {
   const form = new FormData();
   form.append("file", file);
 
@@ -24,5 +31,6 @@ export function uploadImage(file: File): Promise<UploadResult> {
     method: "POST",
     body: form,
     auth: true,
+    query: minLongEdge ? { minLongEdge: String(minLongEdge) } : undefined,
   });
 }

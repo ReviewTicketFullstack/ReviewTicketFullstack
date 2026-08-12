@@ -2,6 +2,9 @@ package com.reviewticket.server.domain;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -61,6 +64,8 @@ public class Review {
     @Column(name = "review_image_url", nullable = false, length = 255)
     private String imageUrl;
 
+    /** Order.orderedAt 과 같은 이유로 @Generated 를 붙인다 — 없으면 등록 응답의 작성 시각이 null 이다. */
+    @Generated(event = EventType.INSERT)
     @Column(name = "review_created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 

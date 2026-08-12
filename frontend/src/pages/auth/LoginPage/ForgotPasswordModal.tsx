@@ -3,10 +3,30 @@ import { Modal, Button, Input } from "@/shared/ui";
 import { checkEmail, requestPasswordReset } from "@/api/authApi";
 import { validateEmail } from "@/shared/lib";
 import { ApiError } from "@/shared/api";
+import { useAuth } from "@/app/providers";
 
 export interface ForgotPasswordModalProps {
   open: boolean;
   onClose: () => void;
+}
+
+/**
+ * 서버는 errorCode 만 보내고 문구는 화면이 채운다.
+ * NO_EXISTING_EMAIL(이메일 자체가 없음)과 ROLE_MISMATCH(이메일은 있지만
+ * 다른 role 계정)를 구분해서, 역할 카드를 잘못 고른 본인이 "이메일이
+ * 아예 없다"고 오인하지 않게 한다.
+ */
+function toMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return "재설정 메일을 보내지 못했습니다.";
+
+  switch (error.errorCode) {
+    case "NO_EXISTING_EMAIL":
+      return "등록되지 않은 이메일입니다.";
+    case "ROLE_MISMATCH":
+      return "계정의 역할에 맞지 않는 접근 시도입니다.";
+    default:
+      return error.message;
+  }
 }
 
 /**
@@ -21,31 +41,35 @@ export function ForgotPasswordModal({
   const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [isResetSent, setIsResetSent] = useState(false);
+
+  const { selectedRole } = useAuth();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateEmail(email) || isSending) return;
+
+    if (!selectedRole) {
+      setError(
+        "어느 계정으로 찾을지 알 수 없어요. 처음 화면부터 다시 시작해 주세요.",
+      );
+      return;
+    }
 
     setIsSending(true);
     setError("");
 
     try {
       const availabilityResponse = await checkEmail(email);
+
       if (availabilityResponse.available) {
         setError("등록되지 않은 이메일입니다.");
         return;
       }
 
-      const response = await requestPasswordReset(email);
+      const response = await requestPasswordReset(email, selectedRole);
       setMessage(response.message);
-      setIsResetSent(true);
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "재설정 메일을 보내지 못했습니다.",
-      );
+      setError(toMessage(err));
     } finally {
       setIsSending(false);
     }
@@ -90,13 +114,9 @@ export function ForgotPasswordModal({
             type="submit"
             fullWidth
             size="large"
-            disabled={!validateEmail(email) || isSending || isResetSent}
+            disabled={!validateEmail(email) || isSending}
           >
-            {isSending
-              ? "보내는 중..."
-              : isResetSent
-                ? "메일이 전송되었습니다."
-                : "재설정 메일 받기"}
+            {isSending ? "보내는 중..." : "재설정 메일 받기"}
           </Button>
         </form>
       )}

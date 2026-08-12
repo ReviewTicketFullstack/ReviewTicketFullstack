@@ -80,7 +80,9 @@ public class AuthController {
     public record VerifyResponse(String email) {
     }
 
-    public record ResetRequest(@Email(message = "이메일 형식이 올바르지 않습니다") @NotBlank String email) {
+    public record ResetRequest(
+            @Email(message = "이메일 형식이 올바르지 않습니다") @NotBlank String email,
+            @NotNull(message = "역할이 없습니다") Role role) {
     }
 
     public record ResetTokenResponse(boolean valid) {
@@ -170,13 +172,13 @@ public class AuthController {
      * 원래는 계정 열거 방지를 위해 존재 여부와 무관하게 항상 같은 응답을
      * 줬는데, "가입되지 않은 이메일입니다" 를 화면에 보여주는 UX 를 위해
      * 의도적으로 그 방어를 풀기로 했다(제품 결정, 2026-08-04).
+     *
+     * 이메일이 아예 없는 경우(NO_EXISTING_EMAIL)와 이메일은 있지만 role 이
+     * 다른 계정인 경우(ROLE_MISMATCH)는 authService 가 구분해서 던진다.
      */
     @PostMapping(value = "/password-reset/request", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResetRequestResponse requestPasswordReset(@Valid @RequestBody ResetRequest request) {
-        boolean exists = authService.requestPasswordReset(request.email());
-        if (!exists) {
-            throw new ValidationException("NO_EXISTING_EMAIL", "가입되지 않은 이메일입니다");
-        }
+        authService.requestPasswordReset(request.email(), request.role());
         return new ResetRequestResponse("YES_EXISTING_EMAIL");
     }
 
