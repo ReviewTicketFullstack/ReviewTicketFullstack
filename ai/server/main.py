@@ -6,8 +6,8 @@ DINOv2 임베딩의 코사인 유사도를 계산해 돌려준다. 0.80 문턱�
 판정)는 이 서버가 아니라 백엔드가 한다 — 여기는 숫자 하나만 책임진다.
 
 기동:
-    C:\\dev\\ReviewTicketFullstack\\ai\\clip-test\\.venv\\Scripts\\python.exe -m uvicorn main:app --port 8000
-    (별도 venv 를 새로 만들지 않고 clip-test 의 venv 를 그대로 쓴다 — torch·
+    C:\\dev\\ReviewTicketFullstack\\ai\\dinov2-test\\.venv\\Scripts\\python.exe -m uvicorn main:app --port 8000
+    (별도 venv 를 새로 만들지 않고 dinov2-test 의 venv 를 그대로 쓴다 — torch·
     transformers 가 이미 설치돼 있다. fastapi/uvicorn/python-multipart 만
     추가로 설치하면 된다: requirements.txt 참고)
 

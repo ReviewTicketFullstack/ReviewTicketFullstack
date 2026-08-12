@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Button } from "@/shared/ui";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
 import { getVerificationStatus, resendVerification } from "@/api/authApi";
+import { useAuth } from "@/app/providers";
 import { ApiError } from "@/shared/api";
 import { Mail, MailCheck } from "lucide-react";
 
@@ -12,6 +13,7 @@ const STATUS_POLL_INTERVAL_MS = 5000;
 export function EmailVerificationPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { selectedRole } = useAuth();
 
   const emailParam = new URLSearchParams(location.search).get("email");
   const email = emailParam ? decodeURIComponent(emailParam) : "";
@@ -107,7 +109,16 @@ export function EmailVerificationPage() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Button fullWidth size="large" onClick={() => navigate("/login")}>
+        <Button
+          fullWidth
+          size="large"
+          onClick={() => {
+            if (selectedRole) {
+              const loginPath = selectedRole === "CUSTOMER" ? "/login/customer" : "/login/owner";
+              navigate(loginPath, { replace: true });
+            }
+          }}
+        >
           로그인하기
         </Button>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Modal } from "@/shared/ui/Modal/Modal";
 import { Button } from "@/shared/ui";
 import { InputHelperText } from "@/shared/ui/InputHelperText";
@@ -14,7 +15,8 @@ export interface MyInfoModalProps {
 }
 
 export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
-  const { user, updateDisplayName } = useAuth();
+  const navigate = useNavigate();
+  const { user, signout, updateDisplayName } = useAuth();
   const [nickname, setNickname] = useState(user?.displayName ?? "");
   const [nameChecked, setNameChecked] = useState<boolean | null>(null);
   const [nameMessage, setNameMessage] = useState("");
@@ -22,6 +24,7 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
   const [saveError, setSaveError] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const [isResetSent, setIsResetSent] = useState(false);
 
   // 모달을 다시 열면 서버가 알고 있는 이름에서 시작한다.
   useEffect(() => {
@@ -93,8 +96,9 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     setPasswordMessage("");
 
     try {
-      const response = await requestPasswordReset(user.email);
+      const response = await requestPasswordReset(user.email, user.role);
       setPasswordMessage(response.message);
+      setIsResetSent(true);
     } catch (error) {
       setPasswordMessage(
         error instanceof ApiError
@@ -104,6 +108,11 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
     } finally {
       setIsSendingReset(false);
     }
+  };
+
+  const handleLogout = () => {
+    signout();
+    navigate("/onboarding", { replace: true });
   };
 
   return (
@@ -180,7 +189,11 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
             onClick={handlePasswordReset}
             disabled={isSendingReset || !user?.email}
           >
-            {isSendingReset ? "보내는 중..." : "비밀번호 재설정 메일 받기"}
+            {isSendingReset
+              ? "보내는 중..."
+              : isResetSent
+                ? "메일이 전송되었습니다."
+                : "재설정 메일 받기"}
           </Button>
           {passwordMessage && (
             <InputHelperText>{passwordMessage}</InputHelperText>
@@ -190,21 +203,33 @@ export function MyInfoModal({ open, onClose }: MyInfoModalProps) {
         {/* Ticket Information */}
         <div className="bg-fill-100 rounded-lg px-4 py-3">
           <p className="text-xs text-ink-700 mb-1">남은 티켓</p>
-          <p className="text-base font-semibold text-ink-900">3개</p>
+          <p className="text-base font-semibold text-ink-900">
+            {user?.tickets ?? 0}개
+          </p>
         </div>
       </div>
 
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-line-100">
-        <Button
-          variant="primary"
-          size="large"
-          fullWidth
-          onClick={handleSave}
-          disabled={!canSave || isSaving}
-        >
-          {isSaving ? "저장 중..." : "저장"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="primary"
+            size="large"
+            className="flex-1"
+            onClick={handleSave}
+            disabled={!canSave || isSaving}
+          >
+            {isSaving ? "저장 중..." : "저장"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="large"
+            className="flex-1"
+            onClick={handleLogout}
+          >
+            로그아웃하기
+          </Button>
+        </div>
       </div>
     </Modal>
   );

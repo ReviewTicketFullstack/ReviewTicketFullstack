@@ -23,12 +23,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isRestoring, setIsRestoring] = useState(() => Boolean(getToken()));
 
   useEffect(() => {
-    if (!getToken()) return;
+    if (!getToken()) {
+      console.log("[Auth] No token found, skipping session restoration");
+      return;
+    }
 
+    console.log("[Auth] Starting session restoration from stored token");
     const controller = new AbortController();
 
     getMe(controller.signal)
       .then((me) => {
+        console.log("[Auth] Session restored successfully", {
+          userId: me.userId,
+          email: me.email,
+          displayName: me.displayName,
+          role: me.role,
+        });
         setUser({
           id: me.userId,
           email: me.email,
@@ -37,32 +47,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tickets: me.tickets,
         });
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log("[Auth] Session restoration failed", {
+          name: error?.name,
+          message: error?.message,
+          isAborted: controller.signal.aborted,
+        });
         // 로그아웃 상태로 시작하면 그만이다. 여기서 토큰을 지우지는 않는다 —
         // 요청 취소(StrictMode 의 이중 마운트)나 일시적인 네트워크 오류까지
         // 여기로 오기 때문에, 지우면 멀쩡한 로그인이 풀린다.
         // 서버가 실제로 거부한 401 은 client.ts 가 이미 지웠다.
       })
       .finally(() => {
-        if (!controller.signal.aborted) setIsRestoring(false);
+        if (!controller.signal.aborted) {
+          console.log("[Auth] Session restoration complete, setting isRestoring to false");
+          setIsRestoring(false);
+        } else {
+          console.log("[Auth] Session restoration was aborted, keeping isRestoring as true");
+        }
       });
 
-    return () => controller.abort();
+    return () => {
+      console.log("[Auth] Cleanup: aborting session restoration request");
+      controller.abort();
+    };
   }, []);
 
   const signin = async (result: LoginResponse) => {
-    saveToken(result.token, result.expiresInSeconds);
-
-    const data = await getMe();
-
-    setUser({
-      id: data.userId,
-      email: data.email,
-      displayName: data.displayName,
-      role: data.role,
-      tickets: data.tickets,
+    console.log("[Auth] signin called", {
+      userId: result.userId,
+      displayName: result.displayName,
+      role: result.role,
     });
-    setSelectedRole(null); // 선택 상태 초기화 (계속 기억하려면 user.role)
+
+    saveToken(result.token, result.expiresInSeconds);
+    console.log("[Auth] Token saved to storage");
+
+    try {
+      console.log("[Auth] Fetching user data via getMe()");
+      const data = await getMe();
+      console.log("[Auth] getMe() succeeded", {
+        userId: data.userId,
+        email: data.email,
+        displayName: data.displayName,
+        role: data.role,
+      });
+
+      setUser({
+        id: data.userId,
+        email: data.email,
+        displayName: data.displayName,
+        role: data.role,
+        tickets: data.tickets,
+      });
+      setSelectedRole(null); // 선택 상태 초기화 (계속 기억하려면 user.role)
+      console.log("[Auth] User state updated successfully");
+    } catch (error) {
+      console.error("[Auth] getMe() failed, clearing token", {
+        name: (error as any)?.name,
+        message: (error as any)?.message,
+      });
+      clearToken();
+      throw error;
+    }
   };
 
   const signout = () => {

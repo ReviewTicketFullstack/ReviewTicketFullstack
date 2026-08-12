@@ -43,9 +43,16 @@ function setCachedStores(stores: Store[]) {
   );
 }
 
+const FOODS = ['치킨윙', '피자', '비빔밥', '라멘', '햄버거'];
+
 export function HomePage() {
   const { user } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
+  const [selectedFoodIndex, setSelectedFoodIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setSelectedFoodIndex(Math.floor(Math.random() * FOODS.length));
+  }, []);
 
   useEffect(() => {
     // 캐시가 있으면 먼저 그려 첫 화면이 비어 보이지 않게 한다.
@@ -67,17 +74,45 @@ export function HomePage() {
   }, []);
 
   return (
-    <div className="space-y-6 px-5 py-6">
+    <div className="space-y-4 px-5 py-6">
       {/* Greeting Card Section */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="flex items-center justify-center p-6">
-          <div className="text-center">
-            <p className="text-3xl font-bold leading-14 text-left">
-              안녕하세요!
+      <div className="max-w-[480px] w-full">
+        <Card className="w-full mr-auto flex gap-4 p-4">
+          <div className="space-y-2">
+            <p className="text-base font-bold text-ink-900">
+              안녕하세요 {user?.displayName}님
             </p>
-            <p className="text-6xl font-bold leading-14 text-left">
-              {user?.displayName} 님!
-            </p>
+            <div className="flex items-baseline gap-1 text-base font-bold text-ink-900">
+              <span>오늘 식사는</span>
+              <div className="inline-flex h-6 overflow-hidden">
+                <div
+                  className={selectedFoodIndex !== null ? "animate-food-slot" : ""}
+                  style={
+                    selectedFoodIndex !== null
+                      ? (() => {
+                          const finalPos = -(19 * 5 * 24 + selectedFoodIndex * 24);
+                          return {
+                            "--final-translate-y": `${finalPos}px`,
+                            "--pos-60": `${finalPos * 0.92}px`,
+                            "--pos-75": `${finalPos * 0.96}px`,
+                            "--pos-87": `${finalPos * 0.98}px`,
+                            "--pos-95": `${finalPos * 0.995}px`,
+                          } as React.CSSProperties;
+                        })()
+                      : {}
+                  }
+                >
+                  {Array.from({ length: 20 })
+                    .flatMap(() => FOODS)
+                    .map((food, index) => (
+                      <div key={index} className="h-6 flex items-center">
+                        {food}
+                      </div>
+                    ))}
+                </div>
+              </div>
+              <span>어떠세요?</span>
+            </div>
           </div>
         </Card>
       </div>
