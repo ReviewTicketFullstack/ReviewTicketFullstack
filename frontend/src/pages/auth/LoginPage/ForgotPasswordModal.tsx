@@ -4,7 +4,6 @@ import { checkEmail, requestPasswordReset } from "@/api/authApi";
 import { validateEmail } from "@/shared/lib";
 import { ApiError } from "@/shared/api";
 import type { UserRole } from "@/entities/user";
-import { useAuth } from "@/app/providers";
 
 export interface ForgotPasswordModalProps {
   open: boolean;
@@ -34,10 +33,6 @@ function toMessage(error: unknown): string {
 /**
  * 재설정 메일만 요청한다. 실제 비밀번호 변경은 메일 링크가 여는
  * 서버 페이지(GET /api/auth/password-reset)에서 이뤄진다.
- * expectedRole과 일치하는 이메일만 재설정 허용.
- *
- * 주의: 이 역할 검사는 GET /api/auth/check-email 이 role 을 함께 내려줘야 동작한다.
- * 현재 서버 AvailabilityResponse 는 available 만 담고 있어 검사가 통과만 한다.
  */
 export function ForgotPasswordModal({
   open,
@@ -50,16 +45,9 @@ export function ForgotPasswordModal({
   const [error, setError] = useState("");
   const [isResetSent, setIsResetSent] = useState(false);
 
-  const { selectedRole } = useAuth();
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateEmail(email) || isSending) return;
-
-    if (!selectedRole) {
-      setError("어느 계정으로 찾을지 알 수 없어요. 처음 화면부터 다시 시작해 주세요.");
-      return;
-    }
 
     setIsSending(true);
     setError("");
@@ -74,22 +62,10 @@ export function ForgotPasswordModal({
         return;
       }
 
-      if (availabilityResponse.role && availabilityResponse.role !== expectedRole) {
-        const roleLabel = expectedRole === "CUSTOMER" ? "고객" : "사장";
-        setError(`이 이메일은 ${roleLabel}용 계정이 아닙니다.`);
-        return;
-      }
-
-      const response = await requestPasswordReset(email);
-      const response = await requestPasswordReset(email, selectedRole);
+      const response = await requestPasswordReset(email, expectedRole);
       setMessage(response.message);
       setIsResetSent(true);
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "재설정 메일을 보내지 못했습니다.",
-      );
       setError(toMessage(err));
     } finally {
       setIsSending(false);
