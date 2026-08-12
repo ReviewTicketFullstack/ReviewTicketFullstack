@@ -9,7 +9,8 @@ import {
   OrderPage,
   OrderHistoryPage,
   OnboardingPage,
-  LoginPage,
+  CustomerLoginPage,
+  OwnerLoginPage,
   SignUpPage,
   EmailVerificationPage,
   StoreManagementPage,
@@ -39,7 +40,7 @@ function ProtectedRoute({
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/onboarding" replace />;
   }
 
   // 역할이 맞지 않으면 화면을 그리지 않는다. 서버도 역할을 검사해 403 으로
@@ -52,18 +53,52 @@ function ProtectedRoute({
   return children;
 }
 
+function LoginRedirectRoute({ children }: { children: React.ReactNode }) {
+  const { user, isRestoring } = useAuth();
+
+  if (isRestoring) {
+    return <Loading />;
+  }
+
+  if (user) {
+    return <Navigate to={homePathOf(user.role)} replace />;
+  }
+
+  return children;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/onboarding" replace />} />
 
       <Route element={<AuthLayout />}>
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/onboarding"
+          element={
+            <LoginRedirectRoute>
+              <OnboardingPage />
+            </LoginRedirectRoute>
+          }
+        />
+        <Route
+          path="/login/customer"
+          element={
+            <LoginRedirectRoute>
+              <CustomerLoginPage />
+            </LoginRedirectRoute>
+          }
+        />
+        <Route
+          path="/login/owner"
+          element={
+            <LoginRedirectRoute>
+              <OwnerLoginPage />
+            </LoginRedirectRoute>
+          }
+        />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/email-verification" element={<EmailVerificationPage />} />
-        {/* <Route path="/signup/customer" element={<SignUpPage />} />
-        <Route path="/signup/owner" element={<SignUpPage />} /> */}
       </Route>
 
       <Route
@@ -85,7 +120,6 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       >
-
         <Route path="stores" element={<StoreManagementPage />} />
         <Route path="menu" element={<MenuManagementPage />} />
         <Route path="reviews" element={<ReviewManagementPage />} />

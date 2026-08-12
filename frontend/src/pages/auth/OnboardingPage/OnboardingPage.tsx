@@ -8,12 +8,12 @@ export function OnboardingPage() {
 
   const handleCustomerClick = () => {
     setSelectedRole("CUSTOMER");
-    navigate("/login");
+    navigate("/login/customer");
   };
 
   const handleOwnerClick = () => {
     setSelectedRole("OWNER");
-    navigate("/login");
+    navigate("/login/owner");
   };
 
   return (

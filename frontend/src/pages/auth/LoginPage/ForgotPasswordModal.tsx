@@ -3,11 +3,12 @@ import { Modal, Button, Input } from "@/shared/ui";
 import { checkEmail, requestPasswordReset } from "@/api/authApi";
 import { validateEmail } from "@/shared/lib";
 import { ApiError } from "@/shared/api";
-import { useAuth } from "@/app/providers";
+import type { UserRole } from "@/entities/user";
 
 export interface ForgotPasswordModalProps {
   open: boolean;
   onClose: () => void;
+  expectedRole: UserRole;
 }
 
 /**
@@ -33,22 +34,20 @@ function toMessage(error: unknown): string {
  * 재설정 메일만 요청한다. 실제 비밀번호 변경은 메일 링크가 여는
  * 서버 페이지(GET /api/auth/password-reset)에서 이뤄진다.
  */
-export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps) {
+export function ForgotPasswordModal({
+  open,
+  onClose,
+  expectedRole,
+}: ForgotPasswordModalProps) {
   const [email, setEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const { selectedRole } = useAuth();
+  const [isResetSent, setIsResetSent] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateEmail(email) || isSending) return;
-
-    if (!selectedRole) {
-      setError("어느 계정으로 찾을지 알 수 없어요. 처음 화면부터 다시 시작해 주세요.");
-      return;
-    }
 
     setIsSending(true);
     setError("");
@@ -63,8 +62,9 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
         return;
       }
 
-      const response = await requestPasswordReset(email, selectedRole);
+      const response = await requestPasswordReset(email, expectedRole);
       setMessage(response.message);
+      setIsResetSent(true);
     } catch (err) {
       setError(toMessage(err));
     } finally {
@@ -111,9 +111,13 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
             type="submit"
             fullWidth
             size="large"
-            disabled={!validateEmail(email) || isSending}
+            disabled={!validateEmail(email) || isSending || isResetSent}
           >
-            {isSending ? "보내는 중..." : "재설정 메일 받기"}
+            {isSending
+              ? "보내는 중..."
+              : isResetSent
+                ? "메일이 전송되었습니다."
+                : "재설정 메일 받기"}
           </Button>
         </form>
       )}
