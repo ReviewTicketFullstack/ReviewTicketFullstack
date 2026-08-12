@@ -107,7 +107,7 @@ export function OrderPage() {
   }
 
   return (
-    <div className="space-y-6 pb-32">
+    <div className="space-y-6 pb-32 px-5">
       {/* Store Promotion Card Section */}
       <DetailStoreCard
         storeName={storeDetail.name}
@@ -133,31 +133,34 @@ export function OrderPage() {
 
       {/* Order Button Section */}
       <div
-        className="bottom-0
+        className="fixed
+                  bottom-0
                   left-1/2
                   w-full
                   max-w-[860px]
                   -translate-x-1/2"
       >
-        <div className="bg-gradient-to-t from-white via-white/90 to-transparent p-5">
-          {orderError && (
-            <p className="mb-2 text-center text-sm text-red-600">
-              {orderError}
-            </p>
-          )}
-          <Button
-            variant="primary"
-            size="xlarge"
-            fullWidth
-            disabled={!selectedMenu || isOrdering}
-            onClick={handleOrderClick}
-          >
-            {isOrdering
-              ? "주문 중..."
-              : selectedMenu
-                ? `${selectedMenu.price.toLocaleString("ko-KR")}원 주문하기`
-                : "메뉴를 선택해주세요"}
-          </Button>
+        <div className="w-full">
+          <div className="bg-gradient-to-t from-white via-white/90 to-transparent p-5">
+            {orderError && (
+              <p className="mb-2 text-center text-sm text-red-600">
+                {orderError}
+              </p>
+            )}
+            <Button
+              variant="primary"
+              size="xlarge"
+              fullWidth
+              disabled={!selectedMenu || isOrdering}
+              onClick={handleOrderClick}
+            >
+              {isOrdering
+                ? "주문 중..."
+                : selectedMenu
+                  ? `${selectedMenu.price.toLocaleString("ko-KR")}원 주문하기`
+                  : "메뉴를 선택해주세요"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
