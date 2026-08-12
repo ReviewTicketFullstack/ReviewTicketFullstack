@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/shared/ui";
+import { useEffect, useState } from "react";
+import { Button, ImageUploadOverlay } from "@/shared/ui";
 import { useAuth } from "@/app/providers";
 import { useStoreLogo } from "@/shared/layout/OwnerLayout/StoreLogoContext";
 import { getMyStore, updateMyStore } from "@/api/storeApi";
-import { uploadImage } from "@/api/uploadApi";
 import { ApiError } from "@/shared/api";
 
 export function StoreManagementPage() {
@@ -15,7 +14,6 @@ export function StoreManagementPage() {
   const [name, setName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 가게 정보 조회. 가게 번호를 보내지 않는다 — 토큰의 주체가 곧 그 가게의 사장이다.
   useEffect(() => {
@@ -72,24 +70,6 @@ export function StoreManagementPage() {
     }
   };
 
-  // 파일 선택 즉시 서버에 올리고 돌려받은 주소를 미리보기에 반영한다.
-  // 실제 가게 정보에 붙는 것은 위 "수정"을 눌러 저장할 때다.
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (!file || !file.type.startsWith("image/")) return;
-
-    setErrorMessage(null);
-    try {
-      const uploaded = await uploadImage(file);
-      setLogo(uploaded.url);
-    } catch (err) {
-      setErrorMessage(
-        err instanceof ApiError ? err.message : "이미지를 올리지 못했습니다.",
-      );
-    }
-  };
-
   return (
     <div className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
@@ -126,38 +106,19 @@ export function StoreManagementPage() {
         </span>
 
         <div className="flex items-start gap-4">
-          <div className="flex flex-col gap-1">
-            {/* 가게 로고 — 확정된 이미지 있으면 표시, 없으면 placeholder */}
-            {logo ? (
-              <img
-                src={logo}
-                alt="가게 로고"
-                className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
-              />
-            ) : (
-              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-gray-200">
-                <span className="text-xs text-gray-400">가게 로고</span>
-              </div>
-            )}
-            {isEditing && (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileSelected}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-neutral-600 underline"
-                >
-                  이미지등록
-                </button>
-              </>
-            )}
-          </div>
+          {/* 가게 로고 — 편집 모드에서만 마우스를 올려 바꿀 수 있다.
+              올린 주소는 미리보기에만 반영되고, 실제로 붙는 것은 "수정" 저장 때다. */}
+          <ImageUploadOverlay
+            src={logo}
+            alt="가게 로고"
+            className="h-20 w-20 flex-shrink-0 rounded-lg bg-gray-200"
+            disabled={!isEditing}
+            onUploaded={(uploaded) => {
+              setErrorMessage(null);
+              setLogo(uploaded.url);
+            }}
+            onError={setErrorMessage}
+          />
 
           {isEditing ? (
             <div className="flex flex-1 flex-col gap-1 self-center">
@@ -181,14 +142,6 @@ export function StoreManagementPage() {
               {storeName || user?.displayName}
             </span>
           )}
-        </div>
-
-        <span className="text-sm font-semibold text-neutral-600">
-          배경 사진
-        </span>
-        {/* 배경 사진 — 편집 기능 미구현, 그대로 placeholder */}
-        <div className="flex h-24 w-20 items-center justify-center rounded-lg bg-gray-200">
-          <span className="text-xs text-gray-400">Image</span>
         </div>
       </div>
     </div>

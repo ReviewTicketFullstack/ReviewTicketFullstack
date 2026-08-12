@@ -83,9 +83,12 @@ export function resendVerification(email: string): Promise<MessageResponse> {
 }
 
 /** 가입되지 않은 이메일이어도 항상 성공한다 — 가입 여부가 새어나가지 않게 하려는 설계다. */
-export function requestPasswordReset(email: string): Promise<MessageResponse> {
+export function requestPasswordReset(
+  email: string,
+  role: UserRole,
+): Promise<MessageResponse> {
   return request<MessageResponse>("/auth/password-reset/request", {
     method: "POST",
-    body: { email },
+    body: { email, role },
   });
 }

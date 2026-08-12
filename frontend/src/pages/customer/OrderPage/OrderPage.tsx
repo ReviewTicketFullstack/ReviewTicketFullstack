@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui";
 import { DetailStoreCard } from "./DetailStoreCard";
 import { MenuListCard, type MenuItemData } from "./MenuListCard";
+import { StoreReviewSection } from "./StoreReviewSection";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { createOrder } from "@/api/orderApi";
 import { getStoreDetail, type StoreDetail } from "@/api/storeApi";
 import { saveOrder } from "@/entities/order/orderStorage";
+import { clearStoreCache } from "@/entities/store";
 import { ApiError } from "@/shared/api";
 
 export function OrderPage() {
@@ -31,6 +33,12 @@ export function OrderPage() {
         setStoreDetail(data);
       })
       .catch((error) => {
+        // 홈 목록 캐시가 가리키는 번호가 실제로는 없는 경우다 — 캐시가 만들어진
+        // 뒤 서버 데이터가 재구성됐을 때 생긴다. 캐시를 지워 다음 홈 진입 때
+        // 새로 받아오게 한다. 이 화면 자체는 안내만 하고 홈으로 보낸다.
+        if (error instanceof ApiError && error.status === 404) {
+          clearStoreCache();
+        }
         setLoadError(
           error instanceof ApiError
             ? error.message
@@ -119,6 +127,9 @@ export function OrderPage() {
         }))}
         onMenuClick={handleMenuClick}
       />
+
+      {/* Review Section — 그 가게에 달린 리뷰 전부 */}
+      <StoreReviewSection storeId={storeDetail.id} />
 
       {/* Order Button Section */}
       <div

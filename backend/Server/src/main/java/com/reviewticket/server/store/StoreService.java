@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,9 @@ public class StoreService {
      */
     private record SeedMenu(String name, int price, boolean reviewEvent) {
     }
+
+    /** 메뉴 하나가 가질 수 있는 표본 사진 수. 프론트 SAMPLE_IMAGE_COUNT 와 같은 값이다. */
+    private static final int MAX_SAMPLE_IMAGES = 5;
 
     private static final List<SeedMenu> SEED_MENUS = List.of(
             new SeedMenu("피자", 18000, true),
@@ -149,6 +153,42 @@ public class StoreService {
         return toMeResponse(store);
     }
 
+    /**
+     * PATCH /api/stores/me/menus/{menuId}. 대표 사진·표본 사진·리뷰이벤트 여부를
+     * 통째로 덮어쓴다.
+     *
+     * 메뉴 번호가 다른 가게 것이어도 STORE_NOT_FOUND 와 같은 이유로 404 하나로
+     * 묶는다 — 남의 메뉴 번호를 넣어 봐도 그게 존재하는지조차 알 수 없게 한다.
+     *
+     * reviewEvent 가 바뀌면 가게의 "리뷰 진행중" 표시(store.reviewing)도 다시
+     * 계산해야 한다. 메뉴 수정 API가 없던 때는 가게 생성 시 한 번만 계산하면
+     * 됐지만, 이제는 메뉴가 바뀔 때마다 다시 봐야 한다.
+     */
+    @Transactional
+    public MenuOwnerResponse updateMyMenu(long userId, Long menuId, String imageUrl,
+            List<String> sampleImageUrls, boolean reviewEvent) {
+        Store store = storeOf(requireOwner(userId));
+        Menu menu = menus.findById(menuId)
+                .orElseThrow(() -> new NotFoundException("MENU_NOT_FOUND", "메뉴를 찾을 수 없습니다"));
+        if (!menu.getStore().getId().equals(store.getId())) {
+            throw new NotFoundException("MENU_NOT_FOUND", "메뉴를 찾을 수 없습니다");
+        }
+
+        List<String> samples = sampleImageUrls == null ? List.of() : sampleImageUrls;
+        if (samples.size() > MAX_SAMPLE_IMAGES) {
+            throw new ValidationException("TOO_MANY_SAMPLE_IMAGES",
+                    "표본 사진은 " + MAX_SAMPLE_IMAGES + "장까지만 등록할 수 있습니다");
+        }
+        if (samples.stream().noneMatch(Objects::nonNull)) {
+            throw new ValidationException("SAMPLE_IMAGE_REQUIRED", "표본 사진을 한 장 이상 등록해야 합니다");
+        }
+
+        menu.applyEdit(imageUrl, samples, reviewEvent);
+        store.markReviewing(menus.existsByStoreIdAndReviewEventTrue(store.getId()));
+
+        return toMenuOwnerResponse(menu);
+    }
+
     /** 사장 전용 기능을 지키는 공통 관문. 고객 계정이면 403, 못 찾으면 401. */
     private User requireOwner(long userId) {
         User user = users.findById(userId)
@@ -193,7 +233,8 @@ public class StoreService {
 
     private static MenuOwnerResponse toMenuOwnerResponse(Menu menu) {
         return new MenuOwnerResponse(menu.getStore().getId(), menu.getId(), menu.getName(), menu.getPrice(),
-                menu.getImageUrl(), menu.isReviewEvent(), toUtc(menu.getCreatedAt()), toUtc(menu.getLatestUpdate()));
+                menu.getImageUrl(), menu.getSampleImageUrls(), menu.isReviewEvent(),
+                toUtc(menu.getCreatedAt()), toUtc(menu.getLatestUpdate()));
     }
 
     /** 저장된 값은 서버 시간대(LocalDateTime)라, 기준이 분명한 UTC(끝에 Z)로 바꿔서 보낸다. */

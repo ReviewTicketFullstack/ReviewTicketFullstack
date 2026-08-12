@@ -3,12 +3,11 @@ import { Card } from "@/shared/ui";
 import { StoreCard } from "./StoreCard";
 import { useAuth } from "@/app/providers";
 import { getStores } from "@/api/storeApi";
+import { STORE_CACHE_KEY } from "@/entities/store/storeCache";
 import type { Store } from "@/entities/store";
 
-const CACHE_KEY = "stores_cache";
-
 function getCachedStores(): Store[] | null {
-  const cached = localStorage.getItem(CACHE_KEY);
+  const cached = localStorage.getItem(STORE_CACHE_KEY);
   if (!cached) return null;
 
   try {
@@ -24,7 +23,7 @@ function getCachedStores(): Store[] | null {
       return stores;
     }
   } catch {
-    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(STORE_CACHE_KEY);
   }
 
   return null;
@@ -35,7 +34,7 @@ function setCachedStores(stores: Store[]) {
   nextMidnight.setHours(24, 0, 0, 0);
 
   localStorage.setItem(
-    CACHE_KEY,
+    STORE_CACHE_KEY,
     JSON.stringify({
       stores,
       timestamp: Date.now(),
@@ -56,20 +55,21 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
+    // 캐시가 있으면 먼저 그려 첫 화면이 비어 보이지 않게 한다.
     const cached = getCachedStores();
+    if (cached) setStores(cached);
 
-    if (cached) {
-      setStores(cached);
-      return;
-    }
-
+    // 캐시가 있어도 서버에 반드시 다시 물어본다. 이 목록에는 리뷰 수와 평균
+    // 별점이 함께 들어 있는데, 그 둘은 리뷰가 등록될 때마다 바뀌는 값이다.
+    // 캐시에서 멈추면 리뷰를 써도 홈 화면은 자정까지 예전 숫자(리뷰 0)를
+    // 보여줘, 등록이 안 된 것처럼 보인다.
     getStores()
       .then((data) => {
         setStores(data);
         if (data.length > 0) setCachedStores(data);
       })
       .catch(() => {
-        // 서버 요청 실패, 캐시도 없으므로 빈 상태 유지
+        // 서버에 닿지 못하면 위에서 그린 캐시를 그대로 둔다. 캐시도 없으면 빈 상태다.
       });
   }, []);
 

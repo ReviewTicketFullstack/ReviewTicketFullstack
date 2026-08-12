@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/shared/ui';
 import { Modal } from '@/shared/ui/Modal/Modal';
 import { useCameraCapture } from '@/shared/hooks';
@@ -18,6 +18,54 @@ export interface ReviewModalProps {
 /** 후기 길이 제한. 서버도 같은 값으로 검사한다. */
 const CONTENT_MIN_LENGTH = 10;
 const CONTENT_MAX_LENGTH = 50;
+
+/**
+ * 작성 중이던 별점과 후기를 잠시 담아 두는 자리.
+ *
+ * 카메라를 켜면 브라우저가 뒤로 밀려나는데, 메모리가 빠듯한 기기에서는 OS 가
+ * 그 탭을 통째로 정리해 버린다. 사진을 찍고 돌아오면 페이지가 새로 로드되어
+ * React state 가 전부 초기화되고, 쓰던 별점과 후기가 사라진 채 목록 화면만
+ * 남는다. 그 둘만이라도 남겨 두면 사진만 다시 찍어 이어서 제출할 수 있다.
+ *
+ * 사진 자체는 File 객체라 담을 수 없다. 탭을 닫으면 함께 사라지도록
+ * localStorage 가 아니라 sessionStorage 를 쓴다.
+ */
+const DRAFT_KEY = "review_draft";
+
+interface ReviewDraft {
+  orderId: ID;
+  rating: number;
+  reviewText: string;
+}
+
+function readDraft(orderId: ID): ReviewDraft | null {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const draft: ReviewDraft = JSON.parse(raw);
+    // 다른 주문에서 쓰던 초안이면 쓰지 않는다.
+    return draft.orderId === orderId ? draft : null;
+  } catch {
+    sessionStorage.removeItem(DRAFT_KEY);
+    return null;
+  }
+}
+
+function writeDraft(draft: ReviewDraft) {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // 저장이 막힌 환경에서는 초안 없이 동작한다.
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // 지우지 못해도 다음 저장이 덮어쓴다.
+  }
+}
 
 /**
  * 제출 실패 사유를 화면 문구로 옮긴다.
@@ -65,12 +113,23 @@ export function ReviewModal({
   menuName,
   onSubmitSuccess,
 }: ReviewModalProps) {
-  const [rating, setRating] = useState<number>(0);
-  const [reviewText, setReviewText] = useState<string>('');
+  // 카메라를 다녀오는 사이 화면이 정리됐다면 쓰던 초안으로 되살린다.
+  const [rating, setRating] = useState<number>(() => readDraft(orderId)?.rating ?? 0);
+  const [reviewText, setReviewText] = useState<string>(
+    () => readDraft(orderId)?.reviewText ?? '',
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { photo, photoFile, removePhoto, capturePhoto, handleFileSelected, fileInputRef, error: cameraError } = useCameraCapture();
+
+  // 별점·후기가 바뀔 때마다 초안을 갱신해 둔다. 카메라를 켜는 순간 화면이
+  // 정리되더라도 마지막 상태가 남아 있어야 한다.
+  useEffect(() => {
+    if (!open) return;
+    if (rating === 0 && reviewText === '') return;
+    writeDraft({ orderId, rating, reviewText });
+  }, [open, orderId, rating, reviewText]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -102,6 +161,7 @@ export function ReviewModal({
       setRating(0);
       setReviewText('');
       removePhoto();
+      clearDraft();
 
       onSubmitSuccess?.();
       onClose();

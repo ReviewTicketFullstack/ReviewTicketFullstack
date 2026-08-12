@@ -1,17 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/shared/ui';
 import { useAuth } from '@/app/providers';
+import { ApiError } from '@/shared/api';
 import { MenuListItem } from './MenuListItem';
 import { MenuEditModal } from './MenuEditModal';
-import { getMyMenus, type MenuItem } from '@/api/storeApi';
+import { getMyMenus, updateMyMenu, type MenuItem } from '@/api/storeApi';
+
+/** 목록·모달이 함께 쓰는 형태. 표본 사진은 목록에 안 뜨지만 모달이 다시 열릴 때 필요하다. */
+type OwnerMenuItem = MenuItem & { sampleImageUrls: (string | null)[] };
 
 export function MenuManagementPage() {
   const { user } = useAuth();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [menuItems, setMenuItems] = useState<OwnerMenuItem[]>([]);
   // 클릭한 메뉴 — 있으면 수정 모달이 열림
-  const [selectedMenu, setSelectedMenu] = useState<MenuItem | null>(null);
+  const [selectedMenu, setSelectedMenu] = useState<OwnerMenuItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
 
   // 내 가게 메뉴 조회. 가게 번호를 보내지 않는다 — 토큰의 주체가 곧 그 가게의 사장이다.
   useEffect(() => {
@@ -28,6 +34,7 @@ export function MenuManagementPage() {
             name: menu.menuName,
             price: menu.menuPrice,
             imageUrl: menu.menuImageUrl,
+            sampleImageUrls: menu.sampleImageUrls,
             reviewEvent: menu.reviewEvent,
           })),
         );
@@ -43,13 +50,42 @@ export function MenuManagementPage() {
     return () => controller.abort();
   }, [user?.displayName]);
 
-  // 모달의 "적용" 클릭 시: 로컬 state만 갱신 — 메뉴 수정 저장 API는 아직 없음
-  const handleApply = (reviewEvent: boolean) => {
+  // 모달의 "적용" 클릭 시: PATCH /api/stores/me/menus/{id} 로 저장하고,
+  // 서버가 돌려준 값으로 목록을 갱신한다 — 저장 지점을 여기 하나로 모아 둔다.
+  const handleApply = async (patch: {
+    reviewEvent: boolean;
+    imageUrl: string | null;
+    sampleUrls: (string | null)[];
+  }) => {
     if (!selectedMenu) return;
-    setMenuItems((items) =>
-      items.map((item) => (item.id === selectedMenu.id ? { ...item, reviewEvent } : item))
-    );
-    setSelectedMenu(null);
+    setIsApplying(true);
+    setApplyError(null);
+    try {
+      const updated = await updateMyMenu(selectedMenu.id, {
+        imageUrl: patch.imageUrl,
+        sampleImageUrls: patch.sampleUrls,
+        reviewEvent: patch.reviewEvent,
+      });
+      setMenuItems((items) =>
+        items.map((item) =>
+          item.id === selectedMenu.id
+            ? {
+                ...item,
+                imageUrl: updated.menuImageUrl,
+                sampleImageUrls: updated.sampleImageUrls,
+                reviewEvent: updated.reviewEvent,
+              }
+            : item,
+        ),
+      );
+      setSelectedMenu(null);
+    } catch (err) {
+      setApplyError(
+        err instanceof ApiError ? err.message : '메뉴를 저장하지 못했습니다.',
+      );
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   return (
@@ -87,6 +123,9 @@ export function MenuManagementPage() {
       {selectedMenu && (
         <MenuEditModal
           menu={selectedMenu}
+          initialSampleUrls={selectedMenu.sampleImageUrls}
+          isApplying={isApplying}
+          applyError={applyError}
           onClose={() => setSelectedMenu(null)}
           onApply={handleApply}
         />

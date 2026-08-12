@@ -71,7 +71,10 @@ export interface MyMenuItem {
   menuId: number;
   menuName: string;
   menuPrice: number;
+  /** 목록·손님 화면에 뜨는 대표 사진 한 장. AI 대조에는 안 쓰인다 */
   menuImageUrl: string | null;
+  /** AI 대조용 표본 사진 5칸. 순서 그대로, 빈 칸은 null */
+  sampleImageUrls: (string | null)[];
   reviewEvent: boolean;
   menuCreatedAt: string;
   menuLatestUpdate: string;
@@ -104,4 +107,34 @@ export function updateMyStore(
 
 export function getMyMenus(signal?: AbortSignal): Promise<MyMenuItem[]> {
   return request<MyMenuItem[]>("/stores/me/menus", { auth: true, signal });
+}
+
+/** PATCH /api/stores/me/menus/{id} 응답. 방금 바뀐 값과 갱신 시각만 돌려준다. */
+export interface UpdateMenuResponse {
+  menuId: number;
+  menuImageUrl: string | null;
+  sampleImageUrls: (string | null)[];
+  reviewEvent: boolean;
+  menuLatestUpdate: string;
+}
+
+/**
+ * 메뉴의 대표 사진·표본 사진·리뷰이벤트 여부를 통째로 덮어쓴다.
+ *
+ * sampleImageUrls 는 한 장 이상 값이 있어야 한다 — 서버가 SAMPLE_IMAGE_REQUIRED
+ * 로 거절한다. 이름·가격은 이 요청으로 못 바꾼다(서버에 그 필드 자체가 없다).
+ */
+export function updateMyMenu(
+  menuId: number,
+  patch: {
+    imageUrl: string | null;
+    sampleImageUrls: (string | null)[];
+    reviewEvent: boolean;
+  },
+): Promise<UpdateMenuResponse> {
+  return request<UpdateMenuResponse>(`/stores/me/menus/${menuId}`, {
+    method: "PATCH",
+    body: patch,
+    auth: true,
+  });
 }

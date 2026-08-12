@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui";
-import { useIsMobile } from "@/shared/hooks";
 import type { ReviewStatus } from "@/entities/order";
 import {
   getRemainingReviewTime,
@@ -21,7 +20,6 @@ export function ReviewButton({
   reviewStatus,
   onReviewClick,
 }: ReviewButtonProps) {
-  const isMobile = useIsMobile();
   const [remainingTime, setRemainingTime] = useState<number>(0);
   const [isExpired, setIsExpired] = useState<boolean>(false);
 
@@ -72,21 +70,16 @@ export function ReviewButton({
     ? "리뷰작성 가능시간 초과"
     : `리뷰작성 ${formatTimeRemaining(remainingTime)}`;
 
-  const handleReviewClick = () => {
-    if (!isMobile) {
-      alert("리뷰 작성은 모바일에서만 가능합니다.");
-      return;
-    }
-    onReviewClick();
-  };
-
+  // 모바일에서만 열리도록 막아 두었었다. 카메라로 찍는 것이 원래 동선이지만,
+  // PC 에서 아예 못 열면 개발·검수 때 흐름을 확인할 방법이 없어 그 차단을
+  // 걷어냈다. PC 는 카메라 대신 파일 선택 창이 열린다(ReviewModal 의 input).
   return (
     <Button
       variant="primary"
       size="large"
       fullWidth
       disabled={isDisabled}
-      onClick={handleReviewClick}
+      onClick={onReviewClick}
     >
       {buttonText}
     </Button>
