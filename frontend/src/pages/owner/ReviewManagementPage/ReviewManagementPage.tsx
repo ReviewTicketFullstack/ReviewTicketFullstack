@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StatsBar } from './StatsBar';
 import { ReviewTabs, type ReviewTab } from './ReviewTabs';
 import { CompletedReviewItem } from './CompletedReviewItem';
@@ -20,9 +20,17 @@ export function ReviewManagementPage() {
   const [averageRating, setAverageRating] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 값이 바뀌면 아래 useEffect 가 다시 돈다. 새로고침 버튼과 카드 만료가 올린다.
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // 카드에 넘기는 값이라 참조가 고정돼야 한다. 인라인 화살표로 넘기면 매 렌더마다
+  // 새 함수가 돼 카드의 카운트다운 interval 이 계속 버려지고 다시 만들어진다.
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
   useEffect(() => {
     const controller = new AbortController();
+    setIsLoading(true);
+    setError(null);
 
     Promise.all([
       getMyStoreReviews(controller.signal),
@@ -43,7 +51,12 @@ export function ReviewManagementPage() {
       });
 
     return () => controller.abort();
-  }, []);
+  }, [reloadKey]);
+
+  // 서버는 둘을 한 목록에 담아 보낸다(GET /api/stores/me/orders/pending).
+  // 마감 전이면 작성 대기, 마감이 지났는데도 리뷰가 없으면 미이행.
+  const pendingList = pendingOrders.filter((o) => o.reviewStatus === 'pending');
+  const expiredList = pendingOrders.filter((o) => o.reviewStatus === 'expired');
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -53,22 +66,32 @@ export function ReviewManagementPage() {
         totalCount={totalCount}
         averageRating={averageRating}
         completedCount={completedReviews.length}
-        pendingCount={pendingOrders.length}
+        pendingCount={pendingList.length}
+        expiredCount={expiredList.length}
       />
 
-      <ReviewTabs active={activeTab} onChange={setActiveTab} />
+      <ReviewTabs
+        active={activeTab}
+        onChange={setActiveTab}
+        onRefresh={reload}
+        isRefreshing={isLoading}
+      />
 
       {isLoading && <p className="text-sm text-neutral-500">불러오는 중...</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-col gap-3">
-        {/* activeTab에 따라 리뷰완료/리뷰미작성 리스트를 다르게 렌더링 */}
+        {/* activeTab에 따라 리뷰완료/작성 대기/미이행 리스트를 다르게 렌더링 */}
         {activeTab === 'completed'
           ? completedReviews.map((review) => (
               <CompletedReviewItem key={review.reviewId} review={review} />
             ))
-          : pendingOrders.map((order) => (
-              <PendingReviewItem key={order.orderId} order={order} />
+          : (activeTab === 'pending' ? pendingList : expiredList).map((order) => (
+              <PendingReviewItem
+                key={order.orderId}
+                order={order}
+                onExpire={reload}
+              />
             ))}
       </div>
     </div>
