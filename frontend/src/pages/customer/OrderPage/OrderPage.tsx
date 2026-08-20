@@ -10,9 +10,11 @@ import { getStoreDetail, type StoreDetail } from "@/api/storeApi";
 import { saveOrder } from "@/entities/order/orderStorage";
 import { clearStoreCache } from "@/entities/store";
 import { ApiError } from "@/shared/api";
+import { useAuth } from "@/app/providers";
 
 export function OrderPage() {
   const { storeId } = useParams();
+  const { updateTickets } = useAuth();
   const navigate = useNavigate();
 
   const [storeDetail, setStoreDetail] = useState<StoreDetail | null>(null);
@@ -73,6 +75,8 @@ export function OrderPage() {
       );
       // 서버가 준 주문을 그대로 사본에 남긴다. 서버에 닿지 못할 때 쓴다.
       saveOrder(order);
+      // 서버가 잠금 반영 후의 잔여 티켓을 함께 준다. - 추가 조회 없이 상단 뱃지를 맞춘다.
+      updateTickets(order.tickets);
       setSelectedMenu(null);
       // replace 로 이동해 뒤로가기가 주문 화면으로 돌아오지 않게 한다.
       navigate("/order-history", { replace: true });

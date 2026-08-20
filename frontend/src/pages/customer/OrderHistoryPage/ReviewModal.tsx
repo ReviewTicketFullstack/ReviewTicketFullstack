@@ -3,6 +3,7 @@ import { Button } from '@/shared/ui';
 import { Modal } from '@/shared/ui/Modal/Modal';
 import { useCameraCapture } from '@/shared/hooks';
 import { createReview } from '@/api/reviewApi';
+import { useAuth } from '@/app/providers';
 import { ApiError } from '@/shared/api';
 import type { ID } from '@/entities/order';
 
@@ -122,6 +123,7 @@ export function ReviewModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { photo, photoFile, removePhoto, capturePhoto, handleFileSelected, fileInputRef, error: cameraError } = useCameraCapture();
+  const { updateTickets } = useAuth();
 
   // 별점·후기가 바뀔 때마다 초안을 갱신해 둔다. 카메라를 켜는 순간 화면이
   // 정리되더라도 마지막 상태가 남아 있어야 한다.
@@ -154,7 +156,9 @@ export function ReviewModal({
     setSubmitError(null);
 
     try {
-      await createReview(orderId, rating, content, photoFile);
+      const created = await createReview(orderId, rating, content, photoFile);
+      // 반환이 반영된 뒤의 잔여 티켓이다.
+      updateTickets(created.tickets);
 
       // 통과했을 때만 입력을 비운다. 실패하면 별점과 후기를 그대로 두어
       // 사진만 다시 찍어 재시도할 수 있게 한다.
