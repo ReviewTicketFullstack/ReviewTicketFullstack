@@ -1,16 +1,6 @@
 import { request } from "@/shared/api";
 import type { Store } from "@/entities/store";
 
-// 강성원 코드
-// export interface StoreSummary {
-//   id: number;
-//   name: string;
-//   imageUrl: string | null;
-//   rating: number;
-//   reviewCount: number;
-//   hasReviewEvent: boolean;
-// }
-
 // 이도연
 export interface MenuItem {
   id: number;
@@ -26,15 +16,6 @@ export interface StoreDetail extends Store {
   menus: MenuItem[];
 }
 
-// 강성원 코드
-// export interface StoreDetail {
-//   id: number;
-//   name: string;
-//   imageUrl: string | null;
-//   rating: number;
-//   reviewCount: number;
-//   menus: MenuItem[];
-// }
 
 // 이도연
 export function getStores(signal?: AbortSignal): Promise<Store[]> {
