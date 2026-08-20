@@ -122,6 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((current) => (current ? { ...current, displayName } : current));
   };
 
+  const updateTickets = (tickets: number) => {
+    setUser((current) => (current ? { ...current, tickets } : current));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -132,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signin,
         signout,
         updateDisplayName,
+        updateTickets,
       }}
     >
       {children}

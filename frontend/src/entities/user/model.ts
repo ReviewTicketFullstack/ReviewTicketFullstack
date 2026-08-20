@@ -35,4 +35,6 @@ export interface AuthContextType {
   signout: () => void;
   setSelectedRole: (role: UserRole | null) => void;
   updateDisplayName: (displayName: string) => void;
+  /** 주문,리뷰 응답에 실려 온 잔여 티켓으로 상단 뱃지 갱신 */
+  updateTickets: (tickets: number) => void;
 }

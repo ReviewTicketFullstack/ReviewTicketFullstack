@@ -127,6 +127,7 @@ export function HomePage() {
             rating={store.rating}
             reviewCount={store.reviewCount.toString()}
             imageUrl={store.imageUrl}
+            hasReviewEvent={store.hasReviewEvent}
           />
         ))}
       </div>

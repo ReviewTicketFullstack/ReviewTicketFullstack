@@ -8,6 +8,8 @@ export interface StoreCardProps {
   rating: number;
   reviewCount: string;
   imageUrl: string | null;
+  // 리뷰 작성 가능 메뉴가 하나라도 있을때 true - 리뷰 뱃지 노출 조건
+  hasReviewEvent: boolean;
 }
 
 export function StoreCard({
@@ -16,6 +18,7 @@ export function StoreCard({
   rating,
   reviewCount,
   imageUrl,
+  hasReviewEvent,
 }: StoreCardProps) {
   const navigate = useNavigate();
 
@@ -50,9 +53,11 @@ export function StoreCard({
         {/* First Row: Store Name + Review Chip */}
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-bold">{storeName}</h3>
-          <div className="bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold">
-            리뷰
-          </div>
+          {hasReviewEvent && (
+            <div className="bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold">
+              리뷰
+            </div>
+          )}
         </div>
 
         {/* Second Row: Rating Info */}
