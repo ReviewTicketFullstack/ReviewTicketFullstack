@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StatsBar } from './StatsBar';
 import { ReviewTabs, type ReviewTab } from './ReviewTabs';
 import { CompletedReviewItem } from './CompletedReviewItem';
@@ -25,7 +25,14 @@ export function ReviewManagementPage() {
 
   // 카드에 넘기는 값이라 참조가 고정돼야 한다. 인라인 화살표로 넘기면 매 렌더마다
   // 새 함수가 돼 카드의 카운트다운 interval 이 계속 버려지고 다시 만들어진다.
-  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+  //
+  // 여러 카드가 비슷한 시점에 동시 만료되면 onExpire 가 카드 수만큼 연달아 호출된다.
+  // debounce 로 묶어서 1초 안에 몰린 호출은 재조회 1번으로 합친다.
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reload = useCallback(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setReloadKey((k) => k + 1), 1000);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
