@@ -23,7 +23,7 @@ export function CompletedReviewItem({ review }: CompletedReviewItemProps) {
         <span className="text-ink-500">{date}</span>
       </div>
       <p className="text-sm text-ink-700">{review.reviewContent}</p>
-      {/* 리뷰 사진은 AI 검증을 통과해야 저장되므로 항상 한 장 있다 */}
+      {/* 리뷰 사진은 AI 검증을 통과해야 저장되므로 실질적으로 항상 존재하지만, 백엔드 계약 변경에 대비해 체크 유지 */}
       {review.reviewImageUrl && (
         <img
           src={review.reviewImageUrl}
