@@ -46,6 +46,25 @@ export function MenuEditModal({
     ),
   );
   const [error, setError] = useState<string | null>(null);
+  // 오버레이 클릭 시 변경사항이 있으면 바로 닫지 않고 이 확인 다이얼로그를 먼저 띄운다.
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // 모달이 처음 열렸을 때(props)와 현재 편집 상태를 비교해 변경 여부를 판단한다.
+  // 리뷰이벤트 설정, 대표 사진, 표본 사진 중 하나라도 바뀌면 dirty로 간주한다.
+  const isDirty =
+    hasReviewEvent !== menu.reviewEvent ||
+    imageUrl !== menu.imageUrl ||
+    sampleUrls.some((url, i) => url !== (initialSampleUrls?.[i] ?? null));
+
+  // 오버레이(배경) 클릭 핸들러.
+  // dirty 상태면 확인 다이얼로그를 띄우고, 변경사항이 없으면 바로 닫는다.
+  const handleOverlayClick = () => {
+    if (isDirty) {
+      setShowConfirm(true);
+    } else {
+      onClose();
+    }
+  };
 
   const handleSampleChange = (index: number, url: string) => {
     setError(null);
@@ -63,10 +82,11 @@ export function MenuEditModal({
   };
 
   return (
-    // 모달 오버레이 — 클릭 시 닫힘 
+    <>
+    {/* 모달 오버레이 — 변경 없으면 즉시 닫힘, 있으면 확인 다이얼로그 표시 */}
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-6"
-      onClick={onClose}
+      onClick={handleOverlayClick}
     >
       {/*모달 본문 */}
       <div
@@ -156,5 +176,35 @@ export function MenuEditModal({
         </div>
       </div>
     </div>
+
+    {/* 변경사항이 있을 때 오버레이 클릭 시 나타나는 이탈 확인 다이얼로그.
+        z-[60]으로 기존 모달(z-50) 위에 렌더링된다.
+        다이얼로그 배경 클릭 시 다이얼로그만 닫히고 편집 모달은 유지된다. */}
+    {showConfirm && (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30"
+        onClick={() => setShowConfirm(false)}
+      >
+        <div
+          className="flex flex-col gap-4 rounded-xl bg-white p-6 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <p className="text-sm font-semibold text-ink-900">
+            수정 중인 내용이 저장되지 않습니다. 나가시겠어요?
+          </p>
+          <div className="flex justify-end gap-2">
+            {/* 계속 수정: 확인 다이얼로그만 닫고 편집 모달로 돌아간다 */}
+            <Button variant="secondary" size="small" onClick={() => setShowConfirm(false)}>
+              계속 수정
+            </Button>
+            {/* 나가기: 변경사항을 버리고 편집 모달을 완전히 닫는다 */}
+            <Button size="small" onClick={onClose}>
+              나가기
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
