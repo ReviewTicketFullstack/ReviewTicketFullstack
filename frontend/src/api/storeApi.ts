@@ -85,7 +85,7 @@ export function updateMyStore(
     auth: true,
   });
 }
-
+/** 백엔드에서 기본값으로 메뉴 정보를 반환한다 */
 export function getMyMenus(signal?: AbortSignal): Promise<MyMenuItem[]> {
   return request<MyMenuItem[]>("/stores/me/menus", { auth: true, signal });
 }
@@ -97,6 +97,38 @@ export interface UpdateMenuResponse {
   sampleImageUrls: (string | null)[];
   reviewEvent: boolean;
   menuLatestUpdate: string;
+}
+
+/**
+ * 사장이 직접 메뉴를 추가한다.
+ *
+ * ─ 백엔드 구현 필요 ─────────────────────────────────────────
+ * 엔드포인트  : POST /api/stores/me/menus
+ * 요청 바디   : { menuName, menuPrice, imageUrl, sampleImageUrls, reviewEvent }
+ * 응답        : MenuOwnerResponse (MyMenuItem 과 동일 필드)
+ *
+ * 구현 시 함께 처리할 것:
+ *  1. StoreService.SEED_MENUS 상수와 createForOwner() 내 메뉴 생성 코드 제거
+ *     (파일: StoreService.java 라인 57-78, 주석에 "메뉴관리 API가 붙으면 지운다"고 명시)
+ *  2. store.markReviewing() 은 현재 createForOwner() 에서만 호출된다.
+ *     메뉴 추가 후 reviewEvent=true 인 메뉴가 생기면 가게의 isReviewing 도
+ *     갱신해야 홈 목록에 리뷰이벤트 배지가 뜬다.
+ * ────────────────────────────────────────────────────────────
+ */
+export function createMyMenu(
+  menuName: string,
+  menuPrice: number,
+  imageUrl: string | null,
+  sampleImageUrls: (string | null)[],
+  reviewEvent: boolean,
+  signal?: AbortSignal,
+): Promise<MyMenuItem> {
+  return request<MyMenuItem>("/stores/me/menus", {
+    method: "POST",
+    body: { menuName, menuPrice, imageUrl, sampleImageUrls, reviewEvent },
+    auth: true,
+    signal,
+  });
 }
 
 /**
@@ -119,3 +151,4 @@ export function updateMyMenu(
     auth: true,
   });
 }
+
