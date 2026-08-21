@@ -4,7 +4,7 @@ import { useAuth } from '@/app/providers';
 import { ApiError } from '@/shared/api';
 import { MenuListItem } from './MenuListItem';
 import { MenuEditModal } from './MenuEditModal';
-import { getMyMenus, updateMyMenu, createMyMenu, type MenuItem, type MyMenuItem } from '@/api/storeApi';
+import { getMyMenus, updateMyMenu, createMyMenu, type MenuItem } from '@/api/storeApi';
 
 /** 서버 errorCode → 화면 문구. 백엔드는 message 를 보내지 않으므로 여기서 채운다. */
 function toMenuError(error: unknown, fallback: string): string {
