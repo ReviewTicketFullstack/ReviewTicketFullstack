@@ -1,10 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Card } from '@/shared/ui';
+import { Card, EmptyState } from '@/shared/ui';
 import { useAuth } from '@/app/providers';
 import { ApiError } from '@/shared/api';
 import { MenuListItem } from './MenuListItem';
 import { MenuEditModal } from './MenuEditModal';
 import { getMyMenus, updateMyMenu, createMyMenu, type MenuItem, type MyMenuItem } from '@/api/storeApi';
+
+/** 서버 errorCode → 화면 문구. 백엔드는 message 를 보내지 않으므로 여기서 채운다. */
+function toMenuError(error: unknown, fallback: string): string {
+  if (!(error instanceof ApiError)) return fallback;
+  switch (error.errorCode) {
+    case 'MENU_NAME_REQUIRED':    return '메뉴 이름을 입력해 주세요.';
+    case 'MENU_NAME_TOO_LONG':    return '메뉴 이름은 32자 이하여야 합니다.';
+    case 'MENU_PRICE_INVALID':    return '가격은 0원 이상이어야 합니다.';
+    case 'MENU_NAME_TAKEN':       return '이미 있는 메뉴 이름입니다. 다른 이름을 써 주세요.';
+    case 'SAMPLE_IMAGE_REQUIRED': return '표본 사진을 한 장 이상 등록해야 합니다.';
+    case 'TOO_MANY_SAMPLE_IMAGES':return '표본 사진은 5장까지만 등록할 수 있습니다.';
+    case 'SAMPLE_IMAGE_NOT_FOUND':return '표본 사진을 찾을 수 없습니다. 다시 올려 주세요.';
+    case 'SAMPLE_IMAGE_TOO_SMALL':return '표본 사진은 긴 쪽이 1920px 이상이어야 합니다.';
+    default:                       return fallback;
+  }
+}
 
 /** 목록·모달이 함께 쓰는 형태. 표본 사진은 목록에 안 뜨지만 모달이 다시 열릴 때 필요하다. */
 type OwnerMenuItem = MenuItem & { sampleImageUrls: (string | null)[] };
@@ -82,9 +98,7 @@ export function MenuManagementPage() {
       );
       setSelectedMenu(null);
     } catch (err) {
-      setApplyError(
-        err instanceof ApiError ? err.message : '메뉴를 저장하지 못했습니다.',
-      );
+      setApplyError(toMenuError(err, '메뉴를 저장하지 못했습니다.'));
     } finally {
       setIsApplying(false);
     }
@@ -124,7 +138,7 @@ export function MenuManagementPage() {
       ]);
       setShowCreateModal(false);
     } catch (err) {
-      setApplyError(err instanceof ApiError ? err.message : '메뉴를 추가하지 못했습니다.');
+      setApplyError(toMenuError(err, '메뉴를 추가하지 못했습니다.'));
     } finally {
       setIsApplying(false);
     }
@@ -150,7 +164,13 @@ export function MenuManagementPage() {
       {isLoading && <p className="text-sm text-neutral-500">불러오는 중...</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      {!isLoading && !error && (
+      {!isLoading && !error && menuItems.length === 0 && (
+        <EmptyState
+          message="아직 등록된 메뉴가 없습니다. 메뉴 추가 버튼을 눌러 첫 메뉴를 만들어 보세요."
+        />
+      )}
+
+      {!isLoading && !error && menuItems.length > 0 && (
         <Card className="overflow-hidden p-0">
           <div className="divide-y divide-gray-200">
             {menuItems.map((menu) => (

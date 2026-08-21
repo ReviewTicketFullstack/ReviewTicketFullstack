@@ -10,7 +10,8 @@ import type { MenuItem } from '@/api/storeApi';
  *  - edit 모드(기본): 기존 메뉴를 menu props 로 받고 onApply 로 변경사항을 전달한다.
  *    이름·가격은 읽기 전용이다(서버 entity 설계상 생성 후 변경 불가).
  *  - create 모드(isNew=true): 빈 더미 menu 를 넘기고 onCreate 로 전체 데이터를 받는다.
- *    이름·가격이 입력 필드가 되며, 표본 사진 체크는 생략한다(추가 후 수정에서 등록 가능).
+ *    이름·가격이 입력 필드가 된다. 표본 사진은 edit 모드와 동일하게 최소 1장 필요 —
+ *    백엔드 POST /api/stores/me/menus 가 생성 시점에도 requireValidSamples 를 적용한다.
  *
  * 두 모드가 같은 UI 레이아웃을 공유하므로 하나의 컴포넌트로 유지한다.
  * 별도 컴포넌트로 분리하면 isNew 분기가 두 파일에 흩어지는 대신,
@@ -115,6 +116,11 @@ export function MenuEditModal({
       }
       if (isNaN(price) || price < 0) {
         setError('올바른 가격을 입력해 주세요.');
+        return;
+      }
+      // edit 모드와 동일 — 백엔드 POST 도 requireValidSamples 적용
+      if (sampleUrls.every((url) => url === null)) {
+        setError('표본 사진을 한 장 이상 올려 주세요. 리뷰 사진을 대조할 기준이 됩니다.');
         return;
       }
       onCreate?.({ menuName: newName.trim(), menuPrice: price, reviewEvent: hasReviewEvent, imageUrl, sampleUrls });

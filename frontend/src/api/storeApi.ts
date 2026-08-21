@@ -102,18 +102,12 @@ export interface UpdateMenuResponse {
 /**
  * 사장이 직접 메뉴를 추가한다.
  *
- * ─ 백엔드 구현 필요 ─────────────────────────────────────────
- * 엔드포인트  : POST /api/stores/me/menus
- * 요청 바디   : { menuName, menuPrice, imageUrl, sampleImageUrls, reviewEvent }
- * 응답        : MenuOwnerResponse (MyMenuItem 과 동일 필드)
+ * 엔드포인트 : POST /api/stores/me/menus (201 Created)
+ * 요청 바디  : { menuName, menuPrice, imageUrl, sampleImageUrls, reviewEvent }
+ * 응답       : MenuOwnerResponse — GET /me/menus 한 줄과 동일한 형태
  *
- * 구현 시 함께 처리할 것:
- *  1. StoreService.SEED_MENUS 상수와 createForOwner() 내 메뉴 생성 코드 제거
- *     (파일: StoreService.java 라인 57-78, 주석에 "메뉴관리 API가 붙으면 지운다"고 명시)
- *  2. store.markReviewing() 은 현재 createForOwner() 에서만 호출된다.
- *     메뉴 추가 후 reviewEvent=true 인 메뉴가 생기면 가게의 isReviewing 도
- *     갱신해야 홈 목록에 리뷰이벤트 배지가 뜬다.
- * ────────────────────────────────────────────────────────────
+ * sampleImageUrls 는 최소 1장 이상이어야 한다 — 서버가 생성 시점에도
+ * requireValidSamples 를 적용하며, 없으면 SAMPLE_IMAGE_REQUIRED 로 거절한다.
  */
 export function createMyMenu(
   menuName: string,
