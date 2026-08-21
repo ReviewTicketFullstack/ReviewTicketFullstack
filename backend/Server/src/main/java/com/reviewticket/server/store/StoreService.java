@@ -14,14 +14,19 @@ import com.reviewticket.server.auth.ForbiddenException;
 import com.reviewticket.server.auth.NotFoundException;
 import com.reviewticket.server.auth.UnauthorizedException;
 import com.reviewticket.server.auth.ValidationException;
+import com.reviewticket.server.config.ReviewTicketProperties;
 import com.reviewticket.server.domain.Menu;
 import com.reviewticket.server.domain.Role;
 import com.reviewticket.server.domain.Store;
 import com.reviewticket.server.domain.User;
+import com.reviewticket.server.image.ImageResizer;
+import com.reviewticket.server.image.ImageStorage;
 import com.reviewticket.server.repository.MenuRepository;
 import com.reviewticket.server.repository.PendingSignupRepository;
 import com.reviewticket.server.repository.StoreRepository;
 import com.reviewticket.server.repository.UserRepository;
+
+import jakarta.persistence.EntityManager;
 
 /**
  * 가게, 메뉴 조회와 생성.
@@ -33,36 +38,32 @@ public class StoreService {
     private final MenuRepository menus;
     private final UserRepository users;
     private final PendingSignupRepository pendings;
+    private final EntityManager entityManager;
+    private final ImageStorage storage;
+    private final ImageResizer resizer;
+    private final ReviewTicketProperties properties;
 
     public StoreService(StoreRepository stores, MenuRepository menus,
-            UserRepository users, PendingSignupRepository pendings) {
+            UserRepository users, PendingSignupRepository pendings, EntityManager entityManager,
+            ImageStorage storage, ImageResizer resizer, ReviewTicketProperties properties) {
         this.stores = stores;
         this.menus = menus;
         this.users = users;
         this.pendings = pendings;
-    }
-
-    /**
-     * 프로토타입용 기본 메뉴. 프론트(OrderPage, MenuManagementPage)가 이미 이
-     * 5종을 화면에 고정해 두고 있어 이름과 리뷰이벤트 여부를 거기 맞춘다.
-     *
-     * 메뉴관리 API가 붙으면 이 상수와 아래 생성 코드를 지운다.
-     */
-    private record SeedMenu(String name, int price, boolean reviewEvent) {
+        this.entityManager = entityManager;
+        this.storage = storage;
+        this.resizer = resizer;
+        this.properties = properties;
     }
 
     /** 메뉴 하나가 가질 수 있는 표본 사진 수. 프론트 SAMPLE_IMAGE_COUNT 와 같은 값이다. */
     private static final int MAX_SAMPLE_IMAGES = 5;
 
-    private static final List<SeedMenu> SEED_MENUS = List.of(
-            new SeedMenu("피자", 18000, true),
-            new SeedMenu("햄버거", 9000, true),
-            new SeedMenu("치킨윙", 15000, false),
-            new SeedMenu("비빔밥", 10000, false),
-            new SeedMenu("라멘", 11000, false));
+    /** 메뉴 이름 길이 상한. menu_table.menu_name 이 VARCHAR(32) 라 거기 맞춘다. */
+    private static final int MAX_MENU_NAME_LENGTH = 32;
 
     /**
-     * 사장 회원가입이 확정될 때 가게와 기본 메뉴를 함께 만든다.
+     * 사장 회원가입이 확정될 때 가게를 만든다.
      *
      * 이미 가게가 있으면 아무것도 하지 않는다 — 가입 확정은 한 번뿐이지만,
      * 이 메서드가 다른 경로에서 다시 불려도 가게가 둘로 늘지 않아야 한다.
@@ -72,15 +73,7 @@ public class StoreService {
         if (stores.existsByOwner(owner)) {
             return;
         }
-        Store store = stores.save(new Store(owner, owner.getDisplayName()));
-        menus.saveAll(SEED_MENUS.stream()
-                .map(seed -> new Menu(store, seed.name(), seed.price(), null, seed.reviewEvent()))
-                .toList());
-
-        // review_event 대상 메뉴가 하나라도 있는지 여기서 한 번만 계산해 둔다.
-        // 메뉴 수정 API가 없어 이후로는 바뀔 일이 없다.
-        boolean reviewing = menus.existsByStoreIdAndReviewEventTrue(store.getId());
-        store.markReviewing(reviewing);
+        stores.save(new Store(owner, owner.getDisplayName()));
     }
 
     /** 홈 목록. 최신 가게가 먼저 온다. */
@@ -154,6 +147,56 @@ public class StoreService {
     }
 
     /**
+     * POST /api/stores/me/menus. 새 메뉴를 한 줄 만든다.
+     *
+     * 수정(updateMyMenu)과 달리 이름·가격을 받는다 — 그 둘은 생성 때만 정하고
+     * 그 뒤로는 고치지 않는다.
+     *
+     * 표본 사진을 최소 한 장 요구하는 것도 updateMyMenu 와 같다 — 표본이 없으면
+     * AI 대조 기준이 없어 그 메뉴로는 리뷰를 받을 수 없는 메뉴가 된다.
+     */
+    @Transactional
+    public MenuOwnerResponse createMyMenu(long userId, String rawName, int price, String imageUrl,
+            List<String> sampleImageUrls, boolean reviewEvent) {
+        Store store = storeOf(requireOwner(userId));
+
+        String name = rawName == null ? "" : rawName.trim();
+        if (name.isEmpty()) {
+            throw new ValidationException("MENU_NAME_REQUIRED", "메뉴 이름을 입력해 주세요");
+        }
+        if (name.length() > MAX_MENU_NAME_LENGTH) {
+            throw new ValidationException("MENU_NAME_TOO_LONG",
+                    "메뉴 이름은 " + MAX_MENU_NAME_LENGTH + "자 이하여야 합니다");
+        }
+        if (price < 0) {
+            throw new ValidationException("MENU_PRICE_INVALID", "가격은 0원 이상이어야 합니다");
+        }
+        // 같은 가게 안에서만 막는다. 다른 가게에 같은 이름의 메뉴가 있는 건 정상이다.
+        if (menus.existsByStoreIdAndName(store.getId(), name)) {
+            throw new ConflictException("MENU_NAME_TAKEN", "이미 쓰이고 있는 메뉴 이름입니다");
+        }
+
+        List<String> samples = sampleImageUrls == null ? List.of() : sampleImageUrls;
+        requireValidSamples(samples);
+
+        // 생성자는 표본 5칸을 모른다. 칸을 채우는 규칙을 두 군데 두지 않도록
+        // 저장 전에 applyEdit 을 한 번 통과시킨다 — updateMyMenu 와 같은 코드를 타게 된다.
+        Menu menu = new Menu(store, name, price, imageUrl, reviewEvent);
+        menu.applyEdit(imageUrl, samples, reviewEvent);
+        Menu saved = menus.saveAndFlush(menu);
+
+        // 생성 시각·갱신 시각은 DB 기본값(CURRENT_TIMESTAMP)으로 채워진다.
+        // INSERT 후 다시 읽어와야 응답에 그 두 값을 실어 보낼 수 있다.
+        entityManager.refresh(saved);
+
+        if (reviewEvent) {
+            store.markReviewing(true);
+        }
+
+        return toMenuOwnerResponse(saved);
+    }
+
+    /**
      * PATCH /api/stores/me/menus/{menuId}. 대표 사진·표본 사진·리뷰이벤트 여부를
      * 통째로 덮어쓴다.
      *
@@ -175,6 +218,25 @@ public class StoreService {
         }
 
         List<String> samples = sampleImageUrls == null ? List.of() : sampleImageUrls;
+        requireValidSamples(samples);
+
+        menu.applyEdit(imageUrl, samples, reviewEvent);
+        store.markReviewing(menus.existsByStoreIdAndReviewEventTrue(store.getId()));
+
+        return toMenuOwnerResponse(menu);
+    }
+
+    /**
+     * 표본 사진 규칙. 메뉴 추가와 메뉴 수정이 같은 기준을 써야 해서 한 군데 모아 둔다.
+     *
+     * 빈 칸(null)은 허용하되 전부 비어 있으면 거절한다 — 한 장도 없으면 AI 대조를 못 한다.
+     *
+     * 갯수만 보는 게 아니라 그 주소가 가리키는 파일까지 열어본다. 업로드 때 크기를
+     * 검사하지만(UploadController 의 minLongEdge) 그건 부르는 쪽이 선택하는 값이라,
+     * 검사 없이 받은 주소를 그대로 표본 칸에 넣으면 아무도 다시 보지 않았다.
+     * 붙이는 시점인 여기서 보면 주소를 어떻게 얻어 왔든 상관없어진다.
+     */
+    private void requireValidSamples(List<String> samples) {
         if (samples.size() > MAX_SAMPLE_IMAGES) {
             throw new ValidationException("TOO_MANY_SAMPLE_IMAGES",
                     "표본 사진은 " + MAX_SAMPLE_IMAGES + "장까지만 등록할 수 있습니다");
@@ -183,10 +245,32 @@ public class StoreService {
             throw new ValidationException("SAMPLE_IMAGE_REQUIRED", "표본 사진을 한 장 이상 등록해야 합니다");
         }
 
-        menu.applyEdit(imageUrl, samples, reviewEvent);
-        store.markReviewing(menus.existsByStoreIdAndReviewEventTrue(store.getId()));
+        // 리뷰 사진에 요구하는 하한과 같은 값을 쓴다 — 대조하는 두 사진 중 기준 쪽만
+        // 저화질이면 같은 음식을 찍은 리뷰도 유사도가 낮게 나와 거부된다.
+        int minLongEdge = properties.review().minImageLongEdge();
 
-        return toMenuOwnerResponse(menu);
+        for (String url : samples) {
+            if (url == null) {
+                continue;
+            }
+            // 파일이 없는 경우와 이미지로 못 읽는 경우를 하나로 묶는다 — 화면 입장에선
+            // 둘 다 "이 사진은 못 쓴다"로 같고, 구분해 알려 주면 서버에 어떤 파일이
+            // 있는지를 떠볼 수 있게 된다.
+            if (!storage.exists(url)) {
+                throw new ValidationException("SAMPLE_IMAGE_NOT_FOUND", "표본 사진을 찾을 수 없습니다");
+            }
+
+            int longEdge;
+            try {
+                longEdge = resizer.longEdge(storage.pathOf(url));
+            } catch (IllegalArgumentException e) {
+                throw new ValidationException("SAMPLE_IMAGE_NOT_FOUND", "표본 사진을 이미지로 읽을 수 없습니다");
+            }
+            if (longEdge < minLongEdge) {
+                throw new ValidationException("SAMPLE_IMAGE_TOO_SMALL",
+                        "표본 사진은 긴 변이 " + minLongEdge + "px 이상이어야 합니다");
+            }
+        }
     }
 
     /** 사장 전용 기능을 지키는 공통 관문. 고객 계정이면 403, 못 찾으면 401. */
