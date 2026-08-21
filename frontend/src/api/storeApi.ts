@@ -85,7 +85,6 @@ export function updateMyStore(
     auth: true,
   });
 }
-/** 백엔드에서 기본값으로 메뉴 정보를 반환한다 */
 export function getMyMenus(signal?: AbortSignal): Promise<MyMenuItem[]> {
   return request<MyMenuItem[]>("/stores/me/menus", { auth: true, signal });
 }
