@@ -60,6 +60,7 @@ export function StoreManagementPage() {
       setStoreName(updated.storeName);
       // 서버가 users.display_name 도 같은 값으로 맞춰 주므로 화면 상태도 함께 갱신한다.
       updateDisplayName(updated.storeName);
+      if(updated.logoUrl) setLogo(updated.logoUrl);
       setIsEditing(false);
     } catch (err) {
       setErrorMessage(
