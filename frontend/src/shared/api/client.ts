@@ -1,3 +1,4 @@
+import { messageForErrorCode } from "@/shared/api/errorMessages";
 import { clearToken, getToken } from "@/shared/lib/token";
 
 const API_BASE_URL = "/api";
@@ -124,7 +125,9 @@ async function toApiError(response: Response): Promise<ApiError> {
   try {
     const body: ApiErrorBody = await response.json();
     return new ApiError(
-      body.message || fallbackMessage(response.status),
+      body.message ||
+        messageForErrorCode(body.errorCode) ||
+        fallbackMessage(response.status),
       response.status,
       Boolean(body.retryable),
       body.errorCode,
@@ -138,8 +141,16 @@ async function toApiError(response: Response): Promise<ApiError> {
   }
 }
 
+/**
+ * errorCode 로 문구를 못 고른 경우의 마지막 안내.
+ *
+ * 상태 코드는 도메인 의미를 담지 못한다 — 400 하나에 서른 개 가까운 사유가
+ * 실려 온다. 그러니 여기에는 어느 화면에서 떠도 틀리지 않을 문구만 둔다.
+ * 특정 기능의 문구가 필요하면 errorMessages 의 표에 코드로 넣는다.
+ */
 function fallbackMessage(status: number) {
-  if (status === 400) return "티켓수량이 부족합니다.";
+  if (status === 400)
+    return "요청을 처리하지 못했습니다. 입력값을 확인해 주세요.";
   if (status === 401) return "로그인이 필요합니다. 다시 로그인해 주세요.";
   if (status === 403) return "권한이 없습니다.";
   if (status === 404) return "요청한 정보를 찾을 수 없습니다.";
