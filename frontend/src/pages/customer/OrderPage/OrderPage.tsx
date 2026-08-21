@@ -11,6 +11,7 @@ import { saveOrder } from "@/entities/order/orderStorage";
 import { clearStoreCache } from "@/entities/store";
 import { ApiError } from "@/shared/api";
 import { useAuth } from "@/app/providers";
+import { ChevronLeft } from "lucide-react";
 
 export function OrderPage() {
   const { storeId } = useParams();
@@ -112,6 +113,16 @@ export function OrderPage() {
 
   return (
     <div className="space-y-6 pb-32 px-5">
+      {/* Back Button Section */}
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        aria-label="가게 목록으로 돌아가기"
+        className="-ml-3 flex size-11 items-center justify-center rounded-lg text-ink-900 hover:bg-fill-100 active:bg-line-100"
+      >
+        <ChevronLeft size={24} />
+      </button>
+
       {/* Store Promotion Card Section */}
       <DetailStoreCard
         storeName={storeDetail.name}
@@ -130,6 +141,7 @@ export function OrderPage() {
           imageUrl: menu.imageUrl,
         }))}
         onMenuClick={handleMenuClick}
+        selectedMenuId={selectedMenu?.id ?? null}
       />
 
       {/* Review Section — 그 가게에 달린 리뷰 전부 */}

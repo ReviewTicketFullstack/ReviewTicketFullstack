@@ -10,14 +10,18 @@ export interface MenuItemData {
 export interface MenuItemProps {
   menu: MenuItemData;
   onClick: (menu: MenuItemData) => void;
+  isSelected: boolean;
 }
 
-export function MenuItem({ menu, onClick }: MenuItemProps) {
+export function MenuItem({ menu, onClick, isSelected }: MenuItemProps) {
   return (
     <button
       type="button"
       onClick={() => onClick(menu)}
-      className="w-full flex gap-4 p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+      className={`w-full flex gap-4 p-4 border-2 first:rounded-t-2xl last:rounded-b-2xl transition-colors text-left ${
+        isSelected ? "border-brand-800 bg-brand-50" : "border-transparent hover:bg-gray-50 active:bg-gray-100"
+      }`}
+      aria-pressed={isSelected}
     >
       {/* Image Section */}
       <div className="flex-shrink-0">
