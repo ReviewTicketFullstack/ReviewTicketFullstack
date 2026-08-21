@@ -85,7 +85,6 @@ export function updateMyStore(
     auth: true,
   });
 }
-
 export function getMyMenus(signal?: AbortSignal): Promise<MyMenuItem[]> {
   return request<MyMenuItem[]>("/stores/me/menus", { auth: true, signal });
 }
@@ -97,6 +96,32 @@ export interface UpdateMenuResponse {
   sampleImageUrls: (string | null)[];
   reviewEvent: boolean;
   menuLatestUpdate: string;
+}
+
+/**
+ * 사장이 직접 메뉴를 추가한다.
+ *
+ * 엔드포인트 : POST /api/stores/me/menus (201 Created)
+ * 요청 바디  : { menuName, menuPrice, imageUrl, sampleImageUrls, reviewEvent }
+ * 응답       : MenuOwnerResponse — GET /me/menus 한 줄과 동일한 형태
+ *
+ * sampleImageUrls 는 최소 1장 이상이어야 한다 — 서버가 생성 시점에도
+ * requireValidSamples 를 적용하며, 없으면 SAMPLE_IMAGE_REQUIRED 로 거절한다.
+ */
+export function createMyMenu(
+  menuName: string,
+  menuPrice: number,
+  imageUrl: string | null,
+  sampleImageUrls: (string | null)[],
+  reviewEvent: boolean,
+  signal?: AbortSignal,
+): Promise<MyMenuItem> {
+  return request<MyMenuItem>("/stores/me/menus", {
+    method: "POST",
+    body: { menuName, menuPrice, imageUrl, sampleImageUrls, reviewEvent },
+    auth: true,
+    signal,
+  });
 }
 
 /**
@@ -119,3 +144,4 @@ export function updateMyMenu(
     auth: true,
   });
 }
+

@@ -1,10 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Card } from '@/shared/ui';
+import { Card, EmptyState } from '@/shared/ui';
 import { useAuth } from '@/app/providers';
 import { ApiError } from '@/shared/api';
 import { MenuListItem } from './MenuListItem';
 import { MenuEditModal } from './MenuEditModal';
-import { getMyMenus, updateMyMenu, type MenuItem } from '@/api/storeApi';
+import { getMyMenus, updateMyMenu, createMyMenu, type MenuItem } from '@/api/storeApi';
+
+/** 서버 errorCode → 화면 문구. 백엔드는 message 를 보내지 않으므로 여기서 채운다. */
+function toMenuError(error: unknown, fallback: string): string {
+  if (!(error instanceof ApiError)) return fallback;
+  switch (error.errorCode) {
+    case 'MENU_NAME_REQUIRED':    return '메뉴 이름을 입력해 주세요.';
+    case 'MENU_NAME_TOO_LONG':    return '메뉴 이름은 32자 이하여야 합니다.';
+    case 'MENU_PRICE_INVALID':    return '가격은 0원 이상이어야 합니다.';
+    case 'MENU_NAME_TAKEN':       return '이미 있는 메뉴 이름입니다. 다른 이름을 써 주세요.';
+    case 'SAMPLE_IMAGE_REQUIRED': return '표본 사진을 한 장 이상 등록해야 합니다.';
+    case 'TOO_MANY_SAMPLE_IMAGES':return '표본 사진은 5장까지만 등록할 수 있습니다.';
+    case 'SAMPLE_IMAGE_NOT_FOUND':return '표본 사진을 찾을 수 없습니다. 다시 올려 주세요.';
+    case 'SAMPLE_IMAGE_TOO_SMALL':return '표본 사진은 긴 쪽이 1920px 이상이어야 합니다.';
+    default:                       return fallback;
+  }
+}
 
 /** 목록·모달이 함께 쓰는 형태. 표본 사진은 목록에 안 뜨지만 모달이 다시 열릴 때 필요하다. */
 type OwnerMenuItem = MenuItem & { sampleImageUrls: (string | null)[] };
@@ -18,6 +34,8 @@ export function MenuManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
+  // 메뉴 추가 모달 표시 여부
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 내 가게 메뉴 조회. 가게 번호를 보내지 않는다 — 토큰의 주체가 곧 그 가게의 사장이다.
   useEffect(() => {
@@ -80,9 +98,47 @@ export function MenuManagementPage() {
       );
       setSelectedMenu(null);
     } catch (err) {
-      setApplyError(
-        err instanceof ApiError ? err.message : '메뉴를 저장하지 못했습니다.',
+      setApplyError(toMenuError(err, '메뉴를 저장하지 못했습니다.'));
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  // MenuEditModal(isNew=true) 의 onCreate 핸들러.
+  // 서버에 POST 요청 후 응답 데이터로 목록을 낙관적 업데이트한다.
+  // 백엔드 API 가 붙으면 name·price 외 imageUrl·sampleUrls·reviewEvent 도
+  // 한 번에 전달할 수 있도록 createMyMenu 시그니처를 확장하면 된다.
+  const handleCreate = async (data: {
+    menuName: string;
+    menuPrice: number;
+    reviewEvent: boolean;
+    imageUrl: string | null;
+    sampleUrls: (string | null)[];
+  }) => {
+    setIsApplying(true);
+    setApplyError(null);
+    try {
+      const created = await createMyMenu(
+        data.menuName,
+        data.menuPrice,
+        data.imageUrl,
+        data.sampleUrls,
+        data.reviewEvent,
       );
+      setMenuItems((items) => [
+        ...items,
+        {
+          id: created.menuId,
+          name: created.menuName,
+          price: created.menuPrice,
+          imageUrl: created.menuImageUrl,
+          sampleImageUrls: created.sampleImageUrls,
+          reviewEvent: created.reviewEvent,
+        },
+      ]);
+      setShowCreateModal(false);
+    } catch (err) {
+      setApplyError(toMenuError(err, '메뉴를 추가하지 못했습니다.'));
     } finally {
       setIsApplying(false);
     }
@@ -95,11 +151,10 @@ export function MenuManagementPage() {
           <h1 className="text-xl font-bold text-ink-900">메뉴관리</h1>
         </div>
         <div className="flex justify-end">
-          {/* 메뉴 추가 기능 아직 미구현 — 자리만 잡아둔 비활성 버튼 */}
           <button
             type="button"
-            disabled
-            className="cursor-not-allowed rounded-lg bg-neutral-300 px-4 py-2 font-semibold text-neutral-500"
+            onClick={() => setShowCreateModal(true)}
+            className="rounded-lg bg-brand-800 px-4 py-2 font-semibold text-white hover:bg-brand-900"
           >
             메뉴 추가
           </button>
@@ -109,7 +164,13 @@ export function MenuManagementPage() {
       {isLoading && <p className="text-sm text-neutral-500">불러오는 중...</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      {!isLoading && !error && (
+      {!isLoading && !error && menuItems.length === 0 && (
+        <EmptyState
+          message="아직 등록된 메뉴가 없습니다. 메뉴 추가 버튼을 눌러 첫 메뉴를 만들어 보세요."
+        />
+      )}
+
+      {!isLoading && !error && menuItems.length > 0 && (
         <Card className="overflow-hidden p-0">
           <div className="divide-y divide-gray-200">
             {menuItems.map((menu) => (
@@ -128,6 +189,18 @@ export function MenuManagementPage() {
           applyError={applyError}
           onClose={() => setSelectedMenu(null)}
           onApply={handleApply}
+        />
+      )}
+
+      {/* create 모드: 빈 더미 menu 를 넘기고 onCreate 로 API 호출 후 목록 갱신 */}
+      {showCreateModal && (
+        <MenuEditModal
+          isNew
+          menu={{ id: 0, name: '', price: 0, imageUrl: null, reviewEvent: false }}
+          isApplying={isApplying}
+          applyError={applyError}
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreate}
         />
       )}
     </div>
