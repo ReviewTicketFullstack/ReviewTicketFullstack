@@ -6,6 +6,7 @@ export interface DetailStoreCardProps {
   rating: number;
   reviewCount: string;
   hasReviewEvent: boolean;
+  onReviewClick?: () => void;
 }
 
 export function DetailStoreCard({
@@ -13,6 +14,7 @@ export function DetailStoreCard({
   rating,
   reviewCount,
   hasReviewEvent,
+  onReviewClick,
 }: DetailStoreCardProps) {
   return (
     <Card className="flex flex-col gap-4 p-5">
@@ -34,10 +36,12 @@ export function DetailStoreCard({
       <div className="flex items-center gap-2">
         <Star size={16} className="fill-yellow-400 text-yellow-400" />
         <span className="text-base font-bold">{rating}</span>
-        <span className="text-sm text-gray-600">
-          리뷰 {reviewCount}
-          {">"}
-        </span>
+        <button
+          onClick={onReviewClick}
+          className="text-sm text-gray-600 font-black cursor-pointer hover:text-gray-900 transition-colors"
+        >
+          리뷰 {reviewCount} {">"}
+        </button>
       </div>
     </Card>
   );

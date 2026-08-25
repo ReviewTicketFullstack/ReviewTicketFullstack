@@ -8,6 +8,7 @@ import {
   HomePage,
   OrderPage,
   OrderHistoryPage,
+  ReviewsPage,
   OnboardingPage,
   CustomerLoginPage,
   OwnerLoginPage,
@@ -111,6 +112,7 @@ export function AppRoutes() {
         <Route path="/home" element={<HomePage />} />
         <Route path="/order/:storeId" element={<OrderPage />} />
         <Route path="/order-history" element={<OrderHistoryPage />} />
+        <Route path="/reviews" element={<ReviewsPage />} />
       </Route>
 
       <Route

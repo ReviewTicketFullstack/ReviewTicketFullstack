@@ -6,7 +6,7 @@ export function CustomerLayout() {
   const location = useLocation();
 
   const showBottomNavigation =
-    location.pathname === "/home" || location.pathname === "/order-history";
+    location.pathname === "/home" || location.pathname === "/order-history" || location.pathname === "/reviews";
 
   return (
     <div className="min-h-screen bg-gray-100">
