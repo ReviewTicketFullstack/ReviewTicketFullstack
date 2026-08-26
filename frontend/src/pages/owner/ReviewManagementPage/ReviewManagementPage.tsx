@@ -3,6 +3,7 @@ import { StatsBar } from './StatsBar';
 import { ReviewTabs, type ReviewTab } from './ReviewTabs';
 import { CompletedReviewItem } from './CompletedReviewItem';
 import { PendingReviewItem } from './PendingReviewItem';
+import { Pagination } from './Pagination';
 import {
   getMyPendingOrders,
   getMyStoreReviews,
@@ -10,10 +11,14 @@ import {
   type PendingOrder,
 } from '@/api/reviewApi';
 
+/** 화면에 한 번에 그리는 개수. 네트워크 요청은 그대로 전체를 받고, 렌더링만 나눈다. */
+const PAGE_SIZE = 10;
+
 export function ReviewManagementPage() {
   const [activeTab, setActiveTab] = useState<ReviewTab>('completed');
   const [completedReviews, setCompletedReviews] = useState<OwnerReview[]>([]);
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
+  const [page, setPage] = useState(1);
   // 총 리뷰 수와 평균 별점은 서버가 가게 표에서 그대로 준다. 화면이 배열을
   // 훑어 직접 세면 목록에 페이지 나누기가 붙는 순간 보이는 몇 건만으로 계산해 틀어진다.
   const [totalCount, setTotalCount] = useState(0);
@@ -34,10 +39,16 @@ export function ReviewManagementPage() {
     debounceTimer.current = setTimeout(() => setReloadKey((k) => k + 1), 1000);
   }, []);
 
+  // 탭을 바꾸면 그 탭의 1페이지부터 다시 본다 — 이전 탭의 페이지 번호가 남아있으면 헷갈린다.
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab]);
+
   useEffect(() => {
     const controller = new AbortController();
     setIsLoading(true);
     setError(null);
+    setPage(1);
 
     Promise.all([
       getMyStoreReviews(controller.signal),
@@ -65,6 +76,11 @@ export function ReviewManagementPage() {
   const pendingList = pendingOrders.filter((o) => o.reviewStatus === 'pending');
   const expiredList = pendingOrders.filter((o) => o.reviewStatus === 'expired');
 
+  // activeTab에 해당하는 전체 목록. 페이지네이션은 이 배열 길이를 기준으로 계산한다.
+  const activeList =
+    activeTab === 'completed' ? completedReviews : activeTab === 'pending' ? pendingList : expiredList;
+  const totalPages = Math.max(1, Math.ceil(activeList.length / PAGE_SIZE));
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <h1 className="text-xl font-bold text-ink-900">리뷰관리</h1>
@@ -88,19 +104,19 @@ export function ReviewManagementPage() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-col gap-3">
-        {/* activeTab에 따라 리뷰완료/작성 대기/미이행 리스트를 다르게 렌더링 */}
+        {/* activeTab에 따라 리뷰완료/작성 대기/미이행 리스트를 다르게 렌더링. 페이지당 PAGE_SIZE개만 보여준다 */}
         {activeTab === 'completed'
-          ? completedReviews.map((review) => (
-              <CompletedReviewItem key={review.reviewId} review={review} />
-            ))
-          : (activeTab === 'pending' ? pendingList : expiredList).map((order) => (
-              <PendingReviewItem
-                key={order.orderId}
-                order={order}
-                onExpire={reload}
-              />
-            ))}
+          ? completedReviews
+              .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+              .map((review) => <CompletedReviewItem key={review.reviewId} review={review} />)
+          : (activeTab === 'pending' ? pendingList : expiredList)
+              .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+              .map((order) => (
+                <PendingReviewItem key={order.orderId} order={order} onExpire={reload} />
+              ))}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>
   );
 }
