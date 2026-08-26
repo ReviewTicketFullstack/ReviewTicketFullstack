@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 /**
  * 회원. id 는 가입 순서대로 붙는 내부 번호이며 화면에 노출하지 않는다.
@@ -59,6 +60,20 @@ public class User {
      */
     @Column(nullable = false)
     private int tickets;
+
+    /**
+     * 낙관적 락. tickets 를 지키는 주 수단은 아니다 — 그건 조회 시점에 행을
+     * 잠그는 UserRepository.findByIdForUpdate 쪽이고, 이 컬럼은 그물이다.
+     *
+     * 잠금 없이 tickets 를 고치는 경로가 나중에 생기면, 이 컬럼 덕분에 값이
+     * 조용히 덮어써지는 대신 커밋이 실패해 500 으로 드러난다. 티켓이 소리 없이
+     * 늘거나 줄어드는 것보다 시끄럽게 터지는 편이 찾기 쉽다.
+     *
+     * Hibernate 전용이라 getter 를 두지 않는다. 응답에 실을 값이 아니다.
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     /** DB 의 DEFAULT / ON UPDATE 가 채운다. */
     @Column(name = "created_at", insertable = false, updatable = false)
