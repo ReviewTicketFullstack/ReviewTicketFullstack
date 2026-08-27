@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
+import java.util.Arrays;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,10 +84,13 @@ public class StoreService {
         store.markReviewing(reviewing);
     }
 
-    /** 홈 목록. 최신 가게가 먼저 온다. */
+    /** 홈 목록. 최신 가게가 먼저 온다. 페이지네이션 지원 (20개씩 응답). */
     @Transactional(readOnly = true)
-    public List<StoreSummaryResponse> findAll() {
+    public List<StoreSummaryResponse> findAll(int page, int size, Sort.by(Sort.Direction.ASC, "storeId")) {
+        int offset = page * size;
         return stores.findAllByOrderByIdDesc().stream()
+                .skip(offset)
+                .limit(size)
                 .map(StoreService::toSummary)
                 .toList();
     }

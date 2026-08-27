@@ -18,8 +18,12 @@ export interface StoreDetail extends Store {
 
 
 // 이도연
-export function getStores(signal?: AbortSignal): Promise<Store[]> {
-  return request<Store[]>("/stores", { auth: true, signal });
+export function getStores(page: number = 0, size: number = 20, signal?: AbortSignal): Promise<Store[]> {
+  return request<Store[]>("/stores", {
+    auth: true,
+    signal,
+    query: { page: page.toString(), size: size.toString() }
+  });
 }
 
 // 이도연
