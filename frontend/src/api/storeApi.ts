@@ -16,10 +16,16 @@ export interface StoreDetail extends Store {
   menus: MenuItem[];
 }
 
-
 // 이도연
-export function getStores(signal?: AbortSignal): Promise<Store[]> {
-  return request<Store[]>("/stores", { auth: true, signal });
+export function getStores(
+  page: number,
+  size: number,
+  signal?: AbortSignal,
+): Promise<Store[]> {
+  return request<Store[]>(`/stores?page=${page}&size=${size}`, {
+    auth: true,
+    signal,
+  });
 }
 
 // 이도연
@@ -144,4 +150,3 @@ export function updateMyMenu(
     auth: true,
   });
 }
-

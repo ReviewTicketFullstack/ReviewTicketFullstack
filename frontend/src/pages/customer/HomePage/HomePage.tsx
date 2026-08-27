@@ -43,12 +43,14 @@ function setCachedStores(stores: Store[]) {
   );
 }
 
-const FOODS = ['치킨윙', '피자', '비빔밥', '라멘', '햄버거'];
+const FOODS = ["치킨윙", "피자", "비빔밥", "라멘", "햄버거"];
 
 export function HomePage() {
   const { user } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
-  const [selectedFoodIndex, setSelectedFoodIndex] = useState<number | null>(null);
+  const [selectedFoodIndex, setSelectedFoodIndex] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     setSelectedFoodIndex(Math.floor(Math.random() * FOODS.length));
@@ -63,7 +65,7 @@ export function HomePage() {
     // 별점이 함께 들어 있는데, 그 둘은 리뷰가 등록될 때마다 바뀌는 값이다.
     // 캐시에서 멈추면 리뷰를 써도 홈 화면은 자정까지 예전 숫자(리뷰 0)를
     // 보여줘, 등록이 안 된 것처럼 보인다.
-    getStores()
+    getStores(0, 20)
       .then((data) => {
         setStores(data);
         if (data.length > 0) setCachedStores(data);
@@ -86,11 +88,16 @@ export function HomePage() {
               <span>오늘 식사는</span>
               <div className="inline-flex h-6 overflow-hidden">
                 <div
-                  className={selectedFoodIndex !== null ? "animate-food-slot" : ""}
+                  className={
+                    selectedFoodIndex !== null ? "animate-food-slot" : ""
+                  }
                   style={
                     selectedFoodIndex !== null
                       ? (() => {
-                          const finalPos = -(19 * 5 * 24 + selectedFoodIndex * 24);
+                          const finalPos = -(
+                            19 * 5 * 24 +
+                            selectedFoodIndex * 24
+                          );
                           return {
                             "--final-translate-y": `${finalPos}px`,
                             "--pos-60": `${finalPos * 0.92}px`,

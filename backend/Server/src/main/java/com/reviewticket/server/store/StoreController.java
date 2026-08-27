@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.reviewticket.server.domain.User;
@@ -56,8 +57,12 @@ public class StoreController {
 
     /** 홈 목록. 개수 제한과 페이지네이션은 두지 않았다. */
     @GetMapping
-    public List<StoreSummaryResponse> stores() {
-        return storeService.findAll();
+    public List<StoreSummaryResponse> stores(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size) {
+         {
+            return storeService.findAll(page, size);
+        }
     }
 
     /** 주문 화면용 상세. 가게 정보 + 그 가게의 메뉴 배열. */
