@@ -29,18 +29,6 @@ function getCachedStores(): Store[] | null {
   return null;
 }
 
-function getCachedPage(): number {
-  const cached = localStorage.getItem(STORE_CACHE_KEY);
-  if (!cached) return 1;
-
-  try {
-    const { page } = JSON.parse(cached);
-    return page || 1;
-  } catch {
-    return 1;
-  }
-}
-
 function setCachedStores(stores: Store[], page: number = 1) {
   const nextMidnight = new Date();
   nextMidnight.setHours(24, 0, 0, 0);
@@ -85,17 +73,8 @@ export function HomePage() {
     // 캐시에서 멈추면 리뷰를 써도 홈 화면은 자정까지 예전 숫자(리뷰 0)를
     // 보여줘, 등록이 안 된 것처럼 보인다.
     getStores(page, 20)
-      .then((data) => {
-        console.log("첫페이지", data.length);
-        setStores(data);
-        setPage(1);
-        setHasMore(data.length === 20);
-        if (data.length > 0) {
-          setCachedStores(data, 1);
-        }
-      })
-      .catch((error) => {
-        console.error("첫페이지요청실패", error);
+      .then(() => {})
+      .catch(() => {
         // 서버에 닿지 못하면 위에서 그린 캐시를 그대로 둔다. 캐시도 없으면 빈 상태다.
       });
   }, []);
@@ -103,17 +82,9 @@ export function HomePage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        console.log("Observer:", {
-          isIntersecting: entry.isIntersecting,
-          page,
-          hasMore,
-          isLoading,
-        });
-
         if (!entry.isIntersecting || !hasMore || isLoading || page <= 0) {
           return;
         }
-        console.log("다음페이지요청", page);
 
         setIsLoading(true);
         getStores(page, 20)
