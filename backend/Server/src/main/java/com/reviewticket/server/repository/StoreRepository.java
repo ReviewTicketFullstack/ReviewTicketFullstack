@@ -1,9 +1,10 @@
 package com.reviewticket.server.repository;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.reviewticket.server.domain.Store;
 import com.reviewticket.server.domain.User;
@@ -11,7 +12,7 @@ import com.reviewticket.server.domain.User;
 public interface StoreRepository extends JpaRepository<Store, Long> {
 
     /** 홈 목록. 최신 가게가 먼저 온다. */
-    List<Store> findAllByOrderByIdDesc();
+    Page<Store> findAllByOrderByIdDesc(Pageable pageable);
 
     boolean existsByOwner(User owner);
 

@@ -7,9 +7,13 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 import org.springframework.stereotype.Component;
 
@@ -86,6 +90,34 @@ public class ImageResizer {
     public int longEdge(byte[] original) {
         BufferedImage source = read(original);
         return Math.max(source.getWidth(), source.getHeight());
+    }
+
+    /**
+     * 이미 저장된 파일의 긴 변을 구한다. 픽셀을 다 풀지 않고 헤더만 읽는다 —
+     * 표본 사진 검증처럼 크기만 알면 되는 자리에서 쓴다. 메뉴 하나를 저장할 때
+     * 최대 5장을 연속으로 보므로 1920px JPEG 를 통째로 디코딩하는 것과 차이가 난다.
+     *
+     * 이미지가 아니거나 읽을 수 없으면 IllegalArgumentException 을 던진다.
+     */
+    public int longEdge(Path file) {
+        try (ImageInputStream in = ImageIO.createImageInputStream(file.toFile())) {
+            if (in == null) {
+                throw new IllegalArgumentException("이미지를 읽을 수 없습니다: " + file);
+            }
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+            if (!readers.hasNext()) {
+                throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다: " + file);
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(in);
+                return Math.max(reader.getWidth(0), reader.getHeight(0));
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("이미지를 읽을 수 없습니다: " + file, e);
+        }
     }
 
     private BufferedImage read(byte[] bytes) {

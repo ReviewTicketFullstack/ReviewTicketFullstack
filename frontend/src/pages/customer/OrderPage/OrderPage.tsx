@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui";
 import { DetailStoreCard } from "./DetailStoreCard";
 import { MenuListCard, type MenuItemData } from "./MenuListCard";
-import { StoreReviewSection } from "./StoreReviewSection";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { createOrder } from "@/api/orderApi";
@@ -129,6 +128,7 @@ export function OrderPage() {
         rating={storeDetail.rating}
         reviewCount={String(storeDetail.reviewCount)}
         hasReviewEvent={storeDetail.hasReviewEvent}
+        onReviewClick={() => navigate(`/order/${storeDetail.id}/reviews`)}
       />
 
       {/* Menu List Section */}
@@ -143,9 +143,6 @@ export function OrderPage() {
         onMenuClick={handleMenuClick}
         selectedMenuId={selectedMenu?.id ?? null}
       />
-
-      {/* Review Section — 그 가게에 달린 리뷰 전부 */}
-      <StoreReviewSection storeId={storeDetail.id} />
 
       {/* Order Button Section */}
       <div

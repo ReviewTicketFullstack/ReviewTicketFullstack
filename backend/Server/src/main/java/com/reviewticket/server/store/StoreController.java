@@ -3,13 +3,17 @@ package com.reviewticket.server.store;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.reviewticket.server.domain.User;
@@ -41,6 +45,20 @@ public class StoreController {
     }
 
     /**
+     * 메뉴 추가 요청.
+     *
+     * 수정(UpdateMenuRequest)과 달리 이름·가격을 받는다 — 그 둘은 생성 때만 정한다.
+     * sampleImageUrls 규칙은 수정과 같다(최대 5장, 최소 1장). 검증은 StoreService 가 한다.
+     */
+    public record CreateMenuRequest(
+            @NotBlank(message = "메뉴 이름을 입력해 주세요") String menuName,
+            int menuPrice,
+            String imageUrl,
+            @NotNull List<String> sampleImageUrls,
+            boolean reviewEvent) {
+    }
+
+    /**
      * 메뉴 수정 요청. 세 값을 통째로 덮어쓴다 — 부분 수정은 없다.
      *
      * sampleImageUrls 는 최대 5개, 최소 1개는 값이 있어야 한다(비어 있으면
@@ -54,10 +72,12 @@ public class StoreController {
             boolean reviewEvent, Instant menuLatestUpdate) {
     }
 
-    /** 홈 목록. 개수 제한과 페이지네이션은 두지 않았다. */
+    /** 홈 목록. 페이지네이션 지원 (20개씩 응답). */
     @GetMapping
-    public List<StoreSummaryResponse> stores() {
-        return storeService.findAll();
+    public List<StoreSummaryResponse> stores(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size) {
+            return storeService.findAll(page, size);
     }
 
     /** 주문 화면용 상세. 가게 정보 + 그 가게의 메뉴 배열. */
@@ -84,6 +104,18 @@ public class StoreController {
     @GetMapping("/me/menus")
     public List<MenuOwnerResponse> myMenus(@AuthenticationPrincipal User user) {
         return storeService.findMyMenus(user.getId());
+    }
+
+    /**
+     * 새 메뉴를 추가한다. 응답은 GET /me/menus 한 줄과 같은 모양이라
+     * 화면이 목록에 그대로 덧붙이면 된다.
+     */
+    @PostMapping(value = "/me/menus", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public MenuOwnerResponse createMyMenu(@AuthenticationPrincipal User user,
+            @Valid @RequestBody CreateMenuRequest request) {
+        return storeService.createMyMenu(user.getId(), request.menuName(), request.menuPrice(),
+                request.imageUrl(), request.sampleImageUrls(), request.reviewEvent());
     }
 
     /** 대표 사진·표본 사진(최대 5장)·리뷰이벤트 여부를 고친다. 메뉴 이름·가격은 여전히 고정이다. */
