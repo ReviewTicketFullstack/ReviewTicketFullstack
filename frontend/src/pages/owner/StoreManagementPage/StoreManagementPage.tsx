@@ -14,6 +14,9 @@ export function StoreManagementPage() {
   const [name, setName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 최초 조회가 끝나기 전엔 logo가 아직 null이다 — 이 상태로 저장하면 서버에
+  // "로고 삭제"로 해석돼 기존 로고가 지워진다. 로딩 중엔 편집 진입 자체를 막는다.
+  const [isLoading, setIsLoading] = useState(true);
 
   // 가게 정보 조회. 가게 번호를 보내지 않는다 — 토큰의 주체가 곧 그 가게의 사장이다.
   useEffect(() => {
@@ -28,6 +31,9 @@ export function StoreManagementPage() {
       .catch((err) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setErrorMessage("가게 정보를 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
       });
 
     return () => controller.abort();
@@ -95,7 +101,12 @@ export function StoreManagementPage() {
             </Button>
           </div>
         ) : (
-          <Button variant="secondary" size="small" onClick={handleStartEdit}>
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={handleStartEdit}
+            disabled={isLoading}
+          >
             정보 수정
           </Button>
         )}
