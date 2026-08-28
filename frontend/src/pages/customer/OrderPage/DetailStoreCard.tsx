@@ -38,12 +38,10 @@ export function DetailStoreCard({
         <Star size={16} className="fill-yellow-400 text-yellow-400" />
         <span className="text-base font-bold">{rating}</span>
         <button
-          type="button"
           onClick={onReviewClick}
-          className="text-sm text-gray-600"
+          className="text-sm text-gray-600 font-black cursor-pointer hover:text-gray-900 transition-colors"
         >
-          리뷰 {reviewCount}
-          {">"}
+          리뷰 {reviewCount} {">"}
         </button>
       </div>
     </Card>

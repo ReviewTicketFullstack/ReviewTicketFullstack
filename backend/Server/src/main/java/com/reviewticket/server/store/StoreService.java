@@ -6,8 +6,11 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Pageable;
 
 import com.reviewticket.server.auth.ConflictException;
 import com.reviewticket.server.auth.ForbiddenException;
@@ -76,12 +79,19 @@ public class StoreService {
         stores.save(new Store(owner, owner.getDisplayName()));
     }
 
-    /** 홈 목록. 최신 가게가 먼저 온다. */
+    /** 홈 목록. 최신 가게가 먼저 온다. 페이지네이션 지원 (20개씩 응답). */
     @Transactional(readOnly = true)
-    public List<StoreSummaryResponse> findAll() {
-        return stores.findAllByOrderByIdDesc().stream()
+    public List<StoreSummaryResponse> findAll(int page, int size) {
+
+        Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Direction.DESC, "id")
+        );
+
+        return stores.findAllByOrderByIdDesc(pageable)
                 .map(StoreService::toSummary)
-                .toList();
+                .getContent();
     }
 
     /** 주문 화면용 상세. 가게 정보에 그 가게 메뉴를 붙여 돌려준다. */
