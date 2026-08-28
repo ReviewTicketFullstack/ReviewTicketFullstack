@@ -18,7 +18,6 @@ import com.reviewticket.server.domain.User;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * 가게, 메뉴 조회와 사장의 가게 관리.
@@ -61,9 +60,7 @@ public class StoreController {
     public List<StoreSummaryResponse> stores(
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size) {
-         {
             return storeService.findAll(page, size);
-        }
     }
 
     /** 주문 화면용 상세. 가게 정보 + 그 가게의 메뉴 배열. */

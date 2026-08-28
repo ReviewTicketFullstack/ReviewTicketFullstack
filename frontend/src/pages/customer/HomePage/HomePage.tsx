@@ -76,70 +76,69 @@ export function HomePage() {
   useEffect(() => {
     // 캐시가 있으면 먼저 그려 첫 화면이 비어 보이지 않게 한다.
     const cached = getCachedStores();
-    if (cached) setStores(cached);
+    if (cached) {
+      setStores(cached);
+    }
 
     // 캐시가 있어도 서버에 반드시 다시 물어본다. 이 목록에는 리뷰 수와 평균
     // 별점이 함께 들어 있는데, 그 둘은 리뷰가 등록될 때마다 바뀌는 값이다.
     // 캐시에서 멈추면 리뷰를 써도 홈 화면은 자정까지 예전 숫자(리뷰 0)를
     // 보여줘, 등록이 안 된 것처럼 보인다.
-    getStores(0, 20)
+    getStores(page, 20)
       .then((data) => {
+        console.log("첫페이지", data.length);
         setStores(data);
-        if (data.length > 0) setCachedStores(data);
+        setPage(1);
+        setHasMore(data.length === 20);
+        if (data.length > 0) {
+          setCachedStores(data, 1);
+        }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("첫페이지요청실패", error);
         // 서버에 닿지 못하면 위에서 그린 캐시를 그대로 둔다. 캐시도 없으면 빈 상태다.
       });
   }, []);
 
   useEffect(() => {
-    // 첫 페이지 데이터 로드
-    if (stores.length === 0 && page === 0 && !isLoading) {
-      setIsLoading(true);
-      getStores(0, 20)
-        .then((data) => {
-          if (data.length === 0) {
-            setHasMore(false);
-          } else {
-            setStores(data);
-            setCachedStores(data, 1);
-            setPage(1);
-          }
-        })
-        .catch(() => {
-          // 서버에 닿지 못하면 무시한다.
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  }, []);
-
-  useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && page > 0) {
-          setIsLoading(true);
-          getStores(page, 20)
-            .then((data) => {
-              if (data.length === 0) {
-                setHasMore(false);
-              } else {
-                setStores((prev) => {
-                  const updated = [...prev, ...data];
-                  setCachedStores(updated, page + 1);
-                  return updated;
-                });
-                setPage((prev) => prev + 1);
-              }
-            })
-            .catch(() => {
-              // 서버에 닿지 못하면 무시한다.
-            })
-            .finally(() => {
-              setIsLoading(false);
-            });
+      ([entry]) => {
+        console.log("Observer:", {
+          isIntersecting: entry.isIntersecting,
+          page,
+          hasMore,
+          isLoading,
+        });
+
+        if (!entry.isIntersecting || !hasMore || isLoading || page <= 0) {
+          return;
         }
+        console.log("다음페이지요청", page);
+
+        setIsLoading(true);
+        getStores(page, 20)
+          .then((data) => {
+            if (data.length < 20) {
+              setHasMore(false);
+            } else {
+              setStores((prev) => {
+                const updated = [...prev, ...data];
+                setCachedStores(updated, page + 1);
+                return updated;
+              });
+              setPage((prev) => prev + 1);
+
+              if (data.length < 20) {
+                setHasMore(false);
+              }
+            }
+          })
+          .catch(() => {
+            // 서버에 닿지 못하면 무시한다.
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
       },
       { threshold: 0.5 },
     );
@@ -148,7 +147,9 @@ export function HomePage() {
       observer.observe(sentinelRef.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [page, isLoading, hasMore]);
 
   return (

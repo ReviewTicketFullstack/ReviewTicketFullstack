@@ -11,12 +11,10 @@ export interface MenuItem {
   reviewEvent: boolean;
 }
 
-// 이도연 코드
 export interface StoreDetail extends Store {
   menus: MenuItem[];
 }
 
-// 이도연
 export function getStores(
   page: number,
   size: number,
@@ -28,7 +26,6 @@ export function getStores(
   });
 }
 
-// 이도연
 export function getStoreDetail(
   storeId: number,
   signal?: AbortSignal,
