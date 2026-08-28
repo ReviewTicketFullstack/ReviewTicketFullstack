@@ -12,13 +12,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.reviewticket.server.auth.ConflictException;
 import com.reviewticket.server.auth.ForbiddenException;
 import com.reviewticket.server.auth.NotFoundException;
+import com.reviewticket.server.auth.UnauthorizedException;
 import com.reviewticket.server.auth.ValidationException;
 import com.reviewticket.server.domain.Menu;
 import com.reviewticket.server.domain.Order;
 import com.reviewticket.server.domain.Review;
+import com.reviewticket.server.domain.User;
 import com.reviewticket.server.image.ImageStorage;
 import com.reviewticket.server.repository.OrderRepository;
 import com.reviewticket.server.repository.ReviewRepository;
+import com.reviewticket.server.repository.UserRepository;
 
 /**
  * 리뷰 등록의 DB 트랜잭션 경계.
@@ -39,11 +42,14 @@ public class ReviewTransaction {
 
     private final ReviewRepository reviews;
     private final OrderRepository orders;
+    private final UserRepository users;
     private final ImageStorage storage;
 
-    public ReviewTransaction(ReviewRepository reviews, OrderRepository orders, ImageStorage storage) {
+    public ReviewTransaction(ReviewRepository reviews, OrderRepository orders, UserRepository users,
+            ImageStorage storage) {
         this.reviews = reviews;
         this.orders = orders;
+        this.users = users;
         this.storage = storage;
     }
 
@@ -76,13 +82,20 @@ public class ReviewTransaction {
     @Transactional
     public ReviewCreateResponse commit(long userId, Long orderId, int rating, String content,
             byte[] reviewImage, double similarity, String compareImageUrl) {
+        // 티켓을 되돌리는 트랜잭션이라 users 행을 맨 앞에서 배타 락으로 잡는다.
+        // 아래 reviews.save() 가 외래키 때문에 같은 행에 공유 락을 먼저 걸어,
+        // 그 상태에서 티켓을 UPDATE 하면 락 승격 데드락이 난다 — 주문 생성과
+        // 똑같은 구조다(UserRepository.findByIdForUpdate 주석 참고).
+        User customer = users.findByIdForUpdate(userId)
+                .orElseThrow(() -> new UnauthorizedException("UNAUTHORIZED", "로그인이 필요합니다"));
+
         Order order = requireWritableOrder(userId, orderId);
 
         String reviewImageUrl = storage.save(reviewImage);
         Review saved = reviews.save(
                 new Review(order, rating, content, reviewImageUrl, similarity, compareImageUrl));
 
-        order.getCustomer().refundTicket();
+        customer.refundTicket();
         order.getStore().recordReview(rating);
 
         return new ReviewCreateResponse(saved.getId(), order.getId(), saved.getStore().getId(),

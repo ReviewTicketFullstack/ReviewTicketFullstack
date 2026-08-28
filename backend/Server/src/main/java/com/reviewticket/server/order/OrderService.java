@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -55,7 +56,7 @@ public class OrderService {
 
     @Transactional
     public OrderCreateResponse create(long userId, Long storeId, Long menuId, boolean reviewEventApply) {
-        User customer = requireCustomer(userId);
+        User customer = requireCustomerForUpdate(userId);
 
         Menu menu = menus.findById(menuId)
                 .orElseThrow(() -> new NotFoundException("MENU_NOT_FOUND", "메뉴를 찾을 수 없습니다"));
@@ -131,7 +132,20 @@ public class OrderService {
 
     /** 사장이 주문을 시도하면 막는다. 고객 전용 기능이다. */
     private User requireCustomer(long userId) {
-        User user = users.findById(userId)
+        return checkCustomer(users.findById(userId));
+    }
+
+    /**
+     * 주문 생성 전용. 티켓을 줄이는 트랜잭션이라 행을 배타 락으로 먼저 잡는다 —
+     * 왜 "먼저" 여야 하는지는 UserRepository.findByIdForUpdate 주석에 적었다.
+     * 조회만 하는 findMine 은 락을 걸 이유가 없어 위쪽을 그대로 쓴다.
+     */
+    private User requireCustomerForUpdate(long userId) {
+        return checkCustomer(users.findByIdForUpdate(userId));
+    }
+
+    private static User checkCustomer(Optional<User> found) {
+        User user = found
                 .orElseThrow(() -> new UnauthorizedException("UNAUTHORIZED", "로그인이 필요합니다"));
         if (user.getRole() != Role.CUSTOMER) {
             throw new ForbiddenException("NOT_CUSTOMER", "사장 계정으로 주문을 시도했습니다");

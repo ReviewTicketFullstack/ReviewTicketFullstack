@@ -6,7 +6,8 @@ export interface DetailStoreCardProps {
   rating: number;
   reviewCount: string;
   hasReviewEvent: boolean;
-  onReviewClick?: () => void;
+  /** 리뷰 개수를 눌렀을 때 — 리뷰 화면으로 이동 */
+  onReviewClick: () => void;
 }
 
 export function DetailStoreCard({
