@@ -118,19 +118,16 @@ export function HomePage() {
         setIsLoading(true);
         getStores(page, 20)
           .then((data) => {
+            setStores((prev) => {
+              const updated = [...prev, ...data];
+              setCachedStores(updated, page + 1);
+              return updated;
+            });
+
             if (data.length < 20) {
               setHasMore(false);
             } else {
-              setStores((prev) => {
-                const updated = [...prev, ...data];
-                setCachedStores(updated, page + 1);
-                return updated;
-              });
               setPage((prev) => prev + 1);
-
-              if (data.length < 20) {
-                setHasMore(false);
-              }
             }
           })
           .catch(() => {
