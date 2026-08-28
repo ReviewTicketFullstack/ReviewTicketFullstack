@@ -7,6 +7,7 @@ import type { UserRole } from "@/entities/user";
 import {
   HomePage,
   OrderPage,
+  StoreReviewPage,
   OrderHistoryPage,
   OnboardingPage,
   CustomerLoginPage,
@@ -110,6 +111,7 @@ export function AppRoutes() {
       >
         <Route path="/home" element={<HomePage />} />
         <Route path="/order/:storeId" element={<OrderPage />} />
+        <Route path="/order/:storeId/reviews" element={<StoreReviewPage />} />
         <Route path="/order-history" element={<OrderHistoryPage />} />
       </Route>
 
