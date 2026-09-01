@@ -4,11 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Random;
+
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,16 +40,32 @@ import com.reviewticket.sdk.imageverify.spi.PairwiseModel;
 class LegacyWireContractTest {
 
     /**
-     * 이미지처럼 생긴 바이트를 만든다. 경계 문자열과 우연히 겹치거나 CRLF 가
-     * 섞여 있어도 본문이 깨지지 않는지 함께 보려고 일부러 이진 잡음을 쓴다.
+     * 진짜 JPEG 를 만들고, 그 뒤에 multipart 파서를 헷갈리게 할 만한 열을 덧붙인다.
+     *
+     * <p>추론 서버는 받은 바이트를 실제로 디코드하므로 아무 잡음이나 보내면 400 이
+     * 돌아온다 — 그러면 전송 형식이 아니라 이미지 형식을 시험하게 된다.
+     *
+     * <p>함정 바이트는 EOI 마커 뒤에 붙인다. 디코더는 이미지가 끝난 뒤의 내용을
+     * 무시하므로 그림으로서는 멀쩡하면서, 본문에는 경계 문자열과 헷갈릴 열이
+     * 실제로 들어간다. sha256 대조는 이 뒷부분까지 포함해 이뤄진다.
      */
-    private static byte[] noisyBytes(long seed, int length) {
-        byte[] bytes = new byte[length];
-        new Random(seed).nextBytes(bytes);
-        // multipart 파서를 헷갈리게 할 만한 열을 일부러 심는다.
-        byte[] trap = "\r\n--boundary\r\n".getBytes();
-        System.arraycopy(trap, 0, bytes, 100, trap.length);
-        return bytes;
+    private static byte[] noisyBytes(long seed, int length) throws Exception {
+        BufferedImage canvas = new BufferedImage(48, 48, BufferedImage.TYPE_INT_RGB);
+        Random random = new Random(seed);
+        for (int y = 0; y < 48; y++) {
+            for (int x = 0; x < 48; x++) {
+                canvas.setRGB(x, y, random.nextInt(0xFFFFFF));
+            }
+        }
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        assertTrue(ImageIO.write(canvas, "jpg", out), "JPEG 인코더를 찾지 못했습니다");
+        out.write("\r\n--boundary\r\n".getBytes(StandardCharsets.ISO_8859_1));
+
+        byte[] tail = new byte[Math.max(0, length)];
+        random.nextBytes(tail);
+        out.write(tail);
+        return out.toByteArray();
     }
 
     private static String sha256(byte[] bytes) throws Exception {

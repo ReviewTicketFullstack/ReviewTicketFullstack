@@ -3,9 +3,14 @@ package com.reviewticket.sdk.imageverify.api;
 import java.net.URI;
 import java.time.Duration;
 
-import com.reviewticket.sdk.imageverify.core.DefaultImageVerifier;
+import com.reviewticket.sdk.imageverify.core.CosineSimilarity;
+import com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifier;
+import com.reviewticket.sdk.imageverify.core.PairwiseImageVerifier;
+import com.reviewticket.sdk.imageverify.http.HttpEmbeddingModel;
 import com.reviewticket.sdk.imageverify.http.HttpPairwiseModel;
+import com.reviewticket.sdk.imageverify.spi.EmbeddingModel;
 import com.reviewticket.sdk.imageverify.spi.PairwiseModel;
+import com.reviewticket.sdk.imageverify.spi.SimilarityMetric;
 
 /**
  * {@link ImageVerifier} 를 조립하는 곳.
@@ -35,7 +40,22 @@ public final class ImageVerifiers {
      */
     public static ImageVerifier pairwiseOverHttp(URI similarityEndpoint, Duration timeout,
             VerifierConfig config) {
-        return new DefaultImageVerifier(new HttpPairwiseModel(similarityEndpoint, timeout), config);
+        return new PairwiseImageVerifier(new HttpPairwiseModel(similarityEndpoint, timeout), config);
+    }
+
+    /**
+     * 임베딩을 받아 와 유사도를 SDK 안에서 계산하는 추론 서버에 붙는다.
+     *
+     * <p>{@link #pairwiseOverHttp} 와 판정 결과는 같아야 하지만 왕복 횟수가 다르다.
+     * 필요한 이미지를 한 번에 보내고 비교는 자바에서 한다.
+     *
+     * @param baseUrl   추론 서버의 기준 주소 (예: {@code http://localhost:8000})
+     * @param embedPath 임베딩 엔드포인트 경로 (예: {@code /embed})
+     */
+    public static ImageVerifier embeddingOverHttp(URI baseUrl, String embedPath, Duration timeout,
+            VerifierConfig config) {
+        return new EmbeddingImageVerifier(
+                new HttpEmbeddingModel(baseUrl, embedPath, timeout), new CosineSimilarity(), config);
     }
 
     /**
@@ -43,6 +63,17 @@ public final class ImageVerifiers {
      * 없이 전체 경로를 돌릴 때 쓴다.
      */
     public static ImageVerifier using(PairwiseModel model, VerifierConfig config) {
-        return new DefaultImageVerifier(model, config);
+        return new PairwiseImageVerifier(model, config);
+    }
+
+    /** 직접 만든 임베딩 백엔드로 조립한다. 척도는 코사인을 쓴다. */
+    public static ImageVerifier using(EmbeddingModel model, VerifierConfig config) {
+        return new EmbeddingImageVerifier(model, new CosineSimilarity(), config);
+    }
+
+    /** 임베딩 백엔드와 척도를 모두 직접 정해 조립한다. */
+    public static ImageVerifier using(EmbeddingModel model, SimilarityMetric metric,
+            VerifierConfig config) {
+        return new EmbeddingImageVerifier(model, metric, config);
     }
 }

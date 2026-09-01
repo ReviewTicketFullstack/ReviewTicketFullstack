@@ -120,7 +120,6 @@ package com.reviewticket.sdk.imageverify.spi;
 public interface EmbeddingModel {
     /** 캐시 키에 섞인다. 모델이 바뀌면 이 값이 바뀌어 캐시가 자동 무효화된다(§4.1). */
     String modelId();
-    int dimension();
     /** 입력 순서와 같은 순서로, L2 정규화된 벡터를 돌려준다. */
     List<float[]> embed(List<byte[]> images);
 }
@@ -144,6 +143,16 @@ public interface EmbeddingCache {
 
 네 인터페이스 모두 사용자가 자기 구현으로 갈아끼울 수 있다. Starter 는
 `@ConditionalOnMissingBean` 으로만 기본값을 등록한다.
+
+> **변경 (Phase 2)** — `EmbeddingModel.dimension()` 을 뺐다. 애초에 응답 길이를
+> 검증하려고 넣었는데, 그 값은 응답 헤더(`X-Embedding-Dim`)가 매 요청마다 실어
+> 보내므로 인터페이스에 둘 이유가 없었다. 구현체가 미리 알 수 없는 값을
+> 인터페이스가 요구하면 커스텀 백엔드를 만들 때만 걸리적거린다.
+
+**`modelId()` 는 언제 정해지는가** — 캐시 키에 쓰이므로 임베딩을 *부르기 전에*
+알아야 한다(Phase 3). HTTP 구현은 처음 필요할 때 한 번 핸드셰이크로 받아 와
+보관한다(§8.3). 응답 헤더로 오는 값과 다르면 그때 갱신한다 — 서버가 모델을
+바꿔 달고 재기동한 경우가 그렇다.
 
 ---
 
@@ -316,6 +325,27 @@ LRU 를 직접 구현한다(약 60줄). 상용 SDK 에서 "의존성 없음"은 
 않는다.
 
 오류: 디코드 실패 시 `400`, 모델 미로딩 시 `503`.
+
+### 8.3 `GET /` — 핸드셰이크. 이미 있는 것을 쓴다
+
+응답: `{"status": "ok", "model": "<모델 식별자>"}`
+
+이 엔드포인트는 원래 사람이 서버 상태를 확인하려고 만들어 둔 것이고 백엔드는
+부르지 않았다. Phase 2 부터 SDK 가 `modelId()` 를 처음 필요로 할 때 한 번
+호출한다. 새 계약을 만들지 않고 있는 것을 쓴다.
+
+호출은 최초 1회뿐이며 결과를 보관한다. 실패하면 `InferenceUnavailableException`.
+
+### 8.4 테스트용 스텁 서버
+
+`sdk/python-inference/stub_server.py` 가 `/similarity`·`/embed`·`/` 세 가지를
+**모델 없이** 똑같은 형식으로 제공한다. 이미지 바이트에서 결정론적으로 벡터를
+만들어 내며, 두 엔드포인트가 같은 벡터를 쓰므로 둘 사이의 수치 일관성
+(AC-30, AC-32)을 실제로 검증할 수 있다.
+
+DINOv2 를 받지 않고도(모델 350MB, `transformers` 설치 불필요) 전송 형식과
+계산 일치를 확인하기 위한 장치다. **모델의 품질을 검증하는 자리가 아니다** —
+그건 `ai/README.md` 의 평가가 하는 일이다.
 
 ---
 

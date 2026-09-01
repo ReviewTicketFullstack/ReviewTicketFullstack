@@ -13,3 +13,4 @@ dinov2
 facebook/
 transformers
 clip-vit
+torch.

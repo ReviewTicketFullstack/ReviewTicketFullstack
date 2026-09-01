@@ -34,6 +34,18 @@ public final class StubInferenceServer implements AutoCloseable {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         StubInferenceServer stub = new StubInferenceServer(server);
 
+        // /embed 와 핸드셰이크(/)도 같은 스텁이 받는다 — 한 서버로 두 백엔드를
+        // 모두 상대할 수 있어야 두 경로를 나란히 비교하는 테스트가 쉬워진다.
+        server.createContext("/", exchange -> {
+            stub.requestCount.incrementAndGet();
+            try (InputStream in = exchange.getRequestBody()) {
+                byte[] captured = in.readAllBytes();
+                synchronized (stub.receivedBodies) {
+                    stub.receivedBodies.add(captured);
+                }
+            }
+            responder.respond(exchange);
+        });
         server.createContext("/similarity", exchange -> {
             stub.requestCount.incrementAndGet();
             try (InputStream in = exchange.getRequestBody()) {

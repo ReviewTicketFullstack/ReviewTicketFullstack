@@ -31,7 +31,7 @@ import com.reviewticket.sdk.imageverify.testing.FakePairwiseModel;
  * <p>ACCEPTANCE.md 의 AC 번호를 메서드 이름에 그대로 쓴다 — 실패한 테스트에서
  * 어떤 계약이 깨졌는지 바로 문서로 찾아갈 수 있게.
  */
-class DefaultImageVerifierTest {
+class PairwiseImageVerifierTest {
 
     private static final byte[] CANDIDATE = "candidate-bytes".getBytes();
 

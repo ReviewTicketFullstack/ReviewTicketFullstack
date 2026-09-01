@@ -26,12 +26,28 @@ public class ImageVerifierConfig {
      * 돌려주는 객체는 스레드풀과 HTTP 연결을 들고 있다. AutoCloseable 이라
      * Spring 이 컨텍스트를 닫을 때 close() 를 알아서 부른다 — 예전에
      * ReviewService 가 들고 있던 @PreDestroy 가 이걸로 대체됐다.
+     *
+     * <p>어느 백엔드를 쓰든 판정 결과는 같다. 그래서 이 선택은 성능과 롤백의
+     * 문제일 뿐, 리뷰가 통과하느냐 마느냐를 바꾸지 않는다.
      */
     @Bean
     ImageVerifier imageVerifier(ReviewTicketProperties properties) {
-        return ImageVerifiers.pairwiseOverHttp(
-                URI.create(properties.ai().serverUrl()),
-                properties.ai().timeout(),
-                VerifierConfig.withThreshold(properties.ai().matchThreshold()));
+        ReviewTicketProperties.Ai ai = properties.ai();
+        VerifierConfig config = VerifierConfig.withThreshold(ai.matchThreshold());
+
+        return switch (backendOf(ai)) {
+            case "pairwise" -> ImageVerifiers.pairwiseOverHttp(
+                    URI.create(ai.serverUrl()), ai.timeout(), config);
+            case "embedding" -> ImageVerifiers.embeddingOverHttp(
+                    URI.create(ai.baseUrl()), ai.embedPath(), ai.timeout(), config);
+            // 오타를 조용히 기본값으로 흘려보내지 않는다. 어느 쪽으로 도는지
+            // 모른 채 운영하는 것보다 기동이 실패하는 편이 낫다.
+            default -> throw new IllegalStateException(
+                    "reviewticket.ai.backend 는 pairwise 또는 embedding 이어야 합니다: " + ai.backend());
+        };
+    }
+
+    private static String backendOf(ReviewTicketProperties.Ai ai) {
+        return ai.backend() == null ? "pairwise" : ai.backend().trim().toLowerCase();
     }
 }

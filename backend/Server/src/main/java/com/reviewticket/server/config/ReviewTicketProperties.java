@@ -47,12 +47,20 @@ public record ReviewTicketProperties(
     /**
      * 리뷰 사진 AI 유사도 판정 서버.
      *
-     * @param serverUrl      두 이미지를 받아 유사도를 돌려주는 엔드포인트 주소
+     * @param backend        어느 방식으로 대조할지. {@code pairwise} 는 사진 두 장을 보내
+     *                       유사도를 받아 오고(레거시), {@code embedding} 은 임베딩을 받아
+     *                       유사도를 서버 쪽에서 계산한다. 두 방식의 판정 결과는 같다 —
+     *                       실측 차이가 3.4e-09 로 문턱값(0.80) 근처에서 뒤집힐 여지가 없다.
+     *                       문제가 생기면 이 줄만 pairwise 로 되돌리면 즉시 원복된다
+     * @param serverUrl      pairwise 가 쓰는 유사도 엔드포인트의 전체 주소
+     * @param baseUrl        embedding 이 쓰는 추론 서버의 기준 주소
+     * @param embedPath      embedding 엔드포인트 경로
      * @param timeout        이 시간 안에 응답이 없으면 AI_SERVER_UNAVAILABLE 로 처리한다.
      *                       500장 실측 기준 최대 응답 시간이 3.5초였던 것에 여유를 둔 값이다
      * @param matchThreshold 이 값 이상이어야 리뷰가 저장된다 (0~1)
      */
-    public record Ai(String serverUrl, Duration timeout, double matchThreshold) {
+    public record Ai(String backend, String serverUrl, String baseUrl, String embedPath,
+            Duration timeout, double matchThreshold) {
     }
 
     /**
