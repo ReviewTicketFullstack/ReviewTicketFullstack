@@ -12,8 +12,14 @@
 # - Java 21 설치
 # - Gradle build 실행
 # - Spring Boot 컴파일 및 테스트 검사
+#   (composite build로 sdk/java-core도 함께 빌드·테스트됩니다)
 
-# 둘 중 하나라도 실패하면 PR merge 전에 문제를 수정해야 합니다.
+# 3. sdk-boundaries
+# - 이미지 검증 SDK의 아키텍처 경계 검사
+# - 빌드가 필요 없어 몇 초 만에 끝나므로 위반을 가장 먼저 알려줍니다
+# - 규칙은 sdk/docs/GUARDRAILS.md 참고
+
+# 셋 중 하나라도 실패하면 PR merge 전에 문제를 수정해야 합니다.
 
 name: CI
 
@@ -79,3 +85,16 @@ jobs:
 
       - name: Build
         run: ./gradlew build
+
+  sdk-boundaries:
+    name: SDK Architecture Boundaries
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 규칙을 어긴 코드가 들어오면 여기서 먼저 빨간불이 켜집니다.
+      # 로컬에서도 같은 명령으로 확인할 수 있습니다.
+      - name: Check architecture boundaries
+        run: bash sdk/tools/check-boundaries.sh

@@ -1,1 +1,11 @@
 rootProject.name = 'server'
+
+// 이미지 검증 SDK 를 composite build 로 끌어다 쓴다(ARCH-R8).
+//
+// Maven 저장소에 올리거나 로컬 publish 를 하지 않아도 되고, SDK 소스를 고치면
+// 다음 빌드에 바로 반영된다. 그러면서도 SDK 는 sdk/ 에서 독립적으로 빌드된다 —
+// 애플리케이션이 없어도 서는 코드라는 것이 "재사용 가능"의 실질적 의미다.
+//
+// build.gradle 의 'com.reviewticket:imageverify-core' 의존성이 이 빌드의
+// 같은 좌표를 가진 프로젝트로 자동 치환된다.
+includeBuild('../../sdk')

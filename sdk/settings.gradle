@@ -1,0 +1,9 @@
+// SDK 는 애플리케이션과 별개의 Gradle 루트다(ARCH-R8).
+// backend/Server 가 includeBuild 로 끌어다 쓰지만, 여기서 독립적으로
+// 빌드·테스트할 수 있어야 한다 — 그게 "재사용 가능"의 실질적 확인이다.
+rootProject.name = 'imageverify'
+
+// 디렉터리 이름(java-core)과 아티팩트 이름(imageverify-core)을 분리한다.
+// 저장소 안에서는 위치가, 밖에서는 좌표가 이름이 된다.
+include 'imageverify-core'
+project(':imageverify-core').projectDir = file('java-core')

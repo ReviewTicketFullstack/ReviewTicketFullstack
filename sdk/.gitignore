@@ -1,0 +1,12 @@
+# Gradle 산출물
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea
+*.iml
+bin/
+.classpath
+.project
+.settings

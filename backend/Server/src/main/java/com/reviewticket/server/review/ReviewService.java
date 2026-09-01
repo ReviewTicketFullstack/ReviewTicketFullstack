@@ -4,20 +4,18 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import jakarta.annotation.PreDestroy;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.reviewticket.sdk.imageverify.api.ImageVerifier;
+import com.reviewticket.sdk.imageverify.api.ImageVerifyException;
+import com.reviewticket.sdk.imageverify.api.ReferenceImage;
+import com.reviewticket.sdk.imageverify.api.VerificationResult;
 import com.reviewticket.server.auth.ImageNotMatchedException;
+import com.reviewticket.server.auth.ServiceUnavailableException;
 import com.reviewticket.server.auth.ValidationException;
 import com.reviewticket.server.config.ReviewTicketProperties;
 import com.reviewticket.server.domain.Store;
@@ -40,6 +38,11 @@ import com.reviewticket.server.store.StoreService;
  * ReviewTransaction 이 각각 트랜잭션으로 감싸고, 그 사이의 이미지 처리와 AI
  * 호출은 트랜잭션 바깥에서 돈다 — 몇 초씩 걸리는 외부 호출을 트랜잭션 안에
  * 두면 그동안 DB 커넥션이 묶여 다른 요청까지 막힌다.
+ *
+ * 사진 대조 자체는 이제 이 클래스에 없다. 동시 호출, 최댓값 선택, 문턱값 비교는
+ * 전부 이미지 검증 SDK(ImageVerifier) 안에 있다 — 그건 리뷰 업무 규칙이 아니라
+ * 어느 서비스에서나 같은 방식으로 도는 일반적인 절차다. 여기 남은 것은 "무엇을
+ * 대조할 것인가"와 "떨어졌을 때 무엇을 할 것인가"뿐이다.
  */
 @Service
 public class ReviewService {
@@ -50,37 +53,20 @@ public class ReviewService {
     private final ReviewTransaction transaction;
     private final ImageResizer resizer;
     private final ImageStorage storage;
-    private final ImageSimilarityClient aiClient;
+    private final ImageVerifier imageVerifier;
     private final ReviewTicketProperties properties;
-
-    /**
-     * 표본 사진 최대 5장을 동시에 대조하기 위한 전용 풀. 순차로 부르면 AI 서버
-     * 응답이 실측 최대 3.5초라 최악의 경우 5배(17초 이상)로 늘어난다 — 유저가
-     * 그만큼 로딩 화면을 더 본다. 동시에 쏘면 전체 소요 시간이 가장 느린 한
-     * 번의 호출 수준으로 유지된다.
-     */
-    private final ExecutorService aiExecutor = Executors.newFixedThreadPool(5);
 
     public ReviewService(ReviewRepository reviews, OrderRepository orders, StoreService storeService,
             ReviewTransaction transaction, ImageResizer resizer, ImageStorage storage,
-            ImageSimilarityClient aiClient, ReviewTicketProperties properties) {
+            ImageVerifier imageVerifier, ReviewTicketProperties properties) {
         this.reviews = reviews;
         this.orders = orders;
         this.storeService = storeService;
         this.transaction = transaction;
         this.resizer = resizer;
         this.storage = storage;
-        this.aiClient = aiClient;
+        this.imageVerifier = imageVerifier;
         this.properties = properties;
-    }
-
-    @PreDestroy
-    void shutdownAiExecutor() {
-        aiExecutor.shutdown();
-    }
-
-    /** 표본 사진 한 장과의 대조 결과. AI 판정을 통과하면 url 이 그대로 compareImageUrl 로 남는다. */
-    private record SampleMatch(String url, double similarity) {
     }
 
     public ReviewCreateResponse create(long userId, Long orderId, int rating, String rawContent, MultipartFile image) {
@@ -115,44 +101,43 @@ public class ReviewService {
         ImageResizer.Resized resized = resizer.resize(rawBytes, properties.upload().targetLongEdge());
 
         // ---- AI 판정. 트랜잭션 바깥이라 이 몇 초 동안 DB 커넥션을 붙잡지 않는다.
-        SampleMatch best = measureBest(resized.bytes(), sampleUrls);
-        if (best.similarity() < properties.ai().matchThreshold()) {
-            throw new ImageNotMatchedException(best.similarity());
+        VerificationResult verdict = verify(sampleUrls, resized.bytes());
+        if (!verdict.matched()) {
+            throw new ImageNotMatchedException(verdict.similarity());
         }
 
         // ---- [쓰기 트랜잭션] 자격을 다시 확인하고 저장한다. compareImageUrl 은
         // 대표 사진이 아니라 방금 가장 높은 유사도를 낸 그 표본 사진이다.
         return transaction.commit(userId, orderId, rating, content,
-                resized.bytes(), best.similarity(), best.url());
+                resized.bytes(), verdict.similarity(), verdict.matchedKey());
     }
 
     /**
-     * 표본 사진 전부와 동시에 대조해 유사도가 가장 높은 것을 고른다.
+     * 표본 사진 전부와 대조해 가장 높은 유사도를 받는다.
      *
      * 다섯 칸은 동등하므로 어느 각도로 찍었든 하나만 맞으면 통과할 수 있어야
-     * 한다. 순차로 부르면 AI 응답(실측 약 3초)이 장수만큼 쌓여 5장이면 15초를
-     * 넘긴다 — 동시에 쏘면 가장 느린 한 번 수준으로 끝난다.
+     * 한다. 동시 호출과 최댓값 선택은 SDK 안에서 일어난다.
+     *
+     * 표본 사진의 바이트를 미리 읽지 않고 읽는 방법만 넘긴다. SDK 는 그 사진이
+     * 디스크에 있는지 어디에 있는지 알지 못하고, 알 필요도 없다. 표본 사진의
+     * URL 을 그대로 key 로 쓰는데, ImageStorage 가 저장할 때마다 새 UUID 이름을
+     * 짓기 때문에 URL 이 곧 내용을 가리키는 안정적인 이름이 된다.
+     *
+     * SDK 예외는 여기서 애플리케이션 예외로 번역한다 — 이 지점이 SDK 와
+     * ReviewTicket 이 만나는 두 곳 중 하나다(다른 하나는 위의 matched 검사).
+     * 예전에 ImageSimilarityClient 가 직접 던지던 것과 같은 코드로 나가므로
+     * 화면이 받는 503 응답은 달라지지 않는다.
      */
-    private SampleMatch measureBest(byte[] reviewImage, List<String> sampleUrls) {
-        List<CompletableFuture<SampleMatch>> futures = sampleUrls.stream()
-                .map(url -> CompletableFuture.supplyAsync(() -> {
-                    byte[] compareBytes = storage.read(url);
-                    return new SampleMatch(url, aiClient.measureSimilarity(reviewImage, compareBytes));
-                }, aiExecutor))
+    private VerificationResult verify(List<String> sampleUrls, byte[] reviewImage) {
+        List<ReferenceImage> samples = sampleUrls.stream()
+                .map(url -> ReferenceImage.of(url, () -> storage.read(url)))
                 .toList();
 
         try {
-            return futures.stream()
-                    .map(CompletableFuture::join)
-                    .max(Comparator.comparingDouble(SampleMatch::similarity))
-                    .orElseThrow();
-        } catch (CompletionException e) {
-            // futures 안에서 던진 예외(AI_SERVER_UNAVAILABLE 등)는 CompletionException 으로
-            // 감싸여 나온다. ApiExceptionHandler 가 원래 예외를 알아보게 벗겨서 다시 던진다.
-            if (e.getCause() instanceof RuntimeException re) {
-                throw re;
-            }
-            throw e;
+            return imageVerifier.verify(samples, reviewImage);
+        } catch (ImageVerifyException e) {
+            throw new ServiceUnavailableException("AI_SERVER_UNAVAILABLE",
+                    "AI 서버가 응답하지 않거나 시간을 초과했습니다", e);
         }
     }
 
