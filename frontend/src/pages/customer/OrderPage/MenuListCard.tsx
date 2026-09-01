@@ -12,8 +12,8 @@ export interface MenuListCardProps {
 
 export function MenuListCard({ menus, onMenuClick, selectedMenuId }: MenuListCardProps) {
   return (
-    <Card className="p-0 overflow-hidden">
-      <div className="divide-y divide-gray-200">
+    <Card className="overflow-hidden p-0">
+      <div className="divide-y divide-line-100">
         {menus.map((menu) => (
           <MenuItem
             key={menu.id}

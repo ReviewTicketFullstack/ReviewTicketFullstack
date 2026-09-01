@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card } from "@/shared/ui";
+import { Card, EmptyState, Loading, StarRating } from "@/shared/ui";
 import { getStoreReviews, type PublicReview } from "@/api/reviewApi";
 import { formatOrderDate } from "@/entities/order/reviewTime";
 
@@ -34,58 +34,59 @@ export function StoreReviewSection({ storeId }: { storeId: number }) {
   }, [storeId]);
 
   return (
-    <div className="space-y-3 px-5">
-      <h2 className="text-lg font-bold">
+    <div className="flex flex-col gap-3 px-5">
+      <h2 className="text-base font-bold text-ink-900">
         리뷰
         {reviews.length > 0 && (
-          <span className="ml-1 text-gray-500">({reviews.length})</span>
+          <span className="ml-1 text-ink-500">({reviews.length})</span>
         )}
       </h2>
 
-      {isLoading && <p className="text-sm text-gray-500">불러오는 중...</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {isLoading && <Loading />}
+      {error && <p className="text-sm text-brand-900">{error}</p>}
 
       {!isLoading && !error && reviews.length === 0 && (
-        <p className="py-6 text-center text-sm text-gray-500">
-          아직 작성된 리뷰가 없어요.
-        </p>
+        <EmptyState
+          icon="💬"
+          message="아직 작성된 리뷰가 없어요. 첫 리뷰를 남겨보세요."
+        />
       )}
 
-      {reviews.map((review) => (
-        <Card key={review.reviewId} className="p-4">
-          <div className="flex gap-3">
-            <img
-              src={review.reviewImageUrl}
-              alt={`${review.menuName} 리뷰 사진`}
-              className="size-20 flex-shrink-0 rounded-lg bg-gray-200 object-cover"
-            />
+      <ul className="flex flex-col gap-3">
+        {reviews.map((review) => (
+          <li key={review.reviewId}>
+            <Card className="flex gap-3 p-3">
+              <img
+                src={review.reviewImageUrl}
+                alt={`${review.menuName} 리뷰 사진`}
+                className="size-20 shrink-0 rounded-xl bg-fill-100 object-cover"
+              />
 
-            <div className="flex flex-1 flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold">{review.displayName}</span>
-                <span className="text-xs text-gray-500">
-                  {formatOrderDate(review.reviewCreatedAt)}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* 별점은 받은 수만큼 노란 별, 나머지는 회색으로 다섯 칸을 채운다 */}
-                <span className="text-sm" aria-label={`별점 ${review.reviewRating}점`}>
-                  <span className="text-yellow-400">
-                    {"★".repeat(review.reviewRating)}
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="min-w-0 truncate text-sm font-bold text-ink-900">
+                    {review.displayName}
                   </span>
-                  <span className="text-gray-300">
-                    {"★".repeat(5 - review.reviewRating)}
+                  <span className="ml-auto shrink-0 text-xs text-ink-500">
+                    {formatOrderDate(review.reviewCreatedAt)}
                   </span>
-                </span>
-                <span className="text-xs text-gray-500">{review.menuName}</span>
-              </div>
+                </div>
 
-              <p className="text-sm text-gray-700">{review.reviewContent}</p>
-            </div>
-          </div>
-        </Card>
-      ))}
+                <div className="flex items-center gap-2">
+                  <StarRating rating={review.reviewRating} />
+                  <span className="min-w-0 truncate text-xs text-ink-500">
+                    {review.menuName}
+                  </span>
+                </div>
+
+                <p className="text-sm leading-relaxed text-ink-700">
+                  {review.reviewContent}
+                </p>
+              </div>
+            </Card>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

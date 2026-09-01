@@ -72,7 +72,7 @@ export function StoreManagementPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-5 px-5 py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-ink-900">가게관리</h1>
         {isEditing ? (
@@ -101,8 +101,8 @@ export function StoreManagementPage() {
         )}
       </div>
 
-      <div className="flex flex-col gap-4 rounded-lg bg-neutral-100 p-6">
-        <span className="text-sm font-semibold text-neutral-600">
+      <div className="flex flex-col gap-5 rounded-2xl bg-surface p-5 shadow-flat">
+        <span className="text-sm font-semibold text-ink-500">
           가게 정보
         </span>
 
@@ -112,7 +112,7 @@ export function StoreManagementPage() {
           <ImageUploadOverlay
             src={logo}
             alt="가게 로고"
-            className="h-20 w-20 flex-shrink-0 rounded-lg bg-gray-200"
+            className="size-20 shrink-0 overflow-hidden rounded-xl bg-fill-100"
             disabled={!isEditing}
             onUploaded={(uploaded) => {
               setErrorMessage(null);
@@ -125,7 +125,7 @@ export function StoreManagementPage() {
             <div className="flex flex-1 flex-col gap-1 self-center">
               <div className="flex items-center gap-2">
                 <input
-                  className="flex-1 rounded border border-neutral-300 px-2 py-1 text-lg font-bold text-ink-900"
+                  className="h-11 flex-1 rounded-lg border border-line-100 px-3 text-base font-bold text-ink-900 focus:border-brand-800 focus:outline-none"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -139,7 +139,7 @@ export function StoreManagementPage() {
               )}
             </div>
           ) : (
-            <span className="flex-1 self-center text-lg font-bold text-ink-900">
+            <span className="flex-1 self-center text-base font-bold text-ink-900">
               {storeName || user?.displayName}
             </span>
           )}

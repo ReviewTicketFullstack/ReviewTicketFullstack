@@ -6,7 +6,7 @@ export function SamplePhotoStrip() {
       {SAMPLE_SLOTS.map((n) => (
         <div
           key={n}
-          className="flex flex-1 aspect-square items-center justify-center rounded-lg bg-gray-200 text-center text-xs text-gray-400"
+          className="flex aspect-square flex-1 items-center justify-center rounded-xl bg-fill-100 text-center text-xs text-ink-500"
         >
           음식 이미지 {n}
         </div>

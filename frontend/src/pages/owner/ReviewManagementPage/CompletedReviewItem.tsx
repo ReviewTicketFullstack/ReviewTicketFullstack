@@ -1,4 +1,4 @@
-import { Card } from '@/shared/ui';
+import { Card, StarRating } from '@/shared/ui';
 import type { OwnerReview } from '@/api/reviewApi';
 import { OrderItemBox } from './OrderItemBox';
 
@@ -13,22 +13,17 @@ export function CompletedReviewItem({ review }: CompletedReviewItemProps) {
   return (
     <Card bordered className="flex flex-col gap-2 p-4">
       <div className="flex items-center gap-3 text-sm">
-        <span className="font-semibold text-ink-900">{review.displayName}</span>
-        {/* 별점 숫자만큼 별 아이콘 반복 표시 */}
-        <span className="flex items-center gap-0.5">
-          {Array.from({ length: review.reviewRating }).map((_, i) => (
-            <img key={i} src="/star.svg" alt="" className="size-3.5" />
-          ))}
-        </span>
-        <span className="text-ink-500">{date}</span>
+        <span className="font-bold text-ink-900">{review.displayName}</span>
+        <StarRating rating={review.reviewRating} />
+        <span className="ml-auto shrink-0 text-xs text-ink-500">{date}</span>
       </div>
-      <p className="text-sm text-ink-700">{review.reviewContent}</p>
+      <p className="text-sm leading-relaxed text-ink-700">{review.reviewContent}</p>
       {/* 리뷰 사진은 AI 검증을 통과해야 저장되므로 실질적으로 항상 존재하지만, 백엔드 계약 변경에 대비해 체크 유지 */}
       {review.reviewImageUrl && (
         <img
           src={review.reviewImageUrl}
           alt=""
-          className="h-24 w-24 rounded-md object-cover"
+          className="size-24 rounded-xl bg-fill-100 object-cover"
         />
       )}
       {/* 리뷰 작성한 주문의 메뉴/가격. 리뷰가 달렸다는 것은 이벤트 참여 주문이라는 뜻이다 */}

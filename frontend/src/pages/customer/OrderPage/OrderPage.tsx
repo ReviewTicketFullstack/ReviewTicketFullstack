@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/shared/ui";
+import { Button, EmptyState, Loading } from "@/shared/ui";
 import { DetailStoreCard } from "./DetailStoreCard";
 import { MenuListCard, type MenuItemData } from "./MenuListCard";
 import { useParams } from "react-router-dom";
@@ -91,27 +91,30 @@ export function OrderPage() {
 
   if (isLoadingStore) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">가게 정보를 불러오는 중...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <Loading />
       </div>
     );
   }
 
   if (!storeDetail || loadError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-red-600">
-          {loadError || "가게를 찾을 수 없습니다."}
-        </p>
-        <Button variant="secondary" onClick={() => navigate("/")}>
-          돌아가기
-        </Button>
+      <div className="flex min-h-screen items-center justify-center">
+        <EmptyState
+          icon="🔍"
+          message={loadError || "가게를 찾을 수 없어요."}
+          action={
+            <Button variant="secondary" size="medium" onClick={() => navigate("/")}>
+              홈으로 가기
+            </Button>
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 pb-32 px-5">
+    <div className="flex flex-col gap-5 px-5 pt-3 pb-32">
       {/* Back Button Section */}
       <button
         type="button"
@@ -144,36 +147,28 @@ export function OrderPage() {
         selectedMenuId={selectedMenu?.id ?? null}
       />
 
-      {/* Order Button Section */}
-      <div
-        className="fixed
-                  bottom-0
-                  left-1/2
-                  w-full
-                  max-w-[860px]
-                  -translate-x-1/2"
-      >
-        <div className="w-full">
-          <div className="bg-gradient-to-t from-white via-white/90 to-transparent p-5">
-            {orderError && (
-              <p className="mb-2 text-center text-sm text-red-600">
-                {orderError}
-              </p>
-            )}
-            <Button
-              variant="primary"
-              size="xlarge"
-              fullWidth
-              disabled={!selectedMenu || isOrdering}
-              onClick={handleOrderClick}
-            >
-              {isOrdering
-                ? "주문 중..."
-                : selectedMenu
-                  ? `${selectedMenu.price.toLocaleString("ko-KR")}원 주문하기`
-                  : "메뉴를 선택해주세요"}
-            </Button>
-          </div>
+      {/* Order Button Section — 하단 고정 CTA 독.
+          그라디언트 대신 Surface 단색 + shadow-dock 으로 경계를 만든다(design.md). */}
+      <div className="fixed bottom-0 left-1/2 w-full max-w-[860px] -translate-x-1/2 bg-surface shadow-dock">
+        <div className="flex flex-col gap-2 px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          {orderError && (
+            <p role="alert" className="text-center text-xs text-brand-900">
+              {orderError}
+            </p>
+          )}
+          <Button
+            variant="primary"
+            size="xlarge"
+            fullWidth
+            disabled={!selectedMenu || isOrdering}
+            onClick={handleOrderClick}
+          >
+            {isOrdering
+              ? "주문 중..."
+              : selectedMenu
+                ? `${selectedMenu.price.toLocaleString("ko-KR")}원 주문하기`
+                : "메뉴를 선택해주세요"}
+          </Button>
         </div>
       </div>
     </div>

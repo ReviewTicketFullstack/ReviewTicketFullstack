@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import { Button } from "@/shared/ui";
+import { Button, EmptyState } from "@/shared/ui";
 import { StoreReviewSection } from "../OrderPage/StoreReviewSection";
 
 /**
@@ -16,11 +16,16 @@ export function StoreReviewPage() {
   // 주소를 직접 고쳐 들어온 경우다. 숫자가 아니면 조회할 수 없다.
   if (!storeId || Number.isNaN(Number(storeId))) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-red-600">가게를 찾을 수 없습니다.</p>
-        <Button variant="secondary" onClick={() => navigate("/home")}>
-          돌아가기
-        </Button>
+      <div className="flex min-h-screen items-center justify-center">
+        <EmptyState
+          icon="🔍"
+          message="가게를 찾을 수 없어요."
+          action={
+            <Button variant="secondary" size="medium" onClick={() => navigate("/home")}>
+              홈으로 가기
+            </Button>
+          }
+        />
       </div>
     );
   }

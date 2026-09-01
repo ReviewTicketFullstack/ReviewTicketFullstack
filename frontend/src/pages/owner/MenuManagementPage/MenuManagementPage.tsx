@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, EmptyState } from '@/shared/ui';
+import { Button, Card, EmptyState, Loading } from '@/shared/ui';
 import { useAuth } from '@/app/providers';
 import { ApiError } from '@/shared/api';
 import { MenuListItem } from './MenuListItem';
@@ -145,38 +145,33 @@ export function MenuManagementPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold text-ink-900">메뉴관리</h1>
-        </div>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowCreateModal(true)}
-            className="rounded-lg bg-brand-800 px-4 py-2 font-semibold text-white hover:bg-brand-900"
-          >
-            메뉴 추가
-          </button>
-        </div>
+    <div className="flex flex-col gap-5 px-5 py-8">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-ink-900">메뉴관리</h1>
+        <Button size="medium" onClick={() => setShowCreateModal(true)}>
+          메뉴 추가
+        </Button>
       </div>
 
-      {isLoading && <p className="text-sm text-neutral-500">불러오는 중...</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {isLoading && <Loading />}
+      {error && <p className="text-sm text-brand-900">{error}</p>}
 
       {!isLoading && !error && menuItems.length === 0 && (
         <EmptyState
-          message="아직 등록된 메뉴가 없습니다. 메뉴 추가 버튼을 눌러 첫 메뉴를 만들어 보세요."
+          icon="🍽️"
+          message="아직 등록된 메뉴가 없어요. 메뉴 추가를 눌러 첫 메뉴를 만들어 보세요."
         />
       )}
 
       {!isLoading && !error && menuItems.length > 0 && (
         <Card className="overflow-hidden p-0">
-          <div className="divide-y divide-gray-200">
+          <ul className="divide-y divide-line-100">
             {menuItems.map((menu) => (
-              <MenuListItem key={menu.id} menu={menu} onClick={() => setSelectedMenu(menu)} />
+              <li key={menu.id}>
+                <MenuListItem menu={menu} onClick={() => setSelectedMenu(menu)} />
+              </li>
             ))}
-          </div>
+          </ul>
         </Card>
       )}
 

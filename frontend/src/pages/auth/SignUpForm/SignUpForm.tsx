@@ -155,7 +155,7 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
         )}
 
         {emailDuplicated === true && (
-          <p className="text-xs text-red-700">이미 가입된 이메일입니다.</p>
+          <p className="text-xs text-brand-900">이미 가입된 이메일입니다.</p>
         )}
 
         <Input
@@ -212,7 +212,7 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
             )}
 
             {nicknameDuplicated === true && (
-              <p className="text-xs text-red-700">이미 사용 중인 이름입니다.</p>
+              <p className="text-xs text-brand-900">이미 사용 중인 이름입니다.</p>
             )}
           </>
         ) : (
@@ -244,7 +244,7 @@ export function SignUpForm({ authType, onSubmit }: SignUpFormProps) {
             )}
 
             {storeNameDuplicated === true && (
-              <p className="text-xs text-red-700">이미 사용 중인 이름입니다.</p>
+              <p className="text-xs text-brand-900">이미 사용 중인 이름입니다.</p>
             )}
           </>
         )}

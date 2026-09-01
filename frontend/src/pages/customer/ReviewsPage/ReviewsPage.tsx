@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card } from "@/shared/ui";
+import { Card, EmptyState, Loading, StarRating } from "@/shared/ui";
 import { getMyOrders } from "@/api/orderApi";
 import { getStoreReviews, type PublicReview } from "@/api/reviewApi";
 import { formatOrderDate } from "@/entities/order/reviewTime";
@@ -73,64 +73,63 @@ export function ReviewsPage() {
   }, []);
 
   return (
-    <div className="space-y-4 px-5 py-6">
-      <div>
-        <h1 className="text-xl font-bold">리뷰</h1>
-        <p className="text-sm text-gray-600">작성한 리뷰를 확인할 수 있습니다.</p>
+    <div className="flex flex-col gap-8 px-5 py-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-xl font-bold text-ink-900">리뷰</h1>
+        <p className="text-sm text-ink-700">작성한 리뷰를 확인할 수 있어요.</p>
       </div>
 
-      {isLoading && <p className="text-center text-sm text-gray-500 py-12">불러오는 중...</p>}
+      {isLoading && <Loading />}
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        <p className="rounded-lg bg-brand-50 px-3 py-3 text-sm text-brand-900">
+          {error}
+        </p>
       )}
 
       {!isLoading && !error && reviews.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-sm text-gray-500">작성한 리뷰가 없습니다.</p>
-        </div>
+        <EmptyState
+          icon="✍️"
+          message="아직 작성한 리뷰가 없어요. 주문내역에서 리뷰를 남기면 여기에 모여요."
+        />
       )}
 
       {reviews.length > 0 && (
-        <div className="space-y-3">
+        <ul className="flex flex-col gap-3">
           {reviews.map((review) => (
-            <Card key={review.reviewId} className="p-4">
-              <div className="flex gap-3">
+            <li key={review.reviewId}>
+              <Card className="flex gap-3 p-3">
                 <img
                   src={review.reviewImageUrl}
                   alt={`${review.menuName} 리뷰 사진`}
-                  className="size-20 flex-shrink-0 rounded-lg bg-gray-200 object-cover"
+                  className="size-20 shrink-0 rounded-xl bg-fill-100 object-cover"
                 />
 
-                <div className="flex flex-1 flex-col gap-1">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 font-semibold">
+                    <span className="min-w-0 truncate text-sm font-bold text-ink-900">
                       {review.storeName}
                     </span>
+                    <span className="ml-auto shrink-0 text-xs text-ink-500">
+                      {formatOrderDate(review.reviewCreatedAt)}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-sm" aria-label={`별점 ${review.reviewRating}점`}>
-                      <span className="text-yellow-400">
-                        {"★".repeat(review.reviewRating)}
-                      </span>
-                      <span className="text-gray-300">
-                        {"★".repeat(5 - review.reviewRating)}
-                      </span>
+                    <StarRating rating={review.reviewRating} />
+                    <span className="min-w-0 truncate text-xs text-ink-500">
+                      {review.menuName}
                     </span>
-                    <span className="text-xs text-gray-500">{review.menuName}</span>
                   </div>
 
-                  <p className="text-sm text-gray-700">{review.reviewContent}</p>
-
-                  <span className="text-xs text-gray-500 pt-1">
-                    {formatOrderDate(review.reviewCreatedAt)}
-                  </span>
+                  <p className="text-sm leading-relaxed text-ink-700">
+                    {review.reviewContent}
+                  </p>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

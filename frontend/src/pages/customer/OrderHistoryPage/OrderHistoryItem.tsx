@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card } from "@/shared/ui";
+import { Badge, Card } from "@/shared/ui";
 import { ReviewButton } from "./ReviewButton";
 import { ReviewModal } from "./ReviewModal";
 import { formatOrderDate } from "@/entities/order/reviewTime";
@@ -15,44 +15,41 @@ export function OrderHistoryItem({ order: initialOrder }: OrderHistoryItemProps)
 
   return (
     <>
-      <Card className="p-5">
-        <div className="space-y-3">
-          {/* Store Name & Review Badge */}
-          <div className="flex flex-row items-center gap-2">
-            <h3 className="text-lg font-bold">{order.storeName}</h3>
+      <Card className="flex flex-col gap-3 p-5">
+        {/* Store Name & Review Badge */}
+        <div className="flex items-center gap-2">
+          <h3 className="min-w-0 truncate text-base font-bold text-ink-900">
+            {order.storeName}
+          </h3>
 
-            {order.hasReviewBadge && (
-              <span className="rounded bg-red-700 px-2 py-0.5 text-xs font-semibold text-white">
-                리뷰
-              </span>
-            )}
-          </div>
+          {order.hasReviewBadge && (
+            <Badge variant="accent" className="shrink-0">
+              리뷰
+            </Badge>
+          )}
 
-          {/* Menu Info */}
-          <div className="flex items-center justify-between">
-            <span className="text-base text-gray-700">{order.menuName}</span>
-            <span className="text-base font-bold">
-              {order.price.toLocaleString("ko-KR")}원
-            </span>
-          </div>
-
-          {/* Date */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-            <span className="text-xs text-gray-500">
-              {formatOrderDate(order.createdAt)}
-            </span>
-          </div>
-
-          {/* Review Button */}
-          <div className="pt-3">
-            <ReviewButton
-              reviewDeadline={order.reviewDeadline}
-              hasReviewBadge={order.hasReviewBadge}
-              reviewStatus={order.reviewStatus}
-              onReviewClick={() => setIsReviewModalOpen(true)}
-            />
-          </div>
+          <span className="ml-auto shrink-0 text-xs text-ink-500">
+            {formatOrderDate(order.createdAt)}
+          </span>
         </div>
+
+        {/* Menu Info */}
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0 truncate text-sm text-ink-700">
+            {order.menuName}
+          </span>
+          <span className="shrink-0 text-base font-bold text-ink-900">
+            {order.price.toLocaleString("ko-KR")}원
+          </span>
+        </div>
+
+        {/* Review Button */}
+        <ReviewButton
+          reviewDeadline={order.reviewDeadline}
+          hasReviewBadge={order.hasReviewBadge}
+          reviewStatus={order.reviewStatus}
+          onReviewClick={() => setIsReviewModalOpen(true)}
+        />
       </Card>
 
       <ReviewModal

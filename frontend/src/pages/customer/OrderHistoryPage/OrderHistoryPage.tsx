@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getMyOrders } from '@/api/orderApi';
 import { getOrderHistory, replaceOrderHistory } from '@/entities/order/orderStorage';
 import { ApiError } from '@/shared/api';
+import { EmptyState, Loading } from '@/shared/ui';
 import { OrderHistoryItem } from './OrderHistoryItem';
 import type { Order } from '@/entities/order';
 
@@ -42,34 +43,35 @@ export function OrderHistoryPage() {
   }, []);
 
   return (
-    <div className="space-y-6 px-5 py-6">
-      <div>
-        <h1 className="text-2xl font-bold">주문내역</h1>
-        <p className="text-gray-600">완료된 주문을 확인할 수 있습니다.</p>
+    <div className="flex flex-col gap-8 px-5 py-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-xl font-bold text-ink-900">주문내역</h1>
+        <p className="text-sm text-ink-700">완료된 주문을 확인할 수 있어요.</p>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">불러오는 중...</p>
-        </div>
+        <Loading />
       ) : (
         <>
           {error && (
-            <p className="rounded-lg bg-gray-100 px-4 py-3 text-sm text-gray-600">
+            <p className="rounded-lg bg-fill-100 px-3 py-3 text-sm text-ink-700">
               {error}
             </p>
           )}
 
           {orders.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">주문내역이 없습니다.</p>
-            </div>
+            <EmptyState
+              icon="🧾"
+              message="아직 주문한 내역이 없어요. 마음에 드는 가게에서 첫 주문을 해보세요."
+            />
           ) : (
-            <div className="space-y-4">
+            <ul className="flex flex-col gap-3">
               {orders.map((order) => (
-                <OrderHistoryItem key={order.id} order={order} />
+                <li key={order.id}>
+                  <OrderHistoryItem order={order} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </>
       )}

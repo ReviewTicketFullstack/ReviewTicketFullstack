@@ -106,7 +106,7 @@ export function ImageUploadOverlay({
       {src ? (
         <img src={src} alt={alt} className="h-full w-full object-cover" />
       ) : (
-        <span className="flex h-full w-full items-center justify-center text-xs text-neutral-400">
+        <span className="flex h-full w-full items-center justify-center text-xs text-ink-500">
           사진 없음
         </span>
       )}

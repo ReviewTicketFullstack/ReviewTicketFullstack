@@ -9,6 +9,12 @@ interface ReviewTabsProps {
   isRefreshing?: boolean;
 }
 
+const TABS: { id: ReviewTab; label: string }[] = [
+  { id: 'completed', label: '리뷰완료' },
+  { id: 'expired', label: '미이행' },
+  { id: 'pending', label: '작성 대기' },
+];
+
 export function ReviewTabs({
   active,
   onChange,
@@ -16,44 +22,28 @@ export function ReviewTabs({
   isRefreshing = false,
 }: ReviewTabsProps) {
   return (
-    // {/* 리뷰 탭 네비게이션 */} 
-    <div className="flex gap-4 border-b border-neutral-200">
-      {/* 리뷰완료 탭 */} 
-      <button
-        type="button"
-        onClick={() => onChange('completed')}
-        className={
-          active === 'completed'
-            ? 'border-b-2 border-brand-800 pb-2 font-bold text-brand-800'
-            : 'pb-2 text-neutral-500'
-        }
-      >
-        리뷰완료
-      </button>
-      {/* 미이행 탭 — 리뷰 기한이 지나버린 주문 */}
-      <button
-        type="button"
-        onClick={() => onChange('expired')}
-        className={
-          active === 'expired'
-            ? 'border-b-2 border-brand-800 pb-2 font-bold text-brand-800'
-            : 'pb-2 text-neutral-500'
-        }
-      >
-        미이행
-      </button>
-      {/* 작성 대기 탭 — 마감 전이라 아직 리뷰가 들어올 수 있다 */}
-      <button
-        type="button"
-        onClick={() => onChange('pending')}
-        className={
-          active === 'pending'
-            ? 'border-b-2 border-brand-800 pb-2 font-bold text-brand-800'
-            : 'pb-2 text-neutral-500'
-        }
-      >
-        작성 대기
-      </button>
+    <div role="tablist" className="flex items-center gap-1 border-b border-line-100">
+      {TABS.map(({ id, label }) => {
+        const isActive = active === id;
+
+        return (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(id)}
+            className={`-mb-px h-11 border-b-2 px-3 text-sm font-semibold transition-colors ${
+              isActive
+                ? 'border-brand-800 text-brand-800'
+                : 'border-transparent text-ink-500 hover:text-ink-700'
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
+
       {/* 목록·개수를 다시 받아온다. 마감이 지나 미이행으로 넘어간 건은
           재조회해야 탭이 옮겨간다 */}
       <button
@@ -61,9 +51,13 @@ export function ReviewTabs({
         onClick={onRefresh}
         disabled={isRefreshing}
         aria-label="새로고침"
-        className="ml-auto flex size-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 disabled:opacity-50"
+        className="ml-auto flex size-11 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-fill-100 active:bg-line-100 disabled:text-ink-300"
       >
-        <RotateCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+        <RotateCw
+          size={16}
+          aria-hidden="true"
+          className={isRefreshing ? 'animate-spin motion-reduce:animate-none' : ''}
+        />
       </button>
     </div>
   );

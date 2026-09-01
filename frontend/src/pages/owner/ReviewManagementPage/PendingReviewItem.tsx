@@ -59,7 +59,8 @@ export function PendingReviewItem({
         <span className="font-semibold text-ink-900">{order.displayName}</span>
         <span className="text-ink-500">{date}</span>
         {isPending && (
-          <span className="ml-auto font-semibold text-orange-600">
+          // 남은 시간은 색만으로 알리지 않는다 — "남음"/"마감" 문구를 함께 둔다.
+          <span className="ml-auto shrink-0 rounded-sm bg-fill-100 px-1.5 py-0.5 text-xs font-semibold text-ink-700">
             {remaining > 0 ? `${formatTimeRemaining(remaining)} 남음` : '마감'}
           </span>
         )}

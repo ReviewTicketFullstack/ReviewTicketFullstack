@@ -1,6 +1,6 @@
-import { Star } from "lucide-react";
-import { Card } from "@/shared/ui";
+import { Star, UtensilsCrossed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Badge, Card } from "@/shared/ui";
 
 export interface StoreCardProps {
   storeId: number;
@@ -24,47 +24,39 @@ export function StoreCard({
 
   return (
     <Card
-      className="
-    flex cursor-pointer gap-4 p-4
-    transition-all duration-200
-    hover:shadow-xl
-    hover:bg-gray-100
-    active:scale-[0.98]
-    "
+      interactive
+      className="flex gap-3 p-3"
       onClick={() => navigate(`/order/${storeId}`)}
     >
-      {/* Image Section (1 part) */}
-      <div className="flex-shrink-0">
-        <div className="aspect-square w-24 rounded-lg bg-gray-200 flex items-center justify-center">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={storeName}
-              className="h-full w-full object-cover rounded-lg"
-            />
-          ) : (
-            <span className="text-gray-400 text-sm">Image</span>
-          )}
-        </div>
+      {/* 미디어는 정사각 고정. 이미지가 없으면 fill-100 배경 + 아이콘 */}
+      <div className="flex aspect-square w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-fill-100">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <UtensilsCrossed size={24} className="text-ink-300" aria-hidden="true" />
+        )}
       </div>
 
-      {/* Content Section (3 parts) */}
-      <div className="flex-1 flex flex-col justify-center gap-2">
-        {/* First Row: Store Name + Review Chip */}
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-bold">{storeName}</h3>
+          <h3 className="min-w-0 truncate text-base font-bold text-ink-900">
+            {storeName}
+          </h3>
           {hasReviewEvent && (
-            <div className="bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold">
+            <Badge variant="accent" className="shrink-0">
               리뷰
-            </div>
+            </Badge>
           )}
         </div>
 
-        {/* Second Row: Rating Info */}
         <div className="flex items-center gap-1">
-          <Star size={16} className="fill-yellow-400 text-yellow-400" />
-          <span className="text-sm font-bold">{rating}</span>
-          <span className="text-sm text-gray-600">({reviewCount})</span>
+          <Star size={14} className="fill-star text-star" aria-hidden="true" />
+          <span className="text-sm font-semibold text-ink-900">{rating}</span>
+          <span className="text-xs text-ink-500">리뷰 {reviewCount}</span>
         </div>
       </div>
     </Card>

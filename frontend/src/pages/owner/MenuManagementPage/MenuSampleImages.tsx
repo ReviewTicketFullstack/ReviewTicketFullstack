@@ -37,7 +37,7 @@ export function MenuSampleImages({
           key={index}
           src={imageUrls[index] ?? null}
           alt={`표본 사진 ${index + 1}`}
-          className="aspect-square flex-1 rounded-lg bg-gray-200"
+          className="aspect-square flex-1 rounded-xl bg-fill-100"
           minLongEdge={MIN_SAMPLE_LONG_EDGE}
           onUploaded={(uploaded) => onChange(index, uploaded.url)}
           onError={onError}

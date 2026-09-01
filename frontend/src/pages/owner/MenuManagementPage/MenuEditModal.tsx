@@ -49,10 +49,10 @@ interface MenuEditModalProps {
 
 // FE-2.6: 가격은 edit 모드에서 못 고친다 — 입력창처럼 보여도 읽기 전용이 맞음
 const lockedFieldClassName =
-  'w-full cursor-not-allowed rounded-lg border border-neutral-200 bg-neutral-100 px-3 py-2 text-sm text-neutral-400';
+  'w-full cursor-not-allowed rounded-lg border border-line-100 bg-fill-100 px-3 py-2 text-sm text-ink-500';
 
 const editableFieldClassName =
-  'w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm focus:border-brand-800 focus:outline-none';
+  'w-full rounded-lg border border-line-100 bg-surface px-3 py-2 text-sm text-ink-900 focus:border-brand-800 focus:outline-none';
 
 export function MenuEditModal({
   menu,
@@ -144,7 +144,7 @@ export function MenuEditModal({
     >
       {/* 모달 본문 */}
       <div
-        className="flex w-full max-w-2xl flex-col gap-8 rounded-2xl bg-white p-10 shadow-xl"
+        className="flex w-full max-w-2xl flex-col gap-8 rounded-2xl bg-surface p-8 shadow-sheet"
         onClick={(e) => e.stopPropagation()}
       >
         <MenuSampleImages
@@ -153,7 +153,7 @@ export function MenuEditModal({
           onError={setError}
         />
         {/* 로그인한 사용자 이름(가게명) 표시 */}
-        <div className="w-fit rounded-lg bg-neutral-200 px-4 py-2 text-sm font-semibold">
+        <div className="w-fit rounded-lg bg-fill-100 px-3 py-2 text-sm font-semibold text-ink-900">
           {user?.displayName}
         </div>
         {/* 메뉴 썸네일 + 이름/가격 + 적용(추가) 버튼 */}
@@ -163,7 +163,7 @@ export function MenuEditModal({
           <ImageUploadOverlay
             src={imageUrl}
             alt={isNew ? '' : menu.name}
-            className="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-200"
+            className="size-16 shrink-0 rounded-xl bg-fill-100"
             onUploaded={(uploaded) => {
               setError(null);
               setImageUrl(uploaded.url);
@@ -179,7 +179,7 @@ export function MenuEditModal({
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="메뉴 이름"
-                  className="w-full text-lg font-bold text-ink-900 placeholder:font-normal placeholder:text-neutral-300 focus:outline-none"
+                  className="w-full text-base font-bold text-ink-900 placeholder:font-normal placeholder:text-ink-300 focus:outline-none"
                 />
                 <div className="flex items-center gap-1">
                   <input
@@ -188,15 +188,15 @@ export function MenuEditModal({
                     onChange={(e) => setNewPrice(e.target.value)}
                     placeholder="0"
                     min={0}
-                    className="w-24 text-sm text-gray-600 placeholder:text-neutral-300 focus:outline-none"
+                    className="w-24 text-sm text-ink-700 placeholder:text-ink-300 focus:outline-none"
                   />
-                  <span className="text-sm text-gray-600">원</span>
+                  <span className="text-sm text-ink-700">원</span>
                 </div>
               </>
             ) : (
               <>
-                <div className="text-lg font-bold">{menu.name}</div>
-                <div className="text-sm text-gray-600">{menu.price.toLocaleString('ko-KR')}원</div>
+                <div className="text-base font-bold text-ink-900">{menu.name}</div>
+                <div className="text-sm text-ink-700">{menu.price.toLocaleString('ko-KR')}원</div>
               </>
             )}
           </div>
@@ -208,19 +208,19 @@ export function MenuEditModal({
         </div>
         {/* 메뉴 설정 — 이미지는 hover 업로드, 가격은 edit 모드에서 읽기 전용 */}
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-neutral-600">메뉴 설정</span>
+          <span className="text-sm font-semibold text-ink-900">메뉴 설정</span>
 
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-ink-500">
               메뉴 이미지 — 메뉴 이름 옆 사진에 마우스를 올려 바꿔요. 메뉴판과
               주문 화면에 이 사진이 뜹니다.
             </span>
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-ink-500">
               표본 사진 — 맨 위 5칸. 손님이 올린 리뷰 사진을 이 사진들과 대조해
               판정해요. 여러 각도로 올릴수록 정확해집니다.
             </span>
             {isNew && (
-              <span className="text-xs text-neutral-400">
+              <span className="text-xs text-ink-500">
                 이름과 가격은 추가 후 변경할 수 없습니다. 신중하게 입력해 주세요.
               </span>
             )}
@@ -233,7 +233,7 @@ export function MenuEditModal({
             // create 모드: 이름·가격 모두 입력 가능 (위 썸네일 행과 같은 상태를 공유)
             <>
               <div className="flex items-center gap-2">
-                <span className="w-25 flex-shrink-0 text-xs text-neutral-400">이름</span>
+                <span className="w-24 shrink-0 text-xs text-ink-500">이름</span>
                 <input
                   type="text"
                   value={newName}
@@ -243,7 +243,7 @@ export function MenuEditModal({
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-25 flex-shrink-0 text-xs text-neutral-400">가격</span>
+                <span className="w-24 shrink-0 text-xs text-ink-500">가격</span>
                 <input
                   type="number"
                   value={newPrice}
@@ -252,29 +252,29 @@ export function MenuEditModal({
                   min={0}
                   className={`flex-1 ${editableFieldClassName}`}
                 />
-                <span className="flex-shrink-0 text-xs text-neutral-400">원</span>
+                <span className="shrink-0 text-xs text-ink-500">원</span>
               </div>
             </>
           ) : (
             // edit 모드: 가격은 서버 entity 설계상 변경 불가 — 잠금 필드로 표시
             <div className="flex items-center gap-2">
-              <span className="w-25 flex-shrink-0 text-xs text-neutral-400">가격</span>
+              <span className="w-24 shrink-0 text-xs text-ink-500">가격</span>
               <div className={`flex-1 ${lockedFieldClassName}`}>{menu.price.toLocaleString('ko-KR')}</div>
-              <span className="flex-shrink-0 text-xs text-neutral-400">원</span>
+              <span className="shrink-0 text-xs text-ink-500">원</span>
             </div>
           )}
         </div>
 
         {/* 리뷰 이벤트 설정 — 이미지+후기 / 설정안함 선택 */}
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-neutral-600">리뷰 이벤트 설정</span>
+          <span className="text-sm font-semibold text-ink-900">리뷰 이벤트 설정</span>
           <button
             type="button"
             onClick={() => setHasReviewEvent(true)}
             className={`rounded-lg border px-4 py-2 text-left text-sm ${
               hasReviewEvent
                 ? 'border-brand-800 bg-brand-50 font-semibold text-brand-800'
-                : 'border-neutral-200 text-neutral-700'
+                : 'border-line-100 text-ink-700 hover:bg-fill-100'
             }`}
           >
             이미지 + 후기
@@ -285,7 +285,7 @@ export function MenuEditModal({
             className={`rounded-lg border px-4 py-2 text-left text-sm ${
               !hasReviewEvent
                 ? 'border-brand-800 bg-brand-50 font-semibold text-brand-800'
-                : 'border-neutral-200 text-neutral-700'
+                : 'border-line-100 text-ink-700 hover:bg-fill-100'
             }`}
           >
             설정안함
@@ -303,7 +303,7 @@ export function MenuEditModal({
         onClick={() => setShowConfirm(false)}
       >
         <div
-          className="flex flex-col gap-4 rounded-xl bg-white p-6 shadow-xl"
+          className="flex flex-col gap-4 rounded-2xl bg-surface p-5 shadow-sheet"
           onClick={(e) => e.stopPropagation()}
         >
           <p className="text-sm font-semibold text-ink-900">

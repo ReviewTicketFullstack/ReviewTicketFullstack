@@ -2,9 +2,12 @@
 
 /* 디자인 토큰 — claude/design.md의 Colors · Typography · Elevation 정의를 그대로 옮긴다. */
 @theme {
+  /* 국문·영문·숫자를 한 서체로 통일한다. 실제 로드는 index.html 의
+     jsDelivr dynamic-subset 링크가 맡고, 도착 전에는 아래 시스템 폰트로
+     폴백한다(의도된 동작). */
   --font-sans:
     "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo",
-    system-ui, sans-serif;
+    "Malgun Gothic", system-ui, sans-serif;
 
   /* Accent — 강조는 brand-800 하나로 수렴 */
   --color-brand-50: oklch(0.978 0.011 17.3); /* #FFF5F5 */
@@ -40,6 +43,34 @@
   --keyframes-fadeIn: fadeIn;
   --keyframes-slideUp: slideUp;
   --keyframes-fadeInSlideDown: fadeInSlideDown;
+}
+
+/* 폰트 렌더링 기준선. Pretendard 는 한글 자간이 촘촘해 안티에일리어싱을
+   켜야 얇은 획이 뭉개지지 않는다. tracking 은 지정하지 않는다(design.md). */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: var(--color-ink-900);
+    background-color: var(--color-surface-sub);
+  }
+
+  /* 숫자가 세로로 흔들리지 않게 고정폭으로 둔다 — 가격·별점·카운트다운이
+     매초 바뀌는 화면에서 폭이 출렁이는 것을 막는다. */
+  body {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 키보드 사용자에게만 보이는 포커스 링. design.md — 포커스 링 제거 금지. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-800);
+    outline-offset: 2px;
+  }
 }
 
 @keyframes fadeIn {

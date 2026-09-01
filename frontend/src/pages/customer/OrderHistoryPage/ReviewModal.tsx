@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Star } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { Modal } from '@/shared/ui/Modal/Modal';
 import { useCameraCapture } from '@/shared/hooks';
@@ -182,8 +183,8 @@ export function ReviewModal({
       <Modal open={open} onClose={onClose}>
         <div className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold">리뷰 작성</h2>
-            <p className="text-gray-600 mt-2">
+            <h2 className="text-xl font-bold text-ink-900">리뷰 작성</h2>
+            <p className="mt-1 text-sm text-ink-700">
               {storeName} - {menuName}
             </p>
           </div>
@@ -191,17 +192,26 @@ export function ReviewModal({
           <div className="space-y-4">
             {/* 평점 */}
             <div>
-              <label className="block text-sm font-semibold mb-2">평점</label>
-              <div className="flex gap-2">
+              <label className="mb-2 block text-sm font-semibold text-ink-900">평점</label>
+              <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
+                    type="button"
                     onClick={() => setRating(star)}
-                    className={`text-3xl transition-transform ${
-                      star <= rating ? 'scale-110' : 'opacity-40 hover:opacity-70'
-                    }`}
+                    aria-label={`별점 ${star}점`}
+                    aria-pressed={star === rating}
+                    className="flex size-11 items-center justify-center rounded-lg transition-transform active:scale-90 motion-reduce:active:scale-100"
                   >
-                    ⭐
+                    <Star
+                      size={28}
+                      aria-hidden="true"
+                      className={
+                        star <= rating
+                          ? 'fill-star text-star'
+                          : 'fill-line-100 text-line-100'
+                      }
+                    />
                   </button>
                 ))}
               </div>
@@ -209,11 +219,11 @@ export function ReviewModal({
 
             {/* 리뷰 내용 */}
             <div>
-              <label className="block text-sm font-semibold mb-2">리뷰 내용</label>
+              <label className="mb-2 block text-sm font-semibold text-ink-900">리뷰 내용</label>
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:border-red-700"
+                className="w-full resize-none rounded-lg border border-line-100 p-3 text-sm text-ink-900 placeholder-ink-500 transition-colors focus:border-brand-800 focus:outline-none"
                 rows={4}
                 placeholder="리뷰를 작성해주세요."
               />
@@ -222,11 +232,11 @@ export function ReviewModal({
             {/* 카메라 캡처 */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold">사진</label>
+                <label className="block text-sm font-semibold text-ink-900">사진</label>
                 {photo && (
                   <button
                     onClick={removePhoto}
-                    className="text-xs text-gray-500 hover:text-gray-700"
+                    className="text-xs font-semibold text-ink-500 hover:text-ink-900"
                   >
                     제거
                   </button>
@@ -238,28 +248,28 @@ export function ReviewModal({
                   <img
                     src={photo.photoData}
                     alt="촬영한 사진"
-                    className="size-20 rounded-lg object-cover border border-gray-200"
+                    className="size-20 rounded-xl border border-line-100 object-cover"
                   />
-                  <span className="text-sm text-gray-600">1장 첨부됨</span>
+                  <span className="text-sm text-ink-700">1장 첨부됨</span>
                 </div>
               ) : (
                 <button
                   onClick={capturePhoto}
-                  className="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 transition-colors"
+                  className="h-11 w-full rounded-lg border-2 border-dashed border-line-100 text-sm font-semibold text-ink-700 transition-colors hover:border-brand-800 hover:text-brand-800"
                 >
                   📷 사진 촬영
                 </button>
               )}
 
               {cameraError && (
-                <p className="text-sm text-red-600 mt-2">{cameraError}</p>
+                <p className="mt-2 text-xs text-brand-900">{cameraError}</p>
               )}
             </div>
           </div>
 
           {/* 제출 실패 사유 — 별점과 후기는 그대로 두고 이 문구만 갱신한다 */}
           {submitError && (
-            <p className="text-sm text-red-600">{submitError}</p>
+            <p className="text-xs text-brand-900">{submitError}</p>
           )}
 
           {/* 버튼 */}

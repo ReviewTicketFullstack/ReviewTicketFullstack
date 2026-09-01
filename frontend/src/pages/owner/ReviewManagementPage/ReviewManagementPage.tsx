@@ -9,6 +9,14 @@ import {
   type OwnerReview,
   type PendingOrder,
 } from '@/api/reviewApi';
+import { EmptyState, Loading } from '@/shared/ui';
+
+/** 탭마다 비었을 때의 안내가 다르다 — 상황을 설명하고 다음 행동을 제시한다. */
+const EMPTY_MESSAGES: Record<ReviewTab, string> = {
+  completed: '아직 등록된 리뷰가 없어요. 손님이 리뷰를 남기면 여기에 쌓여요.',
+  pending: '작성을 기다리는 리뷰가 없어요.',
+  expired: '기한이 지난 리뷰가 없어요.',
+};
 
 export function ReviewManagementPage() {
   const [activeTab, setActiveTab] = useState<ReviewTab>('completed');
@@ -65,8 +73,15 @@ export function ReviewManagementPage() {
   const pendingList = pendingOrders.filter((o) => o.reviewStatus === 'pending');
   const expiredList = pendingOrders.filter((o) => o.reviewStatus === 'expired');
 
+  const visibleCount =
+    activeTab === 'completed'
+      ? completedReviews.length
+      : activeTab === 'pending'
+        ? pendingList.length
+        : expiredList.length;
+
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-5 px-5 py-8">
       <h1 className="text-xl font-bold text-ink-900">리뷰관리</h1>
 
       <StatsBar
@@ -84,23 +99,27 @@ export function ReviewManagementPage() {
         isRefreshing={isLoading}
       />
 
-      {isLoading && <p className="text-sm text-neutral-500">불러오는 중...</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {isLoading && <Loading />}
+      {error && <p className="text-sm text-brand-900">{error}</p>}
 
-      <div className="flex flex-col gap-3">
+      {!isLoading && !error && visibleCount === 0 && (
+        <EmptyState icon="📭" message={EMPTY_MESSAGES[activeTab]} />
+      )}
+
+      <ul className="flex flex-col gap-3">
         {/* activeTab에 따라 리뷰완료/작성 대기/미이행 리스트를 다르게 렌더링 */}
         {activeTab === 'completed'
           ? completedReviews.map((review) => (
-              <CompletedReviewItem key={review.reviewId} review={review} />
+              <li key={review.reviewId}>
+                <CompletedReviewItem review={review} />
+              </li>
             ))
           : (activeTab === 'pending' ? pendingList : expiredList).map((order) => (
-              <PendingReviewItem
-                key={order.orderId}
-                order={order}
-                onExpire={reload}
-              />
+              <li key={order.orderId}>
+                <PendingReviewItem order={order} onExpire={reload} />
+              </li>
             ))}
-      </div>
+      </ul>
     </div>
   );
 }

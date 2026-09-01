@@ -6,6 +6,8 @@ export * from "./Input";
 export * from "./InputHelperText";
 export * from "./Textarea";
 export * from "./Card";
+export * from "./FeatureCard";
 export * from "./EmptyState";
+export * from "./StarRating";
 export * from "./Loading";
 export * from "./ImageUploadOverlay";

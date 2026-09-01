@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Card } from "@/shared/ui";
+import { EmptyState, FeatureCard, Loading } from "@/shared/ui";
+import { GreetingCard } from "./GreetingCard";
+import { FOODS } from "./foods";
 import { StoreCard } from "./StoreCard";
 import { useAuth } from "@/app/providers";
 import { getStores } from "@/api/storeApi";
@@ -44,8 +46,6 @@ function setCachedStores(stores: Store[], page: number = 1) {
   );
 }
 
-const FOODS = ["치킨윙", "피자", "비빔밥", "라멘", "햄버거"];
-
 export function HomePage() {
   const { user } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
@@ -72,8 +72,17 @@ export function HomePage() {
     // 별점이 함께 들어 있는데, 그 둘은 리뷰가 등록될 때마다 바뀌는 값이다.
     // 캐시에서 멈추면 리뷰를 써도 홈 화면은 자정까지 예전 숫자(리뷰 0)를
     // 보여줘, 등록이 안 된 것처럼 보인다.
-    getStores(page, 20)
-      .then(() => {})
+    // 첫 페이지는 0번이다. 여기서 받은 결과로 page 를 1로 올려야 아래 옵저버의
+    // page <= 0 가드가 풀린다 — 올리지 않으면 무한 스크롤이 한 번도 발동하지 않는다.
+    getStores(0, 20)
+      .then((data) => {
+        setStores(data);
+        setPage(1);
+        setHasMore(data.length === 20);
+        if (data.length > 0) {
+          setCachedStores(data, 1);
+        }
+      })
       .catch(() => {
         // 서버에 닿지 못하면 위에서 그린 캐시를 그대로 둔다. 캐시도 없으면 빈 상태다.
       });
@@ -121,76 +130,57 @@ export function HomePage() {
   }, [page, isLoading, hasMore]);
 
   return (
-    <div className="space-y-4 px-5 py-6">
-      {/* Greeting Card Section */}
-      <div className="max-w-[480px] w-full">
-        <Card className="w-full mr-auto flex gap-4 p-4">
-          <div className="space-y-2">
-            <p className="text-base font-bold text-ink-900">
-              안녕하세요 {user?.displayName}님
-            </p>
-            <div className="flex items-baseline gap-1 text-base font-bold text-ink-900">
-              <span>오늘 식사는</span>
-              <div className="inline-flex h-6 overflow-hidden">
-                <div
-                  className={
-                    selectedFoodIndex !== null ? "animate-food-slot" : ""
-                  }
-                  style={
-                    selectedFoodIndex !== null
-                      ? (() => {
-                          const finalPos = -(
-                            19 * 5 * 24 +
-                            selectedFoodIndex * 24
-                          );
-                          return {
-                            "--final-translate-y": `${finalPos}px`,
-                            "--pos-60": `${finalPos * 0.92}px`,
-                            "--pos-75": `${finalPos * 0.96}px`,
-                            "--pos-87": `${finalPos * 0.98}px`,
-                            "--pos-95": `${finalPos * 0.995}px`,
-                          } as React.CSSProperties;
-                        })()
-                      : {}
-                  }
-                >
-                  {Array.from({ length: 20 })
-                    .flatMap(() => FOODS)
-                    .map((food, index) => (
-                      <div key={index} className="h-6 flex items-center">
-                        {food}
-                      </div>
-                    ))}
-                </div>
-              </div>
-              <span>어떠세요?</span>
-            </div>
-          </div>
-        </Card>
-      </div>
+    <div className="flex flex-col gap-8 px-5 py-6">
+      {/* Greeting Section — 좁은 화면에서는 세로로 쌓이고, 폭이 나면
+          인사 카드 옆 빈 자리에 안내 카드가 나란히 붙는다. */}
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <GreetingCard
+          displayName={user?.displayName}
+          selectedFoodIndex={selectedFoodIndex}
+        />
+
+        {/* media 를 넘기지 않으면 Lottie 플레이스홀더가 뜬다.
+            실제 애니메이션은 shared/ui/FeatureCard/LottieSlot 에서 교체한다. */}
+        <FeatureCard
+          eyebrow="리뷰 이벤트"
+          title="리뷰 쓰고 티켓 받기"
+          description="리뷰 배지가 붙은 가게에서 주문하고 사진 리뷰를 남기면 티켓을 받아요."
+        />
+      </section>
 
       {/* Store List Section */}
-      <div className="space-y-4">
-        {stores.map((store) => (
-          <StoreCard
-            key={store.id}
-            storeId={store.id}
-            storeName={store.name}
-            rating={store.rating}
-            reviewCount={store.reviewCount.toString()}
-            imageUrl={store.imageUrl}
-            hasReviewEvent={store.hasReviewEvent}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-base font-bold text-ink-900">
+          지금 주문할 수 있는 가게
+        </h2>
+
+        {stores.length === 0 && !isLoading ? (
+          <EmptyState
+            icon="🍚"
+            message="아직 등록된 가게가 없어요. 조금 뒤에 다시 확인해 주세요."
           />
-        ))}
-      </div>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {stores.map((store) => (
+              <li key={store.id}>
+                <StoreCard
+                  storeId={store.id}
+                  storeName={store.name}
+                  rating={store.rating}
+                  reviewCount={store.reviewCount.toString()}
+                  imageUrl={store.imageUrl}
+                  hasReviewEvent={store.hasReviewEvent}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* Infinite Scroll Sentinel */}
       <div ref={sentinelRef} className="h-4" />
 
-      {/* Loading Indicator */}
-      {isLoading && (
-        <div className="py-4 text-center text-sm text-ink-500">로딩 중...</div>
-      )}
+      {isLoading && <Loading />}
     </div>
   );
 }
