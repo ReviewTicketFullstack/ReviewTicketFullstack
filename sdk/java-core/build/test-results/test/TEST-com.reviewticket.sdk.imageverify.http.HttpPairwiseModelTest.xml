@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:43.272Z" hostname="DESKTOP-1MF3VV3" time="0.385">
+  <properties/>
+  <testcase name="AC-26 재시도하지 않는다" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.007"/>
+  <testcase name="AC-20 추론 서버가 안 떠 있으면 InferenceUnavailable" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.006"/>
+  <testcase name="AC-70 레거시 요청·응답 형태를 그대로 지킨다" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.009"/>
+  <testcase name="AC-70 후보 이미지가 reviewImage 파트에 실린다 (순서 계약)" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.008"/>
+  <testcase name="AC-23 비었거나 해석 불가한 응답은 InferenceUnavailable" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.02"/>
+  <testcase name="AC-21 타임아웃이 실제로 걸린다" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.309"/>
+  <testcase name="지수 표기 응답도 읽는다" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.007"/>
+  <testcase name="AC-22 5xx 는 InferenceUnavailable" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.006"/>
+  <testcase name="AC-24 4xx 는 InvalidImage" classname="com.reviewticket.sdk.imageverify.http.HttpPairwiseModelTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:42.989Z" hostname="DESKTOP-1MF3VV3" time="0.282">
+  <properties/>
+  <testcase name="modelId 는 핸드셰이크로 받아 오고 한 번만 묻는다" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.205"/>
+  <testcase name="본문 길이가 헤더와 어긋나면 거절한다" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.014"/>
+  <testcase name="응답 헤더의 모델 식별자가 핸드셰이크 값보다 우선한다" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.008"/>
+  <testcase name="AC-31 파트 이름 images 를 반복해 보낸다" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.007"/>
+  <testcase name="추론 서버가 없으면 InferenceUnavailable" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.007"/>
+  <testcase name="4xx 는 InvalidImage, 5xx 는 InferenceUnavailable" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.014"/>
+  <testcase name="AC-31 배치 순서와 차원이 보존된다" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.008"/>
+  <testcase name="필수 헤더가 없으면 거절한다" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.007"/>
+  <testcase name="개수가 요청과 다르면 거절한다" classname="com.reviewticket.sdk.imageverify.http.HttpEmbeddingModelTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

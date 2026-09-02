@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.SourceHygieneTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:42.601Z" hostname="DESKTOP-1MF3VV3" time="0.075">
+  <properties/>
+  <testcase name="검사가 실제로 파일을 보고 있다" classname="com.reviewticket.sdk.imageverify.SourceHygieneTest" time="0.029"/>
+  <testcase name="AC-52 java-core 에 특정 모델의 흔적이 없다 (ARCH-R4)" classname="com.reviewticket.sdk.imageverify.SourceHygieneTest" time="0.017"/>
+  <testcase name="java-core 에 Spring 의존이 없다 (ARCH-R1)" classname="com.reviewticket.sdk.imageverify.SourceHygieneTest" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

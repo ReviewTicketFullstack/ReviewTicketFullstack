@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.http.LegacyWireContractTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:43.659Z" hostname="DESKTOP-1MF3VV3" time="0.076">
+  <properties/>
+  <testcase name="계약: 실제 파이썬 서버가 손으로 만든 multipart 본문을 그대로 받는다" classname="com.reviewticket.sdk.imageverify.http.LegacyWireContractTest" time="0.051"/>
+  <testcase name="계약: 파트 이름이 reviewImage/compareImage 그대로다" classname="com.reviewticket.sdk.imageverify.http.LegacyWireContractTest" time="0.013"/>
+  <testcase name="계약: 응답 키가 similarity 그대로다" classname="com.reviewticket.sdk.imageverify.http.LegacyWireContractTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

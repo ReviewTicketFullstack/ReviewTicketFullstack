@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.core.CosineSimilarityTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:42.693Z" hostname="DESKTOP-1MF3VV3" time="0.015">
+  <properties/>
+  <testcase name="정규화된 벡터에서는 내적과 같다" classname="com.reviewticket.sdk.imageverify.core.CosineSimilarityTest" time="0.007"/>
+  <testcase name="영벡터에도 터지지 않는다" classname="com.reviewticket.sdk.imageverify.core.CosineSimilarityTest" time="0.001"/>
+  <testcase name="크기가 달라도 방향이 같으면 1이다" classname="com.reviewticket.sdk.imageverify.core.CosineSimilarityTest" time="0.0"/>
+  <testcase name="길이가 다른 벡터는 거절한다" classname="com.reviewticket.sdk.imageverify.core.CosineSimilarityTest" time="0.003"/>
+  <testcase name="같은 벡터는 1, 반대 벡터는 -1, 직교하면 0" classname="com.reviewticket.sdk.imageverify.core.CosineSimilarityTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

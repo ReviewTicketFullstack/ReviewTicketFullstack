@@ -9,3 +9,4 @@ rootProject.name = 'server'
 // build.gradle 의 'com.reviewticket:imageverify-core' 의존성이 이 빌드의
 // 같은 좌표를 가진 프로젝트로 자동 치환된다.
 includeBuild('../../sdk')
+rootProject.name = 'Server'

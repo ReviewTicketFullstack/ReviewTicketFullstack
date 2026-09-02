@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:42.729Z" hostname="DESKTOP-1MF3VV3" time="0.259">
+  <properties/>
+  <testcase name="AC-12 동점이면 입력 순서상 앞선 것이 이긴다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.005"/>
+  <testcase name="AC-03 임계값 경계는 포함이다 (&gt;=)" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.002"/>
+  <testcase name="AC-25 하나라도 실패하면 전체가 실패한다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.002"/>
+  <testcase name="AC-15 기준 이미지의 바이트가 비면 IllegalArgumentException 이다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.002"/>
+  <testcase name="AC-15 maxReferences 를 넘기면 거절한다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.001"/>
+  <testcase name="AC-15 입력 계약 위반은 IllegalArgumentException 이다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.003"/>
+  <testcase name="AC-13 scores 는 입력 순서와 길이를 지킨다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.002"/>
+  <testcase name="AC-14 기준 이미지들은 동시에 처리된다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.21"/>
+  <testcase name="AC-04 similarity 는 가공되지 않고 그대로 나온다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.002"/>
+  <testcase name="AC-10/AC-11 최댓값과 그 key 를 고른다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.003"/>
+  <testcase name="지연 로딩: loader 는 기준 이미지당 한 번만 불린다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.003"/>
+  <testcase name="scores 는 밖에서 고칠 수 없다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.002"/>
+  <testcase name="동시 verify 가 서로 간섭하지 않는다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.008"/>
+  <testcase name="AC-02 일치하지 않는 사진은 예외가 아니라 matched=false 다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.001"/>
+  <testcase name="AC-01 일치하는 사진은 통과한다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.002"/>
+  <testcase name="AC-27 SDK 는 자기 예외 계층만 던진다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.001"/>
+  <testcase name="AC-50 직접 만든 백엔드로 네트워크 없이 전체 경로가 돈다" classname="com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
