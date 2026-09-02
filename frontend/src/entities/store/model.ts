@@ -1,11 +1,16 @@
 /**
- * [TEMPORARY] 임시 Store 모델.
+ * 주문 가능 가게. 기능명세 FE_4 의 가게 목록 항목이다.
+ *
+ * [TODO] 필드명은 백엔드 API 명세 확정 전 임시다. GET /api/stores 명세가 나오면 맞춘다.
  */
 export interface Store {
-  id: string;
+  id: number;
   name: string;
-  description?: string;
-  imageUrl?: string;
-  countReview: string;
-  reviewBadge?: string;
+  /** 로고를 등록하지 않은 가게는 null 이다 */
+  imageUrl: string | null;
+  /** 평균 별점 */
+  rating: number;
+  reviewCount: number;
+  /** 리뷰 작성 가능 메뉴가 하나라도 있으면 true — 리뷰이벤트 뱃지 노출 조건 */
+  hasReviewEvent: boolean;
 }

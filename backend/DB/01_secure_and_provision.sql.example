@@ -6,7 +6,7 @@
 --                 (application-local.yml 에도 같은 값을 넣는다)
 --
 -- 실행:
---   Get-Content "C:\dev\ReviewTicket\BackEnd\DB\01_secure_and_provision.sql" | & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root --default-character-set=utf8mb4
+--   Get-Content "C:\dev\ReviewTicketFullstack\backend\DB\01_secure_and_provision.sql" | & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root --default-character-set=utf8mb4
 --   (최초 설치 직후 root 는 빈 비밀번호라 -p 없이 접속된다)
 
 -- 1) root 비밀번호 설정
@@ -18,6 +18,51 @@ CREATE DATABASE IF NOT EXISTS reviewticket
   COLLATE utf8mb4_0900_ai_ci;
 
 -- 3) 앱 전용 계정 (Spring Boot 가 이걸로 접속. root 로 붙이지 말 것)
-CREATE USER IF NOT EXISTS 'reviewticket'@'localhost' IDENTIFIED BY '__APP_PW__';
+--
+-- @'localhost' 인 이유 — MySQL 계정은 (아이디, 접속 출처) 쌍이다. 이 계정은
+-- DB 와 같은 PC 에서만 쓸 수 있고, 외부에서는 비밀번호가 맞아도 거부된다.
+--
+-- REQUIRE SSL 과 FAILED_LOGIN_ATTEMPTS/PASSWORD_LOCK_TIME 은 DB 포트를 인터넷에
+-- 열어둔 구조에서의 보안 강화 설정이다 (2026-08-01 도입).
+CREATE USER IF NOT EXISTS 'reviewticket'@'localhost'
+  IDENTIFIED BY '__APP_PW__'
+  REQUIRE SSL
+  FAILED_LOGIN_ATTEMPTS 5 PASSWORD_LOCK_TIME 3650;
 GRANT ALL PRIVILEGES ON reviewticket.* TO 'reviewticket'@'localhost';
+
+-- 4) 팀원이 DBeaver 등으로 원격 접속할 때 쓰는 같은 계정 (비번 동일).
+--    포트를 인터넷에 열어두는 구조라, 필요 없어지면 이 계정은 지운다.
+CREATE USER IF NOT EXISTS 'reviewticket'@'%'
+  IDENTIFIED BY '__APP_PW__'
+  REQUIRE SSL
+  FAILED_LOGIN_ATTEMPTS 5 PASSWORD_LOCK_TIME 3650;
+GRANT ALL PRIVILEGES ON reviewticket.* TO 'reviewticket'@'%';
+
 FLUSH PRIVILEGES;
+
+-- 5) 포트를 기본값(3306)에서 옮긴다.
+--
+-- 팀원이 DBeaver 로 붙어야 해서 MySQL 을 외부에 열어 두었다. 3306 은 스캐너
+-- 봇이 가장 먼저 찍어보는 포트라, 그대로 두면 무차별 대입 시도가 끊이지
+-- 않는다 (SSH 22 번을 열었을 때 14 분 만에 시도가 들어온 적이 있다).
+-- 포트를 옮기는 것만으로 뚫리지 않게 되는 것은 아니고, 자동 스캔 소음을
+-- 줄이는 조치다. 실제 방어는 위의 REQUIRE SSL 과 계정 잠금이 맡는다.
+--
+-- my.ini 의 [mysqld] 에 아래를 넣는다.
+--
+--   port=21096
+--
+-- bind-address 는 넣지 않는다. 넣으면 그 주소에서만 대기해 외부에서 닿지
+-- 못하고, 그러면 팀원이 DBeaver 로 접속할 수 없다.
+--
+-- Windows 기본 경로: C:\ProgramData\MySQL\MySQL Server 8.4\my.ini
+-- 적용하려면 서비스 재시작: Restart-Service MySQL84
+-- 방화벽도 함께 열어야 한다:
+--   New-NetFirewallRule -DisplayName "ReviewTicket MySQL" -Direction Inbound -Protocol TCP -LocalPort 21096 -Action Allow -Profile Any
+--
+-- application.yml 의 datasource URL 도 같은 포트를 가리켜야 한다
+-- (jdbc:mysql://localhost:21096/reviewticket).
+--
+-- 확인 — 두 계정 모두 ssl_type 이 ANY 여야 한다.
+--
+--   SELECT user, host, ssl_type FROM mysql.user WHERE user = 'reviewticket';

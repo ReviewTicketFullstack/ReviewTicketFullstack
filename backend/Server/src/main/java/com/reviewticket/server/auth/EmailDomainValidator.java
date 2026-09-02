@@ -48,7 +48,7 @@ public class EmailDomainValidator {
         try {
             InitialDirContext ctx = new InitialDirContext(env);
             Attribute mx = ctx.getAttributes(domain, new String[] { "MX" }).get("MX");
-            return mx != null && mx.size() > 0;
+            return hasDeliverableExchange(mx);
         } catch (NameNotFoundException e) {
             // 도메인 자체가 없거나, MX·A 레코드가 전혀 없음 — 메일을 받을 수 없다.
             return false;
@@ -56,6 +56,39 @@ public class EmailDomainValidator {
             log.warn("도메인 MX 조회 실패, 판단 보류로 통과시킴: {}", domain, e);
             return true;
         }
+    }
+
+    /**
+     * MX 레코드 중 실제로 메일을 받는 곳이 하나라도 있는지.
+     *
+     * 개수만 세면 안 된다 — 대상 서버 자리에 점 하나(".")만 넣은 레코드가
+     * 있는데, 이는 RFC 7505 의 null MX 로 "이 도메인은 메일을 일절 받지
+     * 않는다"는 명시적 거부 선언이다. 레코드는 1건 있지만 받는 곳은 없다.
+     * 예: example.com 이 "0 ." 하나만 두고 있어, 개수만 보던 때는 통과했다.
+     *
+     * 값의 형식은 "우선순위 대상서버" 다 (예: "10 mail.example.com.").
+     */
+    private boolean hasDeliverableExchange(Attribute mx) throws NamingException {
+        if (mx == null) {
+            return false;
+        }
+
+        for (int i = 0; i < mx.size(); i++) {
+            Object value = mx.get(i);
+            if (value == null) {
+                continue;
+            }
+
+            String record = value.toString().trim();
+            int separator = record.indexOf(' ');
+            String exchange = separator < 0 ? record : record.substring(separator + 1).trim();
+
+            if (!exchange.isEmpty() && !exchange.equals(".")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private String extractDomain(String email) {

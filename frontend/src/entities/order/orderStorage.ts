@@ -1,36 +1,27 @@
 import type { Order } from './model';
 
-const ORDERS_KEY = 'review_ticket_orders';
-const REVIEW_TIME_LIMIT_MS = 60 * 1000; // 1 minute
+/**
+ * 최근 주문의 로컬 사본.
+ *
+ * 서버가 진짜 소스다. 이 사본은 서버에 닿지 못할 때만 쓴다 — 서버 점검이나
+ * 네트워크 문제로 주문내역이 통째로 비어 보이는 것을 막는다.
+ *
+ * 프론트가 값을 만들지 않고 서버 응답을 그대로 저장한다. id·가격·마감 시각을
+ * 여기서 따로 만들면 서버 값과 어긋나고, 어느 쪽이 맞는지 판단할 방법이 없다.
+ */
 
-// toISOString은 UTC 기준이라 KST 새벽 주문이 전날로 기록된다. 로컬 날짜로 포맷한다.
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+const ORDERS_KEY = 'review_ticket_orders';
+
+/** 방금 만든 주문 하나를 사본 맨 앞에 넣는다. 서버 응답을 그대로 받는다. */
+export function saveOrder(order: Order): void {
+  const orders = getOrderHistory().filter((saved) => saved.id !== order.id);
+  orders.unshift(order);
+  writeOrders(orders);
 }
 
-export function saveOrder(order: Omit<Order, 'id' | 'createdAt' | 'reviewDeadline' | 'reviewStatus'>): Order {
-  const orders = getOrderHistory();
-
-  const now = new Date();
-  const createdAt = formatLocalDate(now);
-  const reviewDeadlineTime = new Date(now.getTime() + REVIEW_TIME_LIMIT_MS);
-  const reviewDeadline = reviewDeadlineTime.toISOString();
-
-  const newOrder: Order = {
-    ...order,
-    id: `order-${Date.now()}`,
-    createdAt,
-    reviewDeadline,
-    reviewStatus: 'available',
-  };
-
-  orders.unshift(newOrder);
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-
-  return newOrder;
+/** 서버에서 받은 목록으로 사본을 통째로 갱신한다. */
+export function replaceOrderHistory(orders: Order[]): void {
+  writeOrders(orders);
 }
 
 export function getOrderHistory(): Order[] {
@@ -39,40 +30,20 @@ export function getOrderHistory(): Order[] {
 
   try {
     const parsed: unknown = JSON.parse(stored);
-    if (!Array.isArray(parsed)) throw new Error('주문 내역이 배열이 아닙니다.');
+    if (!Array.isArray(parsed)) throw new Error('주문 사본이 배열이 아닙니다.');
 
-    return (parsed as Order[]).map((order) => ({
-      ...order,
-      reviewStatus: order.reviewStatus || 'available',
-    }));
+    return parsed as Order[];
   } catch {
-    // 저장된 값이 손상된 경우 비워서 이후 조회까지 계속 실패하지 않도록 한다.
+    // 손상된 값이 남아 이후 조회까지 계속 실패하지 않도록 비운다.
     localStorage.removeItem(ORDERS_KEY);
     return [];
   }
 }
 
-export function clearOrderHistory(): void {
-  localStorage.removeItem(ORDERS_KEY);
-}
-
-export function updateOrderReviewStatus(orderId: string, status: 'available' | 'pending' | 'not_available'): void {
-  const orders = getOrderHistory();
-  const updated = orders.map((order) =>
-    order.id === orderId ? { ...order, reviewStatus: status } : order
-  );
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
-}
-
-export function getRemainingReviewTime(reviewDeadline: string): number {
-  const now = new Date().getTime();
-  const deadline = new Date(reviewDeadline).getTime();
-  return Math.max(0, deadline - now);
-}
-
-export function formatTimeRemaining(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+function writeOrders(orders: Order[]): void {
+  try {
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  } catch {
+    // 저장이 막힌 환경(사생활 보호 모드 등)에서는 사본 없이 동작한다.
+  }
 }

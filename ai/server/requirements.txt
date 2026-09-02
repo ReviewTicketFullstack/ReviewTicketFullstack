@@ -1,0 +1,9 @@
+# dinov2-test/.venv 에 이미 torch·transformers·pillow·numpy 가 설치돼 있다.
+# 이 서버를 돌리는 데 추가로 필요한 건 아래 세 개뿐이다.
+#
+# 설치:
+#   C:\dev\ReviewTicketFullstack\ai\dinov2-test\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+fastapi>=0.115
+uvicorn[standard]>=0.32
+python-multipart>=0.0.12

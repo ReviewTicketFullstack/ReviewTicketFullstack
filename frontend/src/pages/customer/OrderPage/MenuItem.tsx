@@ -1,43 +1,65 @@
+import { UtensilsCrossed } from "lucide-react";
+import { Badge } from "@/shared/ui";
+
 export interface MenuItemData {
+  id: number;
   name: string;
-  price: string;
-  reviewBadge: boolean;
+  /** 원 단위 정수. 표시 형식은 이 컴포넌트가 맡는다 */
+  price: number;
+  reviewEvent: boolean;
+  imageUrl: string | null;
 }
 
 export interface MenuItemProps {
   menu: MenuItemData;
   onClick: (menu: MenuItemData) => void;
+  isSelected: boolean;
 }
 
-export function MenuItem({ menu, onClick }: MenuItemProps) {
+export function MenuItem({ menu, onClick, isSelected }: MenuItemProps) {
   return (
     <button
       type="button"
       onClick={() => onClick(menu)}
-      className="w-full flex gap-4 p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+      // button 안에는 phrasing content 만 넣는다(design.md Card).
+      // 선택 상태는 색 외에 테두리로도 드러나야 한다.
+      className={`flex w-full gap-3 border-2 p-3 text-left transition-colors ${
+        isSelected
+          ? "border-brand-800 bg-brand-50"
+          : "border-transparent hover:bg-fill-100 active:bg-line-100"
+      }`}
+      aria-pressed={isSelected}
     >
       {/* Image Section */}
-      <div className="flex-shrink-0">
-        <div className="w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center">
-          <span className="text-gray-400 text-xs">Image</span>
-        </div>
-      </div>
+      <span className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-fill-100">
+        {menu.imageUrl ? (
+          <img
+            src={menu.imageUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <UtensilsCrossed size={22} className="text-ink-300" aria-hidden="true" />
+        )}
+      </span>
 
       {/* Info Section */}
-      <div className="flex-1 flex flex-col justify-center gap-1">
-        {/* Name + Review Badge */}
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-base">{menu.name}</span>
-          {menu.reviewBadge && (
-            <span className="inline-block bg-red-700 text-white text-xs font-semibold px-2 py-0.5 rounded">
+      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+        <span className="flex items-center gap-2">
+          <span className="min-w-0 truncate text-base font-bold text-ink-900">
+            {menu.name}
+          </span>
+          {menu.reviewEvent && (
+            <Badge variant="accent" className="shrink-0">
               리뷰
-            </span>
+            </Badge>
           )}
-        </div>
+        </span>
 
-        {/* Price */}
-        <span className="text-sm text-gray-600">{menu.price}</span>
-      </div>
+        <span className="text-sm text-ink-700">
+          {menu.price.toLocaleString("ko-KR")}원
+        </span>
+      </span>
     </button>
   );
 }

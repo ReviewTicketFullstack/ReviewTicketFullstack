@@ -1,10 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>reviewticket</title>
+
+    <!--
+      Pretendard Variable — SIL OFL 1.1(상업적 이용 무료).
+      dynamic-subset 은 화면에 실제로 쓰인 글자만 내려받는다. 한글 전체를
+      한 파일로 받으면 수 MB 라 첫 화면이 눈에 띄게 늦어진다.
+      웹폰트가 오지 않아도 index.css 의 --font-sans 폴백으로 그려진다.
+    -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+
+    <title>리뷰티켓</title>
   </head>
   <body>
     <div id="root"></div>
