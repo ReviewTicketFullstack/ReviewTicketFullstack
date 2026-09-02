@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:42.709Z" hostname="DESKTOP-1MF3VV3" time="0.019">
+  <properties/>
+  <testcase name="돌려받은 임베딩 개수가 어긋나면 조용히 넘어가지 않는다" classname="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" time="0.006"/>
+  <testcase name="AC-51 척도를 갈아끼울 수 있다" classname="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" time="0.002"/>
+  <testcase name="AC-15 입력 계약은 쌍 단위 백엔드와 동일하다" classname="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" time="0.002"/>
+  <testcase name="한 번의 요청으로 후보와 기준 전부를 보낸다" classname="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" time="0.002"/>
+  <testcase name="AC-50 네트워크 없이 임베딩 백엔드 전체 경로가 돈다" classname="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" time="0.001"/>
+  <testcase name="AC-01/02/03 임계값 판정이 쌍 단위 백엔드와 같다" classname="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" time="0.001"/>
+  <testcase name="AC-10/11/13 최댓값·key·순서가 보존된다" classname="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" time="0.001"/>
+  <testcase name="AC-12 동점이면 앞선 것이 이긴다" classname="com.reviewticket.sdk.imageverify.core.EmbeddingImageVerifierTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

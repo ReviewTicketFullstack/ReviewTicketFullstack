@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.http.NumericEquivalenceContractTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:43.736Z" hostname="DESKTOP-1MF3VV3" time="0.368">
+  <properties/>
+  <testcase name="AC-30 자바 코사인이 torch 코사인과 1e-5 안에서 일치한다" classname="com.reviewticket.sdk.imageverify.http.NumericEquivalenceContractTest" time="0.284"/>
+  <testcase name="AC-71 pairwise 백엔드는 /embed 를 부르지 않는다" classname="com.reviewticket.sdk.imageverify.http.NumericEquivalenceContractTest" time="0.011"/>
+  <testcase name="AC-32 표본별 점수가 하나하나 일치한다" classname="com.reviewticket.sdk.imageverify.http.NumericEquivalenceContractTest" time="0.036"/>
+  <testcase name="AC-32 두 백엔드의 판정이 완전히 같다" classname="com.reviewticket.sdk.imageverify.http.NumericEquivalenceContractTest" time="0.036"/>
+  <system-out><![CDATA[[AC-30] 20쌍 최대 절대오차: torch↔java=1.881e-08, torch↔대조군=1.881e-08 (한계 1e-05)
+[AC-32] pairwise=0.06746212393045425 embedding=0.06746212735847311 차이=3.428e-09
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

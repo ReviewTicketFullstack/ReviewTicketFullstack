@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<div class="breadcrumbs">
+<a class="breadcrumb" href="../index.html">all</a> &gt; 
+<span class="breadcrumb">com.reviewticket.sdk.imageverify.core.PairwiseImageVerifierTest</span>
+</div>
+<div class="tab-container">
+<ul class="tabLinks">
+<li>
+<a class="successGroup" href="#">Gradle Test Run :imageverify-core:test</a>
+</li>
+</ul>
+<div class="tab">
+<h2>Gradle Test Run :imageverify-core:test</h2>
+<h1>PairwiseImageVerifierTest</h1>
+<div class="tab-container">
+<ul class="tabLinks">
+<li>
+<a class="" href="#">summary</a>
+</li>
+</ul>
+<div class="tab">
+<h2>summary</h2>
+<div>
+<div class="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox">
+<div class="counter">17</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox">
+<div class="counter">0</div>
+<p>skipped</p>
+</div>
+</td>
+<td>
+<div class="infoBox duration">
+<div class="counter">0.259s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<table class="test-results">
+<thead>
+<tr>
+<th>Child</th>
+<th>Name</th>
+<th>Tests</th>
+<th>Failures</th>
+<th>Skipped</th>
+<th>Duration</th>
+<th>Success rate</th>
+</tr>
+</thead>
+<tr>
+<td class="success">AC-01 일치하는 사진은 통과한다</td>
+<td class="path">ac01_matchingImagePasses()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.002s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-02 일치하지 않는 사진은 예외가 아니라 matched=false 다</td>
+<td class="path">ac02_mismatchIsAResultNotAnException()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.001s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-03 임계값 경계는 포함이다 (&gt;=)</td>
+<td class="path">ac03_thresholdIsInclusive()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.002s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-04 similarity 는 가공되지 않고 그대로 나온다</td>
+<td class="path">ac04_similarityIsNotRounded()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.002s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-10/AC-11 최댓값과 그 key 를 고른다</td>
+<td class="path">ac10_ac11_picksHighestScoreAndItsKey()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.003s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-12 동점이면 입력 순서상 앞선 것이 이긴다</td>
+<td class="path">ac12_tieGoesToTheFirst()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.005s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-13 scores 는 입력 순서와 길이를 지킨다</td>
+<td class="path">ac13_scoresPreserveInputOrder()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.002s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-14 기준 이미지들은 동시에 처리된다</td>
+<td class="path">ac14_referencesAreProcessedConcurrently()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.210s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-15 기준 이미지의 바이트가 비면 IllegalArgumentException 이다</td>
+<td class="path">ac15_emptyReferenceBytes()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.002s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-15 입력 계약 위반은 IllegalArgumentException 이다</td>
+<td class="path">ac15_inputContractViolations()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.003s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-15 maxReferences 를 넘기면 거절한다</td>
+<td class="path">ac15_tooManyReferences()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.001s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-25 하나라도 실패하면 전체가 실패한다</td>
+<td class="path">ac25_anyFailureFailsTheWholeVerification()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.002s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-27 SDK 는 자기 예외 계층만 던진다</td>
+<td class="path">ac27_onlySdkExceptionsEscape()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.001s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">AC-50 직접 만든 백엔드로 네트워크 없이 전체 경로가 돈다</td>
+<td class="path">ac50_customBackendReplacesTheModel()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.001s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">동시 verify 가 서로 간섭하지 않는다</td>
+<td class="path">concurrentVerifyIsSafe()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.008s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">지연 로딩: loader 는 기준 이미지당 한 번만 불린다</td>
+<td class="path">loaderIsCalledAtMostOnce()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.003s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">scores 는 밖에서 고칠 수 없다</td>
+<td class="path">scoresAreImmutable()</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0.002s</td>
+<td class="success">100%</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="https://www.gradle.org">Gradle 9.5.1</a> at 2026. 9. 1. 오후 2:33:44</p>
+</div>
+</div>
+</body>
+</html>

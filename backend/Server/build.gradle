@@ -18,6 +18,9 @@ repositories {
 }
 
 dependencies {
+	// 리뷰 사진 검증 SDK. settings.gradle 의 includeBuild 가 이 좌표를
+	// sdk/java-core 프로젝트로 치환한다 — 별도 publish 가 필요 없다.
+	implementation 'com.reviewticket:imageverify-core:0.1.0-SNAPSHOT'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'

@@ -1,0 +1,51 @@
+plugins {
+	id 'java-library'
+}
+
+group = 'com.reviewticket'
+version = '0.1.0-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+// 런타임 의존성은 없다 — 의도적으로 비어 있다(SPEC 결정 D-2).
+//
+// 상용 SDK 에서 "의존성 없음"은 도입 장벽을 크게 낮춘다. 도입하는 쪽이
+// 우리 Jackson 버전과 자기 Jackson 버전을 맞출 일이 없다. 그래서
+// HTTP 는 JDK 내장 java.net.http, JSON 파싱은 필요한 한 줄만 직접 처리한다.
+//
+// 가드레일 GR-08 이 이 파일에 implementation/api/runtimeOnly/compileOnly 줄이
+// 생기는 것을 막는다. 의존성을 추가하려면 SPEC 의 결정 D-2 부터 바꿔야 한다.
+dependencies {
+	testImplementation platform('org.junit:junit-bom:5.11.4')
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+
+	// AC-52 (java-core 에 특정 모델 이름이 없다)는 소스 트리를 직접 훑는다.
+	// 테스트는 build 디렉터리에서 도는 탓에 소스 위치를 스스로 알 수 없어
+	// 여기서 넘겨준다.
+	systemProperty 'imageverify.core.src', file('src/main/java').absolutePath
+
+	// 계약 테스트(LegacyWireContractTest)는 실제 추론 서버가 있어야 돌아간다.
+	// 주소를 주면 켜지고, 없으면 통째로 건너뛴다 — CI 기본 실행을 막지 않는다.
+	String contractUrl = System.getProperty('imageverify.contract.url')
+	if (contractUrl) {
+		systemProperty 'imageverify.contract.url', contractUrl
+	}
+
+	testLogging {
+		events 'passed', 'failed', 'skipped'
+		exceptionFormat 'full'
+	}
+}

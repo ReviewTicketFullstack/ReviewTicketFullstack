@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.reviewticket.sdk.imageverify.api.VerifierConfigTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-01T05:33:42.678Z" hostname="DESKTOP-1MF3VV3" time="0.012">
+  <properties/>
+  <testcase name="경계값은 허용된다" classname="com.reviewticket.sdk.imageverify.api.VerifierConfigTest" time="0.006"/>
+  <testcase name="범위 밖 설정은 만드는 시점에 거절된다" classname="com.reviewticket.sdk.imageverify.api.VerifierConfigTest" time="0.005"/>
+  <testcase name="기본값이 현행 애플리케이션 설정과 같다" classname="com.reviewticket.sdk.imageverify.api.VerifierConfigTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

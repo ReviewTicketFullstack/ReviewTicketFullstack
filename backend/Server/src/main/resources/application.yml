@@ -53,6 +53,49 @@ reviewticket:
     # 발신 주소. 비우면 메일을 보내지 않고 인증 링크를 로그에 남긴다.
     # 실제 발송하려면 여기와 application-local.yml 의 spring.mail 을 채운다.
     from: ""
+  order:
+    # 주문 후 리뷰를 쓸 수 있는 기간.
+    #
+    # 1m 이었으나 실사용이 불가능해 10m 으로 늘렸다 — AI 판정에만 3~3.5초가
+    # 걸리고, 그 앞에 사진을 찍고 별점을 고르고 후기를 10자 이상 쓰는 시간이
+    # 붙는다. 실제로 60초 제한에서는 주문 네 건 중 세 건이 작성 도중 만료돼
+    # 티켓만 소멸했다.
+    #
+    # 프론트는 서버가 계산해 내려준 마감 시각을 그대로 표시하므로 이 줄만 고치면 된다.
+    review-ttl: 10m
+  ai:
+    # 대조 방식.
+    #
+    #   pairwise  - 사진 두 장을 보내 유사도를 받는다. 기존 방식이다.
+    #   embedding - 임베딩을 받아 유사도를 서버에서 계산한다. 표본 5장 기준
+    #               HTTP 왕복이 5회에서 1회로, 임베딩 계산이 10회에서 6회로 준다.
+    #
+    # 두 방식의 판정 결과는 같다 - 계약 테스트 실측 차이가 3.4e-09 라
+    # 문턱값(0.80) 근처에서 뒤집힐 여지가 없다. 그래도 기본값은 아직
+    # pairwise 다. 실제 DINOv2 서버로 확인하기 전에는 바꾸지 않는다.
+    #
+    # 문제가 생기면 이 한 줄을 pairwise 로 되돌리면 즉시 원복된다. 재배포도
+    # 코드 변경도 필요 없다.
+    backend: pairwise
+    # AI 서버 주소. 로컬 개발 기본값만 두고, 다른 PC 에서 띄운 경우는
+    # application-local.yml 에서 덮어쓴다(auth.base-url 과 같은 이유).
+    server-url: http://localhost:8000/similarity
+    # embedding 백엔드가 쓰는 주소. server-url 과 같은 서버를 가리킨다.
+    base-url: http://localhost:8000
+    embed-path: /embed
+    # 500장 실측 기준 최대 응답 시간이 3.5초였다. 넉넉히 여유를 둔다.
+    timeout: 10s
+    match-threshold: 0.80
+  upload:
+    dir: ./uploads
+    base-url: /uploads
+    target-long-edge: 1920
+  review:
+    content-min-length: 10
+    content-max-length: 50
+    # upload.target-long-edge 와 같은 값이어야 한다 — 하한과 목표치가 같아야
+    # 리사이즈가 항상 줄이기만 하고 늘리는 일이 없다.
+    min-image-long-edge: 1920
   cors:
     # 프론트엔드를 Spring 이 아닌 다른 곳에서 띄울 때 필요한 허용 출처.
     # /demo 로 서빙하는 경우는 같은 출처라 이 목록과 무관하다.
