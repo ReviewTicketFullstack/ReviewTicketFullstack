@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export interface ModalProps {
   open: boolean;
@@ -7,40 +7,16 @@ export interface ModalProps {
 }
 
 export function Modal({ open, onClose, children }: ModalProps) {
-  // 열려 있는 동안 배경 스크롤을 잠근다(design.md Modal). 닫히거나 언마운트될
-  // 때 반드시 되돌린다 — 되돌리지 않으면 페이지 전체가 스크롤되지 않는다.
-  useEffect(() => {
-    if (!open) return;
-
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose?.();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previous;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, onClose]);
-
   if (!open) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-5"
-    >
-      {/* 오버레이는 검정 반투명 1종. 배경 블러를 쓰지 않는다(design.md) */}
+    // z-50을 추가해 화면 최상단에 뜨도록 보장합니다
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* 배경: bg-black/50을 추가해 주변을 어둡게 만듭니다 */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div
-        className="relative z-10 max-h-[90vh] w-full max-w-[400px] overflow-y-auto rounded-2xl bg-surface p-5 shadow-sheet"
-        style={{ animation: "slideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1)" }}
-      >
+      {/* 콘텐츠 상자: 흰 배경, 패딩, 라운딩, 그림자 효과를 줍니다 */}
+      <div className="relative z-10 bg-white p-6 rounded-2xl shadow-xl max-w-md w-full mx-4">
         {children}
       </div>
     </div>

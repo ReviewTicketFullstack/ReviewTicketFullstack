@@ -1,61 +1,37 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Ticket, Settings } from "lucide-react";
-import { useAuth } from "@/app/providers";
-import { CountBadge } from "@/shared/ui";
 import { MyInfoModal } from "@/pages/customer/MyInfoModal/MyInfoModal";
-
-/** 헤더 높이(56px). 이 지점을 넘겨 스크롤됐을 때만 그림자를 노출한다. */
-const HEADER_HEIGHT = 56;
 
 export function Header() {
   const [isMyInfoModalOpen, setIsMyInfoModalOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const { user } = useAuth();
-
-  // design.md — 헤더 그림자는 폭이 아니라 스크롤 위치로 분기하는 유일한 규칙이다.
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > HEADER_HEIGHT);
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const iconButtonClass =
-    "relative flex size-11 items-center justify-center rounded-lg text-ink-900 transition-colors hover:bg-fill-100 active:bg-line-100";
+  const remainingTickets = 2;
 
   return (
     <>
-      <header
-        className={`sticky top-0 z-40 h-14 bg-surface transition-shadow duration-200 ${
-          isScrolled ? "shadow-header" : ""
-        }`}
-      >
-        <div className="flex h-full items-center justify-between px-5">
-          <h1 className="text-xl font-bold text-ink-900">
-            리뷰<span className="text-brand-800">티켓</span>
-          </h1>
-
-          <div className="flex items-center gap-1">
+      <header className="sticky top-0 z-40 h-14 border-b border-neutral-200 bg-neutral-50">
+        <div className="flex h-full items-center justify-between px-4">
+          <h1 className="font-bold">리뷰티켓</h1>
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsMyInfoModalOpen(true)}
-              className={iconButtonClass}
-              aria-label={`남은 티켓 ${user?.tickets ?? 0}개, 내 정보 열기`}
+              className="relative rounded-lg p-2 hover:bg-neutral-100 active:bg-neutral-200"
+              aria-label="Tickets"
             >
-              <Ticket size={22} aria-hidden="true" />
-              <span className="absolute right-1 top-1">
-                <CountBadge count={user?.tickets ?? 0} />
-              </span>
+              <Ticket size={20} className="text-neutral-900" />
+              <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-800">
+                <span className="text-xs font-semibold text-white">
+                  {remainingTickets}
+                </span>
+              </div>
             </button>
-
             <button
               type="button"
               onClick={() => setIsMyInfoModalOpen(true)}
-              className={iconButtonClass}
-              aria-label="내 정보"
+              className="rounded-lg p-2 hover:bg-neutral-100 active:bg-neutral-200"
+              aria-label="Settings"
             >
-              <Settings size={22} aria-hidden="true" />
+              <Settings size={20} className="text-neutral-900" />
             </button>
           </div>
         </div>

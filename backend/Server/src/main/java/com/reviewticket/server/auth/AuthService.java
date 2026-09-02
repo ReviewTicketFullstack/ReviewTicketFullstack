@@ -24,7 +24,6 @@ import com.reviewticket.server.mail.VerificationMailRequested;
 import com.reviewticket.server.repository.PasswordResetTokenRepository;
 import com.reviewticket.server.repository.PendingSignupRepository;
 import com.reviewticket.server.repository.UserRepository;
-import com.reviewticket.server.store.StoreService;
 
 /**
  * 가입, 이메일 인증, 로그인.
@@ -41,7 +40,7 @@ public class AuthService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /** 재발송 최소 간격. 없으면 남의 메일함에 무한정 보낼 수 있다. */
-    private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(30);
+    private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
 
     private static final int MAX_DISPLAY_NAME_LENGTH = 32;
 
@@ -64,13 +63,12 @@ public class AuthService {
     private final ApplicationEventPublisher events;
     private final ReviewTicketProperties properties;
     private final EmailDomainValidator domainValidator;
-    private final StoreService storeService;
 
     public AuthService(UserRepository users, PendingSignupRepository pendings,
             PasswordResetTokenRepository resetTokens,
             PasswordEncoder passwordEncoder, JwtProvider jwtProvider,
             ApplicationEventPublisher events, ReviewTicketProperties properties,
-            EmailDomainValidator domainValidator, StoreService storeService) {
+            EmailDomainValidator domainValidator) {
         this.users = users;
         this.pendings = pendings;
         this.resetTokens = resetTokens;
@@ -79,7 +77,6 @@ public class AuthService {
         this.events = events;
         this.properties = properties;
         this.domainValidator = domainValidator;
-        this.storeService = storeService;
     }
 
     // ---------- 중복 검사 ----------
@@ -110,26 +107,26 @@ public class AuthService {
         String displayName = rawDisplayName == null ? "" : rawDisplayName.trim();
 
         if (email.length() > MAX_EMAIL_LENGTH) {
-            throw new ValidationException("EMAIL_TOO_LONG", "이메일이 너무 깁니다");
+            throw new IllegalArgumentException("이메일이 너무 깁니다");
         }
         if (!domainValidator.hasMailServer(email)) {
-            throw new ValidationException("EMAIL_DOMAIN_INVALID", "유효하지 않은 이메일 주소입니다");
+            throw new IllegalArgumentException("메일을 받을 수 없는 이메일 주소입니다");
         }
         if (displayName.isEmpty()) {
-            throw new ValidationException("NAME_REQUIRED",
+            throw new IllegalArgumentException(
                     role == Role.OWNER ? "가게 이름을 입력해 주세요" : "닉네임을 입력해 주세요");
         }
         if (displayName.length() > MAX_DISPLAY_NAME_LENGTH) {
-            throw new ValidationException("NAME_TOO_LONG", "이름은 " + MAX_DISPLAY_NAME_LENGTH + "자 이하여야 합니다");
+            throw new IllegalArgumentException("이름은 " + MAX_DISPLAY_NAME_LENGTH + "자 이하여야 합니다");
         }
         PasswordPolicy.require(rawPassword);
 
         // 이미 가입을 마친 회원과의 충돌은 무조건 거부한다.
         if (users.existsByEmail(email)) {
-            throw new ConflictException("EMAIL_TAKEN", "이미 가입된 이메일입니다");
+            throw new ConflictException("이미 가입된 이메일입니다");
         }
         if (users.existsByDisplayName(displayName)) {
-            throw new ConflictException("NAME_TAKEN",
+            throw new ConflictException(
                     role == Role.OWNER ? "이미 쓰이고 있는 가게 이름입니다" : "이미 쓰이고 있는 닉네임입니다");
         }
 
@@ -138,7 +135,7 @@ public class AuthService {
 
         // 다른 사람이 같은 이름으로 대기 중이면 거부한다.
         if (pendings.existsByDisplayName(displayName)) {
-            throw new ConflictException("NAME_TAKEN",
+            throw new ConflictException(
                     role == Role.OWNER ? "이미 쓰이고 있는 가게 이름입니다" : "이미 쓰이고 있는 닉네임입니다");
         }
         // 위 delete 를 DB 에 먼저 반영해야 UNIQUE 제약과 부딪히지 않는다.
@@ -157,16 +154,7 @@ public class AuthService {
     /** 인증 메일 재발송. 토큰을 새로 만들어 옛 링크는 무효화한다. */
     @Transactional
     public void resendVerification(String rawEmail) {
-        String email = normalizeEmail(rawEmail);
-
-        // 가입 때 한 검사를 여기서 다시 한다. 대기 행이 만들어진 뒤에도
-        // 도메인의 MX 가 사라질 수 있고, 가입 당시 DNS 조회가 실패해
-        // "판단 보류"로 통과한 건이 이 버튼으로 반복 발송될 수 있다.
-        if (!domainValidator.hasMailServer(email)) {
-            throw new ValidationException("EMAIL_DOMAIN_INVALID", "메일을 받을 수 없는 이메일 주소입니다");
-        }
-
-        Optional<PendingSignup> found = pendings.findByEmail(email);
+        Optional<PendingSignup> found = pendings.findByEmail(normalizeEmail(rawEmail));
         if (found.isEmpty()) {
             // 대기 건이 없어도 성공처럼 조용히 끝낸다. 여기서 404 를 내면
             // 어떤 이메일이 가입 대기 중인지 알아낼 수 있다.
@@ -174,15 +162,9 @@ public class AuthService {
         }
         PendingSignup pending = found.get();
 
-        // 마지막 발송 시각을 만료시각에서 거꾸로 계산한다. 발송할 때마다
-        // expiresAt 을 "지금 + verificationTtl" 로 새로 잡으므로 그 차가 곧 발송 시각이다.
-        //
-        // createdAt 을 쓰면 안 된다 — 그 값은 대기 행이 처음 만들어진 시각에
-        // 고정돼(insertable=false, updatable=false) 재발송해도 갱신되지 않는다.
-        // 그래서 최초 가입 직후 한 번만 막히고 그 뒤로는 무제한이었다.
-        LocalDateTime lastSentAt = pending.getExpiresAt().minus(properties.auth().verificationTtl());
-        if (lastSentAt.isAfter(LocalDateTime.now().minus(RESEND_COOLDOWN))) {
-            throw new ValidationException("RESEND_COOLDOWN",
+        LocalDateTime createdAt = pending.getCreatedAt();
+        if (createdAt != null && createdAt.isAfter(LocalDateTime.now().minus(RESEND_COOLDOWN))) {
+            throw new IllegalArgumentException(
                     "인증 메일을 방금 보냈습니다. " + RESEND_COOLDOWN.toSeconds() + "초 뒤에 다시 시도해 주세요");
         }
 
@@ -205,30 +187,23 @@ public class AuthService {
         PendingSignup pending = pendings.findByToken(token)
                 // 이미 인증을 마쳤거나(대기 건 삭제됨) 만료돼 정리된 경우도 여기로 온다.
                 // 어느 쪽인지 구분할 근거가 남아 있지 않으므로 한 문장으로 안내한다.
-                .orElseThrow(() -> new ValidationException("VERIFY_TOKEN_INVALID",
+                .orElseThrow(() -> new IllegalArgumentException(
                         "인증 링크가 만료되었거나 이미 처리되었습니다"));
 
         if (pending.isExpired(LocalDateTime.now())) {
-            throw new ValidationException("VERIFY_TOKEN_EXPIRED", "인증 링크가 만료되었습니다");
+            throw new IllegalArgumentException("인증 링크가 만료되었습니다. 회원가입을 다시 진행해 주세요");
         }
 
         // 대기하는 동안 다른 사람이 같은 이메일·이름으로 먼저 가입을 마쳤을 수 있다.
         if (users.existsByEmail(pending.getEmail())) {
-            throw new ConflictException("EMAIL_TAKEN", "이미 가입된 이메일입니다");
+            throw new ConflictException("이미 가입된 이메일입니다");
         }
         if (users.existsByDisplayName(pending.getDisplayName())) {
-            throw new ConflictException("NAME_TAKEN", "이미 쓰이고 있는 이름입니다");
+            throw new ConflictException("이미 쓰이고 있는 이름입니다. 회원가입을 다시 진행해 주세요");
         }
 
         User created = users.save(pending.toUser());
         pendings.delete(pending);
-
-        // 사장은 가입만 하면 가게가 생긴다. 가입 화면에서 받은 이름이 곧
-        // 가게 이름이므로, 여기서 만들지 않으면 사장이 가게를 따로 등록하기
-        // 전까지 고객 홈 목록에 아무것도 뜨지 않는다.
-        if (created.getRole() == Role.OWNER) {
-            storeService.createForOwner(created);
-        }
 
         log.info("회원 생성: id={} email={} role={}", created.getId(), created.getEmail(), created.getRole());
         return created.getEmail();
@@ -258,12 +233,12 @@ public class AuthService {
 
         if (found.isEmpty()) {
             passwordEncoder.matches(rawPassword, DUMMY_HASH);
-            throw new UnauthorizedException("LOGIN_FAILED", "이메일 또는 비밀번호가 올바르지 않습니다");
+            throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다");
         }
 
         User user = found.get();
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-            throw new UnauthorizedException("LOGIN_FAILED", "이메일 또는 비밀번호가 올바르지 않습니다");
+            throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다");
         }
 
         return new LoginResult(jwtProvider.issue(user), jwtProvider.ttlSeconds(), user);
@@ -274,22 +249,22 @@ public class AuthService {
     /**
      * 재설정 요청. 토큰을 만들고 본인 이메일로 재설정 메일을 보낸다.
      *
-     * 존재 여부를 이제 그대로 알려준다(제품 결정, 2026-08-04) — 열거 방지보다
-     * "가입되지 않은 이메일입니다" 라는 UX 를 우선하기로 했다.
-     *
-     * role 도 함께 확인한다. 이메일 자체가 없는 경우와, 이메일은 있지만 role
-     * 이 다른 계정인 경우를 구분해서 던진다 — 온보딩에서 역할 카드를 잘못
-     * 고른 본인에게 "이메일이 아예 없다"고 오인시키지 않기 위해서다.
+     * 이메일 존재 여부와 무관하게 항상 조용히 끝낸다 — 여기서 "없는 이메일"을
+     * 알려주면 어떤 주소가 가입돼 있는지 알아낼 수 있다. 존재하지 않으면
+     * 아무것도 하지 않고, 프론트에는 동일하게 "메일을 보냈다"고 표시한다.
      */
     @Transactional
-    public void requestPasswordReset(String rawEmail, Role role) {
-        User user = users.findByEmail(normalizeEmail(rawEmail))
-                .orElseThrow(() -> new ValidationException("NO_EXISTING_EMAIL", "가입되지 않은 이메일입니다"));
-        if (user.getRole() != role) {
-            throw new ValidationException("ROLE_MISMATCH", "계정의 역할에 맞지 않는 접근 시도입니다");
+    public void requestPasswordReset(String rawEmail) {
+        Optional<User> found = users.findByEmail(normalizeEmail(rawEmail));
+        if (found.isEmpty()) {
+            return;
         }
+        User user = found.get();
 
-        // 재발송 간격 제한. 쿨다운이면 메일만 다시 안 보내고 조용히 끝낸다.
+        // 재발송 간격 제한. 쿨다운이면 조용히 끝낸다 — 예외를 던지면 "존재하는
+        // 이메일 + 최근 요청"만 400 이 나가고 없는 이메일은 200 이라, 응답 차이로
+        // 가입 여부를 알아낼 수 있다(계정 열거). 열거를 막으려면 존재하든 아니든
+        // 쿨다운이든 항상 같은 200 을 줘야 한다. 여기서는 메일만 보내지 않고 리턴.
         boolean recentlySent = resetTokens.findTopByUserOrderByIdDesc(user)
                 .map(PasswordResetToken::getCreatedAt)
                 .map(createdAt -> createdAt != null
@@ -325,13 +300,13 @@ public class AuthService {
     @Transactional
     public void resetPassword(String token, String newPassword, String newPasswordConfirm) {
         PasswordResetToken reset = resetTokens.findByToken(token)
-                .orElseThrow(() -> new ValidationException("RESET_TOKEN_INVALID", "재설정 링크가 올바르지 않습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("재설정 링크가 올바르지 않습니다"));
 
         if (!reset.isUsable(LocalDateTime.now())) {
-            throw new ValidationException("RESET_TOKEN_EXPIRED", "재설정 링크가 만료되었거나 이미 사용되었습니다");
+            throw new IllegalArgumentException("재설정 링크가 만료되었거나 이미 사용되었습니다. 다시 요청해 주세요");
         }
         if (!newPassword.equals(newPasswordConfirm)) {
-            throw new ValidationException("PASSWORD_MISMATCH", "새 비밀번호가 서로 다릅니다");
+            throw new IllegalArgumentException("새 비밀번호가 서로 다릅니다");
         }
         PasswordPolicy.require(newPassword);
 
