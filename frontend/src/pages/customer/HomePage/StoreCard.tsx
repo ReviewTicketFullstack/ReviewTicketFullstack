@@ -1,15 +1,13 @@
-import { Star } from "lucide-react";
-import { Card } from "@/shared/ui";
-import { useNavigate } from "react-router-dom";
+import { Star } from 'lucide-react';
+import { Card } from '@/shared/ui';
+import { useNavigate } from 'react-router-dom';
 
 export interface StoreCardProps {
-  storeId: number;
+  storeId: string;
   storeName: string;
   rating: number;
   reviewCount: string;
-  imageUrl: string | null;
-  // 리뷰 작성 가능 메뉴가 하나라도 있을때 true - 리뷰 뱃지 노출 조건
-  hasReviewEvent: boolean;
+  imageUrl?: string;
 }
 
 export function StoreCard({
@@ -18,20 +16,19 @@ export function StoreCard({
   rating,
   reviewCount,
   imageUrl,
-  hasReviewEvent,
 }: StoreCardProps) {
   const navigate = useNavigate();
 
   return (
-    <Card
-      className="
+    <Card 
+    className="
     flex cursor-pointer gap-4 p-4
     transition-all duration-200
     hover:shadow-xl
     hover:bg-gray-100
     active:scale-[0.98]
     "
-      onClick={() => navigate(`/order/${storeId}`)}
+    onClick={() => navigate(`/order/${storeId}`)}
     >
       {/* Image Section (1 part) */}
       <div className="flex-shrink-0">
@@ -53,11 +50,9 @@ export function StoreCard({
         {/* First Row: Store Name + Review Chip */}
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-bold">{storeName}</h3>
-          {hasReviewEvent && (
-            <div className="bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold">
-              리뷰
-            </div>
-          )}
+          <div className="bg-red-700 text-white px-2 py-1 rounded text-xs font-semibold">
+            리뷰
+          </div>
         </div>
 
         {/* Second Row: Rating Info */}

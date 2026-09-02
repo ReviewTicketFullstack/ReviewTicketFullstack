@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Card } from "@/shared/ui";
 import { ReviewButton } from "./ReviewButton";
 import { ReviewModal } from "./ReviewModal";
-import { formatOrderDate } from "@/entities/order/reviewTime";
-import type { Order } from "@/entities/order";
+import { updateOrderReviewStatus } from "@/entities/order/orderStorage";
+import type { Order } from "@/entities/order/model";
 
 export interface OrderHistoryItemProps {
   order: Order;
@@ -38,9 +38,7 @@ export function OrderHistoryItem({ order: initialOrder }: OrderHistoryItemProps)
 
           {/* Date */}
           <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-            <span className="text-xs text-gray-500">
-              {formatOrderDate(order.createdAt)}
-            </span>
+            <span className="text-xs text-gray-500">{order.createdAt}</span>
           </div>
 
           {/* Review Button */}
@@ -58,12 +56,12 @@ export function OrderHistoryItem({ order: initialOrder }: OrderHistoryItemProps)
       <ReviewModal
         open={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
-        orderId={order.id}
         storeName={order.storeName}
         menuName={order.menuName}
         onSubmitSuccess={() => {
-          // 서버에 저장이 끝난 뒤에만 불린다. 새로고침해도 같은 상태로 온다.
-          setOrder({ ...order, reviewStatus: 'done' });
+          const updatedOrder = { ...order, reviewStatus: 'pending' as const };
+          setOrder(updatedOrder);
+          updateOrderReviewStatus(order.id, 'pending');
         }}
       />
     </>

@@ -35,18 +35,15 @@ public class LoginRateLimiter {
 
     private final ConcurrentHashMap<String, Attempt> attempts = new ConcurrentHashMap<>();
 
-    /** 로그인 시도 전에 부른다. 차단 중이면 남은 시간과 함께 예외를 던진다. */
+    /** 로그인 시도 전에 부른다. 차단 중이면 예외를 던진다. */
     public void checkAllowed(String ip) {
         Attempt a = attempts.get(ip);
         if (a == null) {
             return;
         }
         synchronized (a) {
-            Instant now = Instant.now();
-            if (a.blockedUntil != null && now.isBefore(a.blockedUntil)) {
-                long remaining = Duration.between(now, a.blockedUntil).toSeconds();
-                throw new TooManyRequestsException(
-                        "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.", remaining);
+            if (a.blockedUntil != null && Instant.now().isBefore(a.blockedUntil)) {
+                throw new TooManyRequestsException("로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.");
             }
         }
     }

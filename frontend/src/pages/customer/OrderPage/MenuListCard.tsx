@@ -6,20 +6,17 @@ export type { MenuItemData };
 export interface MenuListCardProps {
   menus: MenuItemData[];
   onMenuClick: (menu: MenuItemData) => void;
-  /** 선택된 메뉴. 없으면 null */
-  selectedMenuId: number | null;
 }
 
-export function MenuListCard({ menus, onMenuClick, selectedMenuId }: MenuListCardProps) {
+export function MenuListCard({ menus, onMenuClick }: MenuListCardProps) {
   return (
     <Card className="p-0 overflow-hidden">
       <div className="divide-y divide-gray-200">
-        {menus.map((menu) => (
+        {menus.map((menu, index) => (
           <MenuItem
-            key={menu.id}
+            key={`${menu.name}-${index}`}
             menu={menu}
             onClick={onMenuClick}
-            isSelected={menu.id === selectedMenuId}
           />
         ))}
       </div>

@@ -39,7 +39,6 @@
   /* Animations for Onboarding */
   --keyframes-fadeIn: fadeIn;
   --keyframes-slideUp: slideUp;
-  --keyframes-fadeInSlideDown: fadeInSlideDown;
 }
 
 @keyframes fadeIn {
@@ -59,56 +58,5 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes fadeInSlideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes foodSlot {
-  0% {
-    transform: translateY(0);
-  }
-
-  /* 3초 지점: 92% 진행 */
-  60% {
-    transform: translateY(var(--pos-60, 0));
-  }
-
-  /* 점진적 감속 구간 */
-  75% {
-    transform: translateY(var(--pos-75, 0));
-  }
-
-  87% {
-    transform: translateY(var(--pos-87, 0));
-  }
-
-  95% {
-    transform: translateY(var(--pos-95, 0));
-  }
-
-  /* 최종 위치 */
-  100% {
-    transform: translateY(var(--final-translate-y, 0));
-  }
-}
-
-.animate-food-slot {
-  animation: foodSlot 5s 1 cubic-bezier(0.42, 0, 0.58, 1) forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-food-slot {
-    animation: none;
-    transform: translateY(var(--final-translate-y, 0));
   }
 }

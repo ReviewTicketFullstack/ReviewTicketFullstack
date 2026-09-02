@@ -24,18 +24,13 @@ import com.reviewticket.server.config.ReviewTicketProperties;
 public class SecurityConfig {
 
     /**
-     * Spring 이 직접 서빙하는 정적 파일(데모 프로토타입, 업로드된 로고/리뷰 사진)은
-     * 인증 대상이 아니다. 정적 리소스의 내부 forward 도 다시 보안 필터를 탈 수
-     * 있으므로, authorizeHttpRequests 의 공개 규칙과 별도로 필터 체인 자체에서 제외한다.
-     *
-     * 업로드 사진도 여기 넣는 이유 — <img src> 로 불러오는 브라우저 요청은
-     * Authorization 헤더를 안 실어 보낸다. 인증을 요구하면 사진이 하나도 안 뜬다.
+     * Spring 이 직접 서빙하는 데모 정적 파일은 인증 대상이 아니다.
+     * 정적 리소스의 내부 forward 도 다시 보안 필터를 탈 수 있으므로,
+     * authorizeHttpRequests 의 공개 규칙과 별도로 필터 체인 자체에서 제외한다.
      */
     @Bean
-    public WebSecurityCustomizer demoStaticResources(ReviewTicketProperties properties) {
-        return web -> web.ignoring().requestMatchers(
-                "/demo/**", "/assets/**", "/", "/favicon.ico", "/favicon.svg",
-                properties.upload().baseUrl() + "/**");
+    public WebSecurityCustomizer demoStaticResources() {
+        return web -> web.ignoring().requestMatchers("/demo/**", "/assets/**", "/", "/favicon.ico", "/favicon.svg");
     }
 
     /**
@@ -72,7 +67,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter,
-            CorsConfigurationSource corsConfigurationSource, ReviewTicketProperties properties) throws Exception {
+            CorsConfigurationSource corsConfigurationSource) throws Exception {
         return http
                 .cors(c -> c.configurationSource(corsConfigurationSource))
                 // 세션을 쓰지 않으므로 CSRF 토큰이 필요 없다. CSRF 는 브라우저가
@@ -89,9 +84,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 가입, 로그인, 중복 검사, 이메일 인증은 토큰 없이 들어온다
                         .requestMatchers("/api/auth/**").permitAll()
-                        // 프로토타입 화면과 업로드된 사진은 공개
+                        // 프로토타입 화면은 공개
                         .requestMatchers("/demo/**", "/assets/**", "/", "/favicon.ico", "/favicon.svg", "/error").permitAll()
-                        .requestMatchers(properties.upload().baseUrl() + "/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

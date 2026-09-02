@@ -1,1 +1,0 @@
-export { StoreReviewPage } from './StoreReviewPage';

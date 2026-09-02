@@ -35,8 +35,7 @@ public class AccountController {
         this.attemptLogger = attemptLogger;
     }
 
-    /** @param tickets 남은 리뷰 티켓. 사장은 -1 로 나간다(티켓 개념이 없다는 표시). */
-    public record MeResponse(long userId, String email, String displayName, Role role, int tickets) {
+    public record MeResponse(long userId, String email, String displayName, Role role) {
     }
 
     public record ChangeNameRequest(@NotBlank(message = "이름을 입력해 주세요") String displayName) {
@@ -47,7 +46,7 @@ public class AccountController {
 
     @GetMapping
     public MeResponse me(@AuthenticationPrincipal User user) {
-        return new MeResponse(user.getId(), user.getEmail(), user.getDisplayName(), user.getRole(), user.getTickets());
+        return new MeResponse(user.getId(), user.getEmail(), user.getDisplayName(), user.getRole());
     }
 
     @PatchMapping(value = "/name", consumes = MediaType.APPLICATION_JSON_VALUE)

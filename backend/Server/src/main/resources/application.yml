@@ -12,7 +12,7 @@ spring:
     active: local
 
   datasource:
-    url: jdbc:mysql://localhost:21096/reviewticket
+    url: jdbc:mysql://localhost:3306/reviewticket
     username: reviewticket
     # password 는 application-local.yml 에 있다
 
@@ -27,22 +27,6 @@ spring:
         format_sql: true
     # dialect 는 일부러 적지 않는다 — Boot 4/Hibernate 7 에서 MySQL8Dialect 같은
     # 버전별 이름이 제거됐다. 안 적으면 드라이버가 알아서 감지한다.
-
-  servlet:
-    multipart:
-      # 리뷰 사진의 상한(15MB)에 맞춘다. 이보다 작으면 정상 사진도 튕겨 나가고,
-      # 기본값(1MB)을 그대로 두면 휴대폰 사진 대부분이 이 값보다 커서 막힌다.
-      max-file-size: 15MB
-      max-request-size: 16MB
-
-  # 시각 형식은 따로 설정하지 않는다.
-  #
-  # Boot 4 는 Jackson 3(tools.jackson)을 쓰는데, 거기서는 날짜를 ISO 8601
-  # 문자열로 내보내는 것이 기본이다. Jackson 2 에서 쓰던
-  # spring.jackson.serialization.write-dates-as-timestamps 는 그 자리에
-  # 더 이상 없어서, 적어 두면 기동 자체가 실패한다.
-  #
-  # 주문 API 의 시각은 Instant 로 내보내므로 "2026-08-04T09:30:00Z" 형태가 된다.
 
 server:
   port: 60921
@@ -61,53 +45,26 @@ reviewticket:
     token-ttl: 1h
     # 이메일 인증 링크 유효 기간
     verification-ttl: 30m
-    # 인증 메일에 넣을 링크의 앞부분.
-    #
-    # 여기에는 기본값만 둔다. 팀원 브라우저가 실제로 여는 주소는 환경마다
-    # 다르고 유동 IP라 바뀌기도 하는데, 그 값을 여기 적으면 바뀔 때마다
-    # 커밋해야 하고 공개 저장소에 운영 서버 주소가 그대로 남는다.
-    #
-    # 다른 PC 에서 접속해야 한다면 application-local.yml 에서 덮어쓴다.
-    # 그러면 주소가 바뀌어도 각자 로컬 파일만 고치면 되고 커밋할 것이 없다.
-    base-url: http://localhost:60921
+    # 인증 메일에 넣을 링크의 앞부분. 팀원 브라우저가 여는 주소여야 하므로
+    # localhost 로 두면 안 된다. 공인 IP를 그대로 쓴다 (BackEnd/접속정보/README.md 참고).
+    # 유동 IP라 바뀔 수 있음 — 바뀌면 여기도 같이 고친다.
+    base-url: http://59.9.88.135:60921
   mail:
     # 발신 주소. 비우면 메일을 보내지 않고 인증 링크를 로그에 남긴다.
     # 실제 발송하려면 여기와 application-local.yml 의 spring.mail 을 채운다.
     from: ""
-  order:
-    # 주문 후 리뷰를 쓸 수 있는 기간.
-    #
-    # 1m 이었으나 실사용이 불가능해 10m 으로 늘렸다 — AI 판정에만 3~3.5초가
-    # 걸리고, 그 앞에 사진을 찍고 별점을 고르고 후기를 10자 이상 쓰는 시간이
-    # 붙는다. 실제로 60초 제한에서는 주문 네 건 중 세 건이 작성 도중 만료돼
-    # 티켓만 소멸했다.
-    #
-    # 프론트는 서버가 계산해 내려준 마감 시각을 그대로 표시하므로 이 줄만 고치면 된다.
-    review-ttl: 10m
-  ai:
-    # AI 서버 주소. 로컬 개발 기본값만 두고, 다른 PC 에서 띄운 경우는
-    # application-local.yml 에서 덮어쓴다(auth.base-url 과 같은 이유).
-    server-url: http://localhost:8000/similarity
-    # 500장 실측 기준 최대 응답 시간이 3.5초였다. 넉넉히 여유를 둔다.
-    timeout: 10s
-    match-threshold: 0.80
-  upload:
-    dir: ./uploads
-    base-url: /uploads
-    target-long-edge: 1920
-  review:
-    content-min-length: 10
-    content-max-length: 50
-    # upload.target-long-edge 와 같은 값이어야 한다 — 하한과 목표치가 같아야
-    # 리사이즈가 항상 줄이기만 하고 늘리는 일이 없다.
-    min-image-long-edge: 1920
   cors:
-    # 쿠키를 쓰지 않고 Authorization 헤더로만 인증하므로(allowCredentials 꺼짐)
-    # 출처를 전부 열어도 쿠키 기반 CSRF 같은 위험이 생기지 않는다.
-    # 팀원이 localhost, LAN IP, 이 서버의 공인 IP 등 어디서 접속하든
-    # 매번 목록에 추가할 필요 없게 전부 허용한다.
+    # 프론트엔드를 Spring 이 아닌 다른 곳에서 띄울 때 필요한 허용 출처.
+    # /demo 로 서빙하는 경우는 같은 출처라 이 목록과 무관하다.
+    # 포트가 다르면 다른 출처다 — Vite(5173), Live Server(5500) 등을 넣어둔다.
     allowed-origins:
-      - "*"
+      - "http://localhost:*"
+      - "http://127.0.0.1:*"
+      # 팀원이 자기 PC 에서 프론트를 띄우고 이 서버를 호출하는 경우.
+      # 사설망 대역을 통째로 허용해 둔다.
+      - "http://192.168.*:*"
+      - "http://172.*:*"
+      - "http://10.*:*"
 logging:
   level:
     org.hibernate.SQL: debug

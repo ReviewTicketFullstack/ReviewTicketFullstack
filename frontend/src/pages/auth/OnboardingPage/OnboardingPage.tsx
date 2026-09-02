@@ -3,17 +3,17 @@ import { Utensils, Store } from "lucide-react";
 import { useAuth } from "@/app/providers";
 
 export function OnboardingPage() {
-  const { setSelectedRole } = useAuth();
+  const { setUserRole } = useAuth();
   const navigate = useNavigate();
 
   const handleCustomerClick = () => {
-    setSelectedRole("CUSTOMER");
-    navigate("/login/customer");
+    setUserRole("CUSTOMER");
+    navigate("/login");
   };
 
   const handleOwnerClick = () => {
-    setSelectedRole("OWNER");
-    navigate("/login/owner");
+    setUserRole("OWNER");
+    navigate("/login");
   };
 
   return (
