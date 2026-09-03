@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(xargs cat)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(ls -la /Users/byurin/codeStress/experiments/mini-order 2>/dev/null || echo \"Directory does not exist yet\")",
+      "Read(//Users/byurin/codeStress/experiments/**)",
+      "Read(//Users/byurin/codeStress/**)"
+    ]
+  }
+}
