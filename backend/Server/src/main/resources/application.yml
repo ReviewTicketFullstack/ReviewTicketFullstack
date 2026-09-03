@@ -101,9 +101,6 @@ reviewticket:
     # upload.target-long-edge 와 같은 값이어야 한다 — 하한과 목표치가 같아야
     # 리사이즈가 항상 줄이기만 하고 늘리는 일이 없다.
     min-image-long-edge: 1920
-  store:
-    # 홈 가게 목록 맨 위에 고정할 가게. 비우면 최신순 그대로.
-    pinned-name: "썬더치킨 별내점"
   cors:
     # 쿠키를 쓰지 않고 Authorization 헤더로만 인증하므로(allowCredentials 꺼짐)
     # 출처를 전부 열어도 쿠키 기반 CSRF 같은 위험이 생기지 않는다.

@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /** application.yml 의 reviewticket.* 를 그대로 받는다. */
 @ConfigurationProperties(prefix = "reviewticket")
 public record ReviewTicketProperties(
-        String demoDir, Auth auth, Mail mail, Cors cors, Order order, Ai ai, Upload upload, Review review, Store store) {
+        String demoDir, Auth auth, Mail mail, Cors cors, Order order, Ai ai, Upload upload, Review review) {
 
     /**
      * @param jwtSecret       서명 키. 32바이트 이상. application-local.yml 에 둔다
@@ -79,10 +79,10 @@ public record ReviewTicketProperties(
     }
 
     /**
-    * 홈 가게 목록.
-    *
-    * @param pinnedName 목록 맨 위에 고정할 가게 이름. 비어 있으면 고정하지 않는다
-    */
+     * 홈 가게 목록.
+     *
+     * @param pinnedName 목록 맨 위에 고정할 가게 이름. 비어 있으면 고정하지 않는다
+     */
     public record Store(String pinnedName) {
     }
 }
