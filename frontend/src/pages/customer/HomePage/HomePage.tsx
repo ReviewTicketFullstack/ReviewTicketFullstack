@@ -93,8 +93,9 @@ export function HomePage() {
           setCachedStores(data, 1);
         }
       })
-      .catch(() => {
-        // 서버에 닿지 못하면 위에서 그린 캐시를 그대로 둔다. 캐시도 없으면 빈 상태다.
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
       });
 
     return () => controller.abort();
