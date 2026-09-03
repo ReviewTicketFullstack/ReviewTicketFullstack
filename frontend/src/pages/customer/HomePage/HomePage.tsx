@@ -7,6 +7,7 @@ import { useAuth } from "@/app/providers";
 import { getStores } from "@/api/storeApi";
 import { STORE_CACHE_KEY } from "@/entities/store/storeCache";
 import type { Store } from "@/entities/store";
+import type { StoreSort } from "@/api/storeApi";
 
 function getCachedStores(): Store[] | null {
   const cached = localStorage.getItem(STORE_CACHE_KEY);
@@ -56,37 +57,48 @@ export function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const [sort, setSort] = useState<StoreSort>("LATEST");
+  const sortRef = useRef(sort);
+
+  sortRef.current = sort;
 
   useEffect(() => {
     setSelectedFoodIndex(Math.floor(Math.random() * FOODS.length));
   }, []);
 
   useEffect(() => {
-    // 캐시가 있으면 먼저 그려 첫 화면이 비어 보이지 않게 한다.
-    const cached = getCachedStores();
-    if (cached) {
-      setStores(cached);
+    const controller = new AbortController();
+
+    // 정렬 기준이 바뀌면 기존 목록을 비우고 첫 페이지부터 다시 조회
+    setStores([]);
+    setPage(0);
+    setHasMore(true);
+
+    // 현재 캐시는 LATEST 목록에서만 사용
+    if (sort === "LATEST") {
+      const cached = getCachedStores();
+      if (cached) setStores(cached);
     }
 
-    // 캐시가 있어도 서버에 반드시 다시 물어본다. 이 목록에는 리뷰 수와 평균
-    // 별점이 함께 들어 있는데, 그 둘은 리뷰가 등록될 때마다 바뀌는 값이다.
-    // 캐시에서 멈추면 리뷰를 써도 홈 화면은 자정까지 예전 숫자(리뷰 0)를
-    // 보여줘, 등록이 안 된 것처럼 보인다.
-    // 첫 페이지는 0번이다. 여기서 받은 결과로 page 를 1로 올려야 아래 옵저버의
-    // page <= 0 가드가 풀린다 — 올리지 않으면 무한 스크롤이 한 번도 발동하지 않는다.
-    getStores(0, 20)
+    // 캐시가 있어도 서버에 반드시 다시 요청
+    // 리뷰수와 평균 별점은 리뷰 등록 시 변경될 수 있기 때문이다.
+    // 첫 페이지는 0번. 조회 성공 후 page 를 1로 올려 다음 페이지 요청 준비.
+    getStores(0, 20, sort, controller.signal)
       .then((data) => {
-        setStores(data);
+        setStores(data); // 서버 결과로 교체
         setPage(1);
         setHasMore(data.length === 20);
-        if (data.length > 0) {
+
+        if (sort === "LATEST" && data.length > 0) {
           setCachedStores(data, 1);
         }
       })
       .catch(() => {
         // 서버에 닿지 못하면 위에서 그린 캐시를 그대로 둔다. 캐시도 없으면 빈 상태다.
       });
-  }, []);
+
+    return () => controller.abort();
+  }, [sort]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -96,13 +108,11 @@ export function HomePage() {
         }
 
         setIsLoading(true);
-        getStores(page, 20)
+        getStores(page, 20, sort)
           .then((data) => {
-            setStores((prev) => {
-              const updated = [...prev, ...data];
-              setCachedStores(updated, page + 1);
-              return updated;
-            });
+            if (sortRef.current !== sort) return;
+
+            setStores((prev) => [...prev, ...data]);
 
             if (data.length < 20) {
               setHasMore(false);
@@ -127,7 +137,7 @@ export function HomePage() {
     return () => {
       observer.disconnect();
     };
-  }, [page, isLoading, hasMore]);
+  }, [page, isLoading, hasMore, sort]);
 
   return (
     <div className="flex flex-col gap-8 px-5 py-6">
@@ -153,6 +163,23 @@ export function HomePage() {
         <h2 className="text-base font-bold text-ink-900">
           지금 주문할 수 있는 가게
         </h2>
+        <div className="flex gap-1">
+          {(["LATEST", "REVIEWS"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setSort(value)}
+              aria-pressed={sort === value}
+              className={`rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                sort === value
+                  ? "font-bold text-brand-800"
+                  : "font-semibold text-ink-500 hover:text-ink-900"
+              }`}
+            >
+              {value === "LATEST" ? "최신순" : "리뷰많은순"}
+            </button>
+          ))}
+        </div>
 
         {stores.length === 0 && !isLoading ? (
           <EmptyState
