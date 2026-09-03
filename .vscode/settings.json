@@ -1,4 +1,9 @@
 {
   "java.compile.nullAnalysis.mode": "automatic",
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "automatic",
+  // backend/Server 가 sdk 를 composite build(includeBuild)로 끌어다 쓴다.
+  // 두 Gradle 루트를 모두 가져와야 언어 서버가 좌표 치환을 볼 수 있다 —
+  // 하나만 가져오면 imageverify-core 를 Maven Central 에서 찾다 실패한다.
+  "java.import.gradle.enabled": true,
+  "java.import.projectSelection": "automatic"
 }
