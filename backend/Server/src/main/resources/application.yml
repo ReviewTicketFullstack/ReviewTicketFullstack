@@ -48,7 +48,7 @@ server:
   port: 60921
   tomcat:
     threads:
-      max: 100                  # 기본 200 은 이 서버엔 과하다
+      max: 100 # 기본 200 은 이 서버엔 과하다
 
 # ---- 이 서비스 전용 설정 ----
 reviewticket:

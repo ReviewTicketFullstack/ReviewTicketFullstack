@@ -6,11 +6,11 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 
 import com.reviewticket.server.auth.ConflictException;
 import com.reviewticket.server.auth.ForbiddenException;
@@ -45,6 +45,17 @@ public class StoreService {
     private final ImageStorage storage;
     private final ImageResizer resizer;
     private final ReviewTicketProperties properties;
+
+    /**
+     * 홈 목록 정렬 기준. 어느 값이든 고정 가게(reviewticket.store.pinned-name)가
+     * 항상 맨 위다 — 고정은 정렬 옵션이 아니라 그 위에 얹는 규칙이다.
+     */
+    public enum StoreSort {
+        /** 등록 역순(기존 동작) */
+        LATEST,
+        /** 리뷰 많은 순 */
+        REVIEWS
+    }
 
     public StoreService(StoreRepository stores, MenuRepository menus,
             UserRepository users, PendingSignupRepository pendings, EntityManager entityManager,
@@ -81,15 +92,19 @@ public class StoreService {
 
     /** 홈 목록. 최신 가게가 먼저 온다. 페이지네이션 지원 (20개씩 응답). */
     @Transactional(readOnly = true)
-    public List<StoreSummaryResponse> findAll(int page, int size) {
+    public List<StoreSummaryResponse> findAll(int page, int size, StoreSort sort) {
 
+        // Sort 를 넣지 않음 - @Query 에 이미 ORDER BY 가 있고, Pageable 의 Sort 는 그 뒤에 덧붙여져 정렬 조건이
+        // 두번 적힘.
         Pageable pageable = PageRequest.of(
-            page,
-            size,
-            Sort.by(Sort.Direction.DESC, "id")
-        );
+                page,
+                size);
 
-        return stores.findAllByOrderByIdDesc(pageable)
+        Page<Store> found = (sort == StoreSort.REVIEWS)
+                ? stores.findAllByOrderByReviewNumberDescIdDesc(pageable)
+                : stores.findAllByOrderByIdDesc(pageable);
+
+        return found
                 .map(StoreService::toSummary)
                 .getContent();
     }

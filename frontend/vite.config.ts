@@ -9,14 +9,14 @@ export default defineConfig(({ mode }) => {
   // 공용 서버를 쓰면 그 주소다. 코드에 박아두면 주소가 바뀔 때마다 커밋하고
   // 팀원 전원이 pull 을 받아야 하므로 .env.local 에서 읽는다
   // (*.local 은 .gitignore 에 걸려 커밋되지 않는다. .env.example 참고)
-  const env = loadEnv(mode, __dirname, "VITE_");
+  const env = loadEnv(mode, import.meta.dirname, "VITE_");
   const apiTarget = env.VITE_API_TARGET || "http://localhost:60921";
 
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        "@": path.resolve(import.meta.dirname, "./src"),
       },
     },
     server: {

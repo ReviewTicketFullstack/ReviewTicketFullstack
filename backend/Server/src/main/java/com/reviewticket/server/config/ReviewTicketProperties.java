@@ -77,4 +77,12 @@ public record ReviewTicketProperties(
      */
     public record Review(int contentMinLength, int contentMaxLength, int minImageLongEdge) {
     }
+
+    /**
+     * 홈 가게 목록.
+     *
+     * @param pinnedName 목록 맨 위에 고정할 가게 이름. 비어 있으면 고정하지 않는다
+     */
+    public record Store(String pinnedName) {
+    }
 }

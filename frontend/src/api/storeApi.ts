@@ -1,7 +1,6 @@
 import { request } from "@/shared/api";
 import type { Store } from "@/entities/store";
 
-// 이도연
 export interface MenuItem {
   id: number;
   name: string;
@@ -13,17 +12,6 @@ export interface MenuItem {
 
 export interface StoreDetail extends Store {
   menus: MenuItem[];
-}
-
-export function getStores(
-  page: number,
-  size: number,
-  signal?: AbortSignal,
-): Promise<Store[]> {
-  return request<Store[]>(`/stores?page=${page}&size=${size}`, {
-    auth: true,
-    signal,
-  });
 }
 
 export function getStoreDetail(
@@ -145,5 +133,19 @@ export function updateMyMenu(
     method: "PATCH",
     body: patch,
     auth: true,
+  });
+}
+
+export type StoreSort = "LATEST" | "REVIEWS";
+
+export function getStores(
+  page: number,
+  size: number,
+  sort: StoreSort = "LATEST",
+  signal?: AbortSignal,
+): Promise<Store[]> {
+  return request<Store[]>(`/stores?page=${page}&size=${size}&sort=${sort}`, {
+    auth: true,
+    signal,
   });
 }

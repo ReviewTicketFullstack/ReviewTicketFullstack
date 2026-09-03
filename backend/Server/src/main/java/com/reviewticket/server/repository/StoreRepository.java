@@ -11,8 +11,11 @@ import com.reviewticket.server.domain.User;
 
 public interface StoreRepository extends JpaRepository<Store, Long> {
 
-    /** 홈 목록. 최신 가게가 먼저 온다. */
+    // 홈 목록 - 최신순. 등록 역순
     Page<Store> findAllByOrderByIdDesc(Pageable pageable);
+
+    // 홈 목록 - 리뷰 많은 순
+    Page<Store> findAllByOrderByReviewNumberDescIdDesc(Pageable pageable);
 
     boolean existsByOwner(User owner);
 
