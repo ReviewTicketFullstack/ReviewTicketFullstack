@@ -3,48 +3,48 @@ import { Utensils, Store } from "lucide-react";
 import { useAuth } from "@/app/providers";
 
 export function OnboardingPage() {
-  const { setSelectedRole } = useAuth();
+  const { setUserRole } = useAuth();
   const navigate = useNavigate();
 
   const handleCustomerClick = () => {
-    setSelectedRole("CUSTOMER");
-    navigate("/login/customer");
+    setUserRole("CUSTOMER");
+    navigate("/login");
   };
 
   const handleOwnerClick = () => {
-    setSelectedRole("OWNER");
-    navigate("/login/owner");
+    setUserRole("OWNER");
+    navigate("/login");
   };
 
   return (
-    <div className="flex min-h-screen flex-col gap-8 px-5 pb-8 pt-8">
+    <div className="flex flex-col min-h-screen px-5 pb-5 pt-8">
       {/* Hero Section */}
       <div
         className="flex-1 flex flex-col items-center justify-center gap-8 opacity-0"
         style={{ animation: "fadeIn 0.8s ease-out forwards" }}
       >
         {/* Logo Placeholder */}
-        <div className="flex size-20 items-center justify-center rounded-2xl bg-brand-50 text-5xl">
-          🎫
+        <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-brand-50">
+          <div className="text-5xl">🎫</div>
         </div>
 
         {/* App Name */}
-        <div className="flex flex-col gap-3 text-center">
-          <h1 className="text-3xl font-bold text-ink-900">
-            리뷰<span className="text-brand-800">티켓</span>
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-ink-900 mb-3">
+            Review Ticket
           </h1>
-          <p className="text-sm leading-relaxed text-ink-700">
-            주문하고 리뷰를 남기면
+          <p className="text-sm text-ink-700 leading-relaxed">
+            주문하고 리뷰를 작성하면
             <br />
-            티켓을 받을 수 있어요.
+            보상을 받을 수 있습니다.
           </p>
         </div>
 
         {/* Illustration Placeholder */}
-        <div className="flex aspect-square w-full max-w-xs items-center justify-center gap-3 rounded-2xl bg-brand-50 text-6xl">
-          <span>🍔</span>
-          <span>✍️</span>
-          <span>🎫</span>
+        <div className="w-full max-w-xs aspect-square rounded-2xl bg-brand-50 flex items-center justify-center gap-2">
+          <span className="text-6xl">🍔</span>
+          <span className="text-6xl">✍️</span>
+          <span className="text-6xl">🎫</span>
         </div>
       </div>
 
@@ -54,18 +54,18 @@ export function OnboardingPage() {
         <button
           type="button"
           onClick={handleCustomerClick}
-          className="cursor-pointer rounded-2xl border border-line-100 bg-surface p-5 opacity-0 transition-all duration-200 ease-out hover:border-brand-800 hover:shadow-raised active:scale-[0.98] motion-reduce:active:scale-100"
+          className="rounded-2xl bg-surface border border-line-100 p-4 transition-all duration-300 ease-out hover:shadow-raised active:scale-95 cursor-pointer opacity-0"
           style={{
             animation: "slideUp 0.6s ease-out forwards",
             animationDelay: "200ms",
           }}
         >
-          <div className="flex items-center gap-3">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-brand-50">
+          <div className="flex items-start gap-3">
+            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-brand-50 flex-shrink-0">
               <Utensils size={28} className="text-brand-800" />
             </div>
             <div className="flex-1 text-left">
-              <h2 className="mb-1 text-base font-bold text-ink-900">
+              <h2 className="text-base font-bold text-ink-900 mb-1">
                 고객님으로 로그인할게요!
               </h2>
               <p className="text-xs text-ink-700 leading-relaxed">
@@ -81,18 +81,18 @@ export function OnboardingPage() {
         <button
           type="button"
           onClick={handleOwnerClick}
-          className="cursor-pointer rounded-2xl border border-line-100 bg-surface p-5 opacity-0 transition-all duration-200 ease-out hover:border-brand-800 hover:shadow-raised active:scale-[0.98] motion-reduce:active:scale-100"
+          className="rounded-2xl bg-surface border border-line-100 p-4 transition-all duration-300 ease-out hover:shadow-raised active:scale-95 cursor-pointer opacity-0"
           style={{
             animation: "slideUp 0.6s ease-out forwards",
             animationDelay: "300ms",
           }}
         >
-          <div className="flex items-center gap-3">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-brand-50">
+          <div className="flex items-start gap-3">
+            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-brand-50 flex-shrink-0">
               <Store size={28} className="text-brand-800" />
             </div>
             <div className="flex-1 text-left">
-              <h2 className="mb-1 text-base font-bold text-ink-900">
+              <h2 className="text-base font-bold text-ink-900 mb-1">
                 사장님으로 로그인할게요!
               </h2>
               <p className="text-xs text-ink-700 leading-relaxed">
@@ -107,7 +107,7 @@ export function OnboardingPage() {
 
       {/* Footer */}
       <div
-        className="text-center opacity-0"
+        className="mt-8 text-center opacity-0"
         style={{ animation: "fadeIn 0.8s ease-out forwards 400ms" }}
       >
         <p className="text-xs text-ink-500 leading-relaxed">

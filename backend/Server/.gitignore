@@ -1,7 +1,7 @@
 ### ReviewTicket ###
-# 업로드된 리뷰·메뉴 사진. 코드 폴더 안에 있지만 저장소에 올리지 않는다.
-uploads/
-!uploads/.gitkeep
+# 업로드된 리뷰 사진. 코드 폴더 안에 있지만 저장소에 올리지 않는다.
+Uploaded_pictures/
+!Uploaded_pictures/.gitkeep
 # DB 접속 비밀번호가 들어간다
 src/main/resources/application-local.yml
 
