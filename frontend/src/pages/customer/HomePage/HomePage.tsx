@@ -8,6 +8,7 @@ import { getStores } from "@/api/storeApi";
 import { STORE_CACHE_KEY } from "@/entities/store/storeCache";
 import type { Store } from "@/entities/store";
 import type { StoreSort } from "@/api/storeApi";
+import { Modal } from "@/shared/ui/Modal";
 
 function getCachedStores(): Store[] | null {
   const cached = localStorage.getItem(STORE_CACHE_KEY);
@@ -59,6 +60,80 @@ export function HomePage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [sort, setSort] = useState<StoreSort>("LATEST");
   const sortRef = useRef(sort);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+
+  useEffect(() => {
+    // 브라우저가 Notification API 를 지원하지 않는 경우
+    if (!("Notification" in window)) return;
+
+    // 이미 허용했거나 거부했다면 다시 표시하지 않는다.
+    if (Notification.permission !== "default") return;
+
+    // HomePage 진입 후 1초 뒤 앱 자체 안내 모달을 표시한다.
+    const timer = window.setTimeout(() => {
+      setShowNotificationModal(true);
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  const handleAllowNotification = async () => {
+    if (!("Notification" in window)) return;
+    if (!("serviceWorker" in navigator)) return;
+    if (!("PushManager" in window)) return;
+
+    try {
+      // 1. 브라우저 알림권한 요청
+      const permission = await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        console.log("Notification permissin:", permission);
+        return;
+      }
+
+      // 2. Service Worker 등록
+      const registration = await navigator.serviceWorker.register("/sw.js");
+
+      // 3. Service Worker 활성화 대기
+      await navigator.serviceWorker.ready;
+
+      // 4. 기존 PushSubscription 확인
+      let subscription = await registration.pushManager.getSubscription();
+
+      // 5. 없으면 새로 생성
+      if (!subscription) {
+        const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
+        if (!vapidPublicKey) {
+          throw new Error("VITE_VAPID_PUBLIC KEY 가 없습니다.");
+        }
+
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        });
+      }
+
+      console.log("Push Subscription:", subscription);
+      console.log("Push Subscription JSON:", subscription.toJSON());
+
+      setShowNotificationModal(false);
+    } catch (error) {
+      console.log("Push Subscription failed:", error);
+    }
+  };
+
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+  }
 
   sortRef.current = sort;
 
@@ -207,6 +282,40 @@ export function HomePage() {
 
       {/* Infinite Scroll Sentinel */}
       <div ref={sentinelRef} className="h-4" />
+
+      {/* 알림 권한 허용 모달 */}
+      <Modal
+        open={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+      >
+        <div className="flex flex-col">
+          <h2 className="text-xl font-bold text-ink-900">
+            점심시간 알림을 받아보세요
+          </h2>
+
+          <p className="mt-2 text-sm leading-5 text-ink-500">
+            오전 11시 30분에 점심 주문 알림을 보내드릴게요.
+          </p>
+
+          <div className="mt-5 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleAllowNotification}
+              className="rounded-xl bg-brand-800 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700"
+            >
+              알림 허용
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowNotificationModal(false)}
+              className="rounded-xl px-4 py-3 text-sm font-semibold text-ink-500 transition-colors hover:text-ink-900"
+            >
+              나중에
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {isLoading && <Loading />}
     </div>
