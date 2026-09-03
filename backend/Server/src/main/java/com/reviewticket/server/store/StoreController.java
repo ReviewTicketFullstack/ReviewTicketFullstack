@@ -72,12 +72,13 @@ public class StoreController {
             boolean reviewEvent, Instant menuLatestUpdate) {
     }
 
-    /** 홈 목록. 페이지네이션 지원 (20개씩 응답). */
+    /** 홈 목록. 페이지네이션 지원 (20개씩 응답) + 정렬. sort 생략 시 최신순으로 정렬 */
     @GetMapping
     public List<StoreSummaryResponse> stores(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "20") int size) {
-            return storeService.findAll(page, size);
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "LATEST") StoreService.StoreSort sort) {
+        return storeService.findAll(page, size, sort);
     }
 
     /** 주문 화면용 상세. 가게 정보 + 그 가게의 메뉴 배열. */
@@ -97,7 +98,8 @@ public class StoreController {
     public UpdateStoreResponse updateMyStore(@AuthenticationPrincipal User user,
             @Valid @RequestBody UpdateStoreRequest request) {
         StoreMeResponse updated = storeService.updateMine(user.getId(), request.storeName(), request.logoUrl());
-        return new UpdateStoreResponse(updated.storeId(), updated.storeName(), updated.logoUrl(), updated.latestUpdate());
+        return new UpdateStoreResponse(updated.storeId(), updated.storeName(), updated.logoUrl(),
+                updated.latestUpdate());
     }
 
     /** 사장이 자기 가게 메뉴를 조회한다. */
