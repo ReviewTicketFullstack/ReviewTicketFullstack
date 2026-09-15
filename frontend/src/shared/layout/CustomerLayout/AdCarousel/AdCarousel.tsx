@@ -91,28 +91,6 @@ export function AdCarousel() {
       >
         <ChevronRight size={20} aria-hidden="true" />
       </button>
-
-      {/* 페이지네이션 — 점만 두면 터치 타깃이 모자라서 버튼을 44px 로 두고
-          안쪽 점만 작게 그린다. */}
-      <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-center">
-        {AD_SLIDES.map((slide, slideIndex) => (
-          <button
-            key={slide.id}
-            type="button"
-            onClick={() => goTo(slideIndex)}
-            aria-label={`${slideIndex + 1}번째 광고 보기`}
-            aria-current={slideIndex === index}
-            className="flex size-11 items-center justify-center"
-          >
-            <span
-              aria-hidden="true"
-              className={`h-1.5 rounded-full bg-white transition-all duration-200 ${
-                slideIndex === index ? "w-5" : "w-1.5 opacity-50"
-              }`}
-            />
-          </button>
-        ))}
-      </div>
     </section>
   );
 }
